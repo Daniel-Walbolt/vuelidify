@@ -151,9 +151,11 @@ export type FinalFormValidation<
 	? ArrayValidatorTypes<U, T, T, Args, FValidationReturn>
 	: T extends IndexableObject
 		? RecursiveValidation<T, KParent, Args, FValidationReturn>
-		: T extends Primitive
-			? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn>
-			: undefined;
+		: T extends boolean // boolean is separate from Primitive because TS would otherwise split boolean into true | false here. Resulting in undefined nested types.
+			? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn>
+			: T extends Primitive
+				? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn>
+				: undefined;
 
 export type ValidationConfig<
 	T,
