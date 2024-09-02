@@ -63,6 +63,7 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
 };
 /** Shorthand type for accepting either a Sync or Async validator. */
 type Validator<T, KParent, Args, FValidationReturn> = (SyncValidator<T, KParent, Args, FValidationReturn> | AsyncValidator<T, KParent, Args, FValidationReturn>);
+type ValidatorTypes<T, KParent, Args, FValidationReturn> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn> : PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn>;
 type BaseValidator<T, K, V, F> = (input: ValidatorParams<T, K, V>) => F;
 type SyncValidator<T, K, V, F> = BaseValidator<T, K, V, BaseValidationReturn<F>>;
 type AsyncValidator<T, K, V, F> = BaseValidator<T, K, V, Promise<BaseValidationReturn<F> | undefined>>;
@@ -80,8 +81,12 @@ type BaseValidationReturn<F = any> = {
      */
     custom?: F;
 };
+type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
+    /** The raw list of results from validating every object in the array */
+    arrayResults?: ValidationState<U, FValidationReturn>[];
+};
 /** The general validation object type for Final Form. */
-type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, T, Args, FValidationReturn> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn> : undefined;
+type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, T, Args, FValidationReturn> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     objectToValidate: Readonly<Ref<T | undefined | null>>;
     validation: FinalFormValidation<T, Args, FValidationReturn, T>;
@@ -124,11 +129,41 @@ declare function bufferAsync<F extends (...args: any) => any, K>(func: (...param
 declare function throttleQueueAsync<F extends (...args: any) => any, K>(func: (...params: Parameters<F>) => K | Promise<K>, delay: number): (...params: Parameters<typeof func>) => Promise<K | undefined>;
 
 /**
+ * Makes sure the object is not undefined and the trim length is greater than 0.
+ * @param value
+ * @returns Synchronous validator
+ */
+declare function required<T, P, V, R>(): SyncValidator<T, P, V, R>;
+/**
+ * Validates the provided validators if the provided condition is true.
+ * @param condition the condition to evaluate before executing validators.
+ * @param validators the validators that get executed if the condition returns true.
+ * @returns Asynchronous validator
+ */
+declare function validateIf<T, P, V, R>(condition: (parent: P, args: V) => boolean, validators: (SyncValidator<T, P, V, R> | AsyncValidator<T, P, V, R>)[]): AsyncValidator<T, P, V, R>;
+/**
  * Makes sure the string to validate has a length >= to the provided length. Undefined strings are treated as 0 length.
  * @param minLength
  * @returns Synchronous validator
  */
 declare function minimumLength<T extends string | number | undefined | null, P, V, R>(minLength: number): SyncValidator<T, P, V, R>;
+/**
+ * Makes sure the string to validate is less than the provided length. Undefined strings are treated as 0 length.
+ * @param maxLength
+ * @return Synchronous validator
+ */
+declare function maximumLength<T extends string | undefined | null, P, V, R>(maxLength: number): SyncValidator<T, P, V, R>;
+/**
+ * Makes sure the number to validate is not undefined and is atleast the provided value.
+ * @param minValue
+ * @returns Synchronous validator
+ */
+declare function minValue<T extends number | undefined | null, P, V, R>(minValue: number): SyncValidator<T, P, V, R>;
+/**
+ * Checks if the string value is a valid looking email using RegEx.
+ * @returns Synchronous validator
+ */
+declare function isEmailSync<T extends string | undefined | null, P, V, R>(): SyncValidator<T, P, V, R>;
 
 /**
  * Vue3 composable that handles lazy and reactive synchronous and asynchronous validation.
@@ -148,4 +183,4 @@ declare function useValidation<T, Args = undefined, FValidationReturn = unknown>
     isDirty: boolean;
 };
 
-export { AsyncValidator, SyncValidator, ValidatorParams, bufferAsync, minimumLength, throttleQueueAsync, useValidation };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, FinalFormValidation, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maximumLength, minValue, minimumLength, required, throttleQueueAsync, useValidation, validateIf };
