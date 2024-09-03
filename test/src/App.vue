@@ -1,7 +1,10 @@
 <script setup lang="ts">
 	import { ref, watch } from "vue";
 	import { minimumLength, useValidation, minValue } from "vue-final-form"
-import { Child, Person } from "./types";
+	import { Child, Person } from "./types";
+	import ChildComponent from "./components/ChildComponent.vue";
+import NeighborComponent from "./components/NeighborComponent.vue";
+import { PartialPersonValidation } from "./separateValidation";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -92,10 +95,10 @@ import { Child, Person } from "./types";
 
 	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
 	const randomPerson = (genNeighbors: boolean = true): Person => {
-		const countChildren = Math.ceil(Math.random() * 4);
+		const countChildren = Math.ceil(Math.random() * 10);
 		const children = []
 		for (let i = 0; i < countChildren; i++) { children.push(randomChild()); }
-		const countNeighbors = Math.ceil(Math.random() * 2);
+		const countNeighbors = Math.ceil(Math.random() * 10);
 		const neighbors = [];
 		if (genNeighbors) {
 			for (let i = 0; i < countNeighbors; i++) { neighbors.push(randomPerson(false)); }
@@ -120,15 +123,9 @@ import { Child, Person } from "./types";
 	const v$4 = useValidation({
 		objectToValidate: complexObjectValidation,
 		validation: {
-			name: {},
-			age: {},
-			countChildren: {},
-			children: {
-				$each: {
-					name: {
-						$reactive: [minimumLength(10)]
-					}
-				}
+			...PartialPersonValidation,
+			neighbors: {
+				$each: PartialPersonValidation
 			}
 		},
 		delayReactiveValidation: false
@@ -204,49 +201,12 @@ import { Child, Person } from "./types";
 		</form>
 		<form class="form">
 			<h2>Complex Object Validation</h2>
-			<section>
-				<div class="field">
-					<label>
-						Name
-						<input v-model="complexObjectValidation.name"/>
-						<span v-if="v$4.propertyState.name.isValidating"></span>
-					</label>
-					<div class="input-errors">
-						<p v-for="error in v$4.propertyState.name.errorMessages">{{error}}</p>
-					</div>
-				</div>
-				<div class="field">
-					<label>
-						Age
-						<input v-model="complexObjectValidation.age"/>
-						<span v-if="v$4.propertyState.age.isValidating"></span>
-					</label>
-					<div class="input-errors">
-						<p v-for="error in v$4.propertyState.age.errorMessages">{{error}}</p>
-					</div>
-				</div>
-			</section>
-			<h3>Children</h3>
-			<section>
-				<div v-for="child,i in complexObjectValidation.children">
-					<span>Age: {{ child.age }}</span>
-					<div class="field">
-						<label>
-							Name
-							<input v-model="child.name"/>
-							<span v-if="v$4.propertyState.children.arrayState[i].name.isValidating"></span>
-						</label>
-						<div class="input-errors">
-							<p v-for="error in v$4.propertyState.children.arrayState[i].name.errorMessages">{{error}}</p>
-						</div>
-					</div>
-				</div>
-			</section>
+			<NeighborComponent :person="complexObjectValidation" :validation="v$4.propertyState"/>
 		</form>
 	</div>
 </template>
 
-<style scoped>
+<style>
 	.main {
 		display: flex;
 		flex-wrap: wrap;
@@ -263,6 +223,13 @@ import { Child, Person } from "./types";
 			gap: 1rem;
 		}
 	}
+
+	section > section {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
 
 	.field {
 		display: flex;

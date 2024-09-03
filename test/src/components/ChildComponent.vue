@@ -7,6 +7,8 @@
 		validation: ValidationState<Child, unknown>;
 	}
 
+	// Looks like you currently need to access "props" variable in the template in order to get correct types
+	// when using ValidationState on an object, Primitives seem to work just fine.
 	const props = defineProps<Props>();
 </script>
 
@@ -17,10 +19,10 @@
 			<label>
 				Name
 				<input v-model="child.name"/>
-				<span>{{  }}</span>
+				<span v-if="props.validation.name.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in validation">{{error}}</p>
+				<p v-for="error in props.validation.name.errorMessages">{{error}}</p>
 			</div>
 		</div>
 	</div>
