@@ -132,7 +132,6 @@ export function useValidation<
 		validationConfigs = [validatedPropertyConfig];
 	}
 	else {
-		console.log("Complex object");
 		const typedObject = object as Ref<IndexableObject>;
 		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn>;
 		const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
@@ -197,30 +196,30 @@ async function invokeReactivePropertyValidators<
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
 ) {
+	// Early return optimization
 	if (propertyConfig.validation.$reactive == undefined) {
 		return true;
 	}
 	propertyConfig.validatingReactive.value = true;
+	
+	let shouldOptimizeValidators = true;
+	// Assume every validator returns true. If any return false, this property will be set to false.
+	let allValid = true;
+	// Local ID for identifying each validator in the array.
+	let localId = 0;
 
 	// Get the specified reactive validators and run them.
 	let reactiveValidators: Validator<G, KParent, Args, FValidationReturn>[] = propertyConfig.validation.$reactive;
-
-	let shouldOptimizeValidators = true;
-
-	// Check if these validators have been ran before
-	// If they have, some optimizations may have been applied.
+	// Check if these validators have been ran before. 
+	// If they have, some optimizations may have been applied already, and we don't want to do them again.
 	if (propertyConfig.syncValidators.$reactive || propertyConfig.asyncValidators.$reactive) {
 		shouldOptimizeValidators = false;
 		reactiveValidators = ((propertyConfig.syncValidators.$reactive ?? []) as typeof reactiveValidators)
 			.concat((propertyConfig.asyncValidators.$reactive ?? []) as typeof reactiveValidators);
 	}
 
-	// Assume every validator returns true. If any return false, this property will be invalid.
-	let allValid = true;
-	// Local ID for identifying each validator in the array.
-	let localId = 0;
 
-	function processValidator(ret: BaseValidationReturn[]) {
+	function processValidators(ret: BaseValidationReturn[]) {
 		let temp: BaseValidationReturn | undefined;
 		if (iterationId != propertyConfig.validationIterationId) {
 			return;
@@ -240,7 +239,13 @@ async function invokeReactivePropertyValidators<
 		}
 	}
 
-	const reactiveValidationResults = invokeValidators(propertyConfig.property.value, parent, args, reactiveValidators, processValidator);
+	const reactiveValidationResults = invokeValidators(
+		propertyConfig.property.value,
+		parent,
+		args,
+		reactiveValidators,
+		processValidators
+	);
 
 	// Optimize the validators based on certain conditions
 	// Currently, optimizations pertain to throttling asynchronous validators
@@ -254,10 +259,11 @@ async function invokeReactivePropertyValidators<
 	}
 
 	// Process the synchronous results instantly
-	processValidator(reactiveValidationResults.syncResults);
+	processValidators(reactiveValidationResults.syncResults);
 	// Wait for all the asynchronous validators to finish before returning.
 	await Promise.all(reactiveValidationResults.asyncPromises);
 
+	// Only update the validation config if this is the latest validation iteration
 	if (iterationId == propertyConfig.validationIterationId) {
 		propertyConfig.reactiveIsValid.value = allValid;
 		propertyConfig.validatingReactive.value = false;
@@ -279,26 +285,28 @@ async function invokeLazyPropertyValidators<
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
 ) {
+	// Early return optimization
 	if (propertyConfig.validation.$lazy == undefined) {
 		return true;
 	}
 	propertyConfig.validatingLazy.value = true;
 
+	// Assume every validator returns true. If any return false, this property will be set to false.
 	let allValid = true;
+	// Local ID for identifying each validator in the array.
 	let localId = 0;
 	let shouldOptimizeValidators = true;
 
 	// Get the specified reactive validators and run them.
 	let lazyValidators: Validator<G, KParent, Args, FValidationReturn>[] = propertyConfig.validation.$lazy;
-	
 	if (propertyConfig.syncValidators.$lazy || propertyConfig.asyncValidators.$lazy) {
 		shouldOptimizeValidators = false;
 		lazyValidators = ((propertyConfig.syncValidators.$lazy ?? []) as typeof lazyValidators)
 			.concat((propertyConfig.asyncValidators.$lazy ?? []) as typeof lazyValidators);
 	}
 
-	// Function for processing validation on the property itself
-	function processValidator(ret: BaseValidationReturn[]) {
+	/** Process the results of several validators and add them to the validation results with unique identifiers. */
+	function processValidators(ret: BaseValidationReturn[]) {
 		let temp: BaseValidationReturn | undefined;
 
 		if (iterationId != propertyConfig.validationIterationId) {
@@ -320,8 +328,16 @@ async function invokeLazyPropertyValidators<
 		}
 	}
 
-	const lazyValidationResults = invokeValidators(propertyConfig.property.value, parent, args, lazyValidators, processValidator);
+	const lazyValidationResults = invokeValidators(
+		propertyConfig.property.value,
+		parent,
+		args,
+		lazyValidators,
+		processValidators
+	);
 
+	// Optimize the validators based on certain conditions
+	// Currently, optimizations pertain to throttling asynchronous validators
 	if (shouldOptimizeValidators) {
 		const bufferedAsyncValidators: typeof lazyValidationResults.asyncValidators = [];
 		for (const validator of lazyValidationResults.asyncValidators) {
@@ -332,10 +348,11 @@ async function invokeLazyPropertyValidators<
 	}
 
 	// Process the synchronous results instantly
-	processValidator(lazyValidationResults.syncResults);
+	processValidators(lazyValidationResults.syncResults);
 	// Wait for all the asynchronous validators to finish before returning.
 	await Promise.all(lazyValidationResults.asyncPromises);
 
+	// Only update the validation config if this is the latest validation iteration
 	if (iterationId == propertyConfig.validationIterationId) {
 		propertyConfig.lazyIsValid.value = allValid;
 		propertyConfig.validatingLazy.value = false;
