@@ -1,6 +1,7 @@
 <script setup lang="ts">
-	import { ref } from "vue";
+	import { ref, watch } from "vue";
 	import { minimumLength, useValidation, minValue } from "vue-final-form"
+import { Child, Person } from "./types";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -89,18 +90,6 @@
 		addObjectToArray();
 	}
 
-	type Person = {
-		name: string;
-		age: number;
-		countChildren: number;
-		children: Child[],
-		neighbors: Person[]
-	}
-
-	type Child = {
-		name: string;
-		age: number;
-	}
 	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
 	const randomPerson = (genNeighbors: boolean = true): Person => {
 		const countChildren = Math.ceil(Math.random() * 4);
@@ -136,7 +125,9 @@
 			countChildren: {},
 			children: {
 				$each: {
-					name: {}
+					name: {
+						$reactive: [minimumLength(10)]
+					}
 				}
 			}
 		},
@@ -234,21 +225,22 @@
 						<p v-for="error in v$4.propertyState.age.errorMessages">{{error}}</p>
 					</div>
 				</div>
-				<section>
-					<h2>Children</h2>
-					<div v-for="child,i in complexObjectValidation.children">
-						<div class="field">
-							<label>
-								Name
-								<input v-model="child.name"/>
-								<span v-if="v$4.propertyState.children.arrayState[i].name.isValidating"></span>
-							</label>
-							<div class="input-errors">
-								<p v-for="error in v$4.propertyState.age.errorMessages">{{error}}</p>
-							</div>
+			</section>
+			<h3>Children</h3>
+			<section>
+				<div v-for="child,i in complexObjectValidation.children">
+					<span>Age: {{ child.age }}</span>
+					<div class="field">
+						<label>
+							Name
+							<input v-model="child.name"/>
+							<span v-if="v$4.propertyState.children.arrayState[i].name.isValidating"></span>
+						</label>
+						<div class="input-errors">
+							<p v-for="error in v$4.propertyState.children.arrayState[i].name.errorMessages">{{error}}</p>
 						</div>
 					</div>
-				</section>
+				</div>
 			</section>
 		</form>
 	</div>

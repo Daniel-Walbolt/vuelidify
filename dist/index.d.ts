@@ -4,7 +4,7 @@ import { Ref } from 'vue';
 /** Shorthand union for conditional types scattered around Final Form */
 type Primitive = string | number | boolean | bigint | symbol;
 /** Holds the latest results of validation */
-type ValidationState<T, FValidationReturn> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn> : T extends Primitive ? PrimitiveValidationState<FValidationReturn> : RecursiveValidationState<T, FValidationReturn>;
+type ValidationState<T, FValidationReturn> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn> : T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn> : T extends Primitive ? PrimitiveValidationState<FValidationReturn> : undefined;
 type RecursiveValidationState<T, FValidationReturn> = {
     [key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 };
