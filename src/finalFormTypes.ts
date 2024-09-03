@@ -9,9 +9,11 @@ export type ValidationState<
 	FValidationReturn
 > = T extends Array<infer U>
 	? ArrayValidationState<U, FValidationReturn>
-	: T extends Primitive 
-		? PrimitiveValidationState<FValidationReturn>
-		: RecursiveValidationState<T, FValidationReturn>
+	: T extends IndexableObject
+		? RecursiveValidationState<T, FValidationReturn>
+		: T extends Primitive 
+			? PrimitiveValidationState<FValidationReturn>
+			: undefined;
 
 export type RecursiveValidationState<T, FValidationReturn> = {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
