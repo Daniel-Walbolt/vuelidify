@@ -132,6 +132,7 @@ export function useValidation<
 		validationConfigs = [validatedPropertyConfig];
 	}
 	else {
+		console.log("Complex object");
 		const typedObject = object as Ref<IndexableObject>;
 		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn>;
 		const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
@@ -558,6 +559,7 @@ function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, 
 	// Store the validation configurations for all relevant properties.
 	const validationConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[] = [];
 	const state: ValidationState<IndexableObject , FValidationReturn> = {} as any;
+	console.log("Performing complex validation setup", validation);
 	if (validation != undefined) {
 		recursiveSetup(object, validation);
 	}
@@ -573,8 +575,11 @@ function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, 
 			 * Note, this has to be a getter Ref.
 			 */
 			const property = computed(() => rObject[key]);
-			/** We can distinguish if this is a validatable property (array or primitive) */
-			const isPrimitiveOrArray = rValidation[key]?.$reactive != undefined || rValidation[key]?.$lazy != undefined;
+			// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
+			// We can distinguish if this is a validatable property (array or primitive)
+			const isPrimitiveOrArray = (rValidation as PrimitiveOrArrayValidation)?.$reactive != undefined ||
+				(rValidation as PrimitiveOrArrayValidation)?.$lazy != undefined ||
+				(rValidation as PrimitiveOrArrayValidation)?.$each != undefined;
 			if (isPrimitiveOrArray) {
 				const propertyValidation = rValidation[key] as unknown as ValidatorTypes<G[keyof G], KParent, Args, FValidationReturn>;
 				const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation);
