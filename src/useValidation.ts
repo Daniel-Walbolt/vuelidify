@@ -577,9 +577,9 @@ function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, 
 			const property = computed(() => rObject[key]);
 			// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
 			// We can distinguish if this is a validatable property (array or primitive)
-			const isPrimitiveOrArray = (rValidation as PrimitiveOrArrayValidation)?.$reactive != undefined ||
-				(rValidation as PrimitiveOrArrayValidation)?.$lazy != undefined ||
-				(rValidation as PrimitiveOrArrayValidation)?.$each != undefined;
+			const isPrimitiveOrArray = (rValidation[key] as PrimitiveOrArrayValidation)?.$reactive != undefined ||
+				(rValidation[key] as PrimitiveOrArrayValidation)?.$lazy != undefined ||
+				(rValidation[key] as PrimitiveOrArrayValidation)?.$each != undefined;
 			if (isPrimitiveOrArray) {
 				const propertyValidation = rValidation[key] as unknown as ValidatorTypes<G[keyof G], KParent, Args, FValidationReturn>;
 				const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation);
