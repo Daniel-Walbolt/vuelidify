@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { ref, watch } from "vue";
+	import { ref } from "vue";
 	import { minimumLength, useValidation, minValue } from "vue-final-form"
 	const stringTest = ref<string>();
 	const v$ = useValidation({
@@ -50,7 +50,8 @@
 					$reactive: [minimumLength(5), async input => {
 						await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
 						return {
-							isValid: true
+							isValid: input.value.length > 6,
+							errorMessage: "Async failed"
 						}
 					}]
 				}
@@ -84,9 +85,63 @@
 		}
 	}
 
-	for (let i = 0; i < 100; i++) {
+	for (let i = 0; i < 15; i++) {
 		addObjectToArray();
 	}
+
+	type Person = {
+		name: string;
+		age: number;
+		countChildren: number;
+		children: Child[],
+		neighbors: Person[]
+	}
+
+	type Child = {
+		name: string;
+		age: number;
+	}
+	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
+	const randomPerson = (genNeighbors: boolean = true): Person => {
+		const countChildren = Math.ceil(Math.random() * 4);
+		const children = []
+		for (let i = 0; i < countChildren; i++) { children.push(randomChild()); }
+		const countNeighbors = Math.ceil(Math.random() * 2);
+		const neighbors = [];
+		if (genNeighbors) {
+			for (let i = 0; i < countNeighbors; i++) { neighbors.push(randomPerson(false)); }
+		}
+		return {
+			name: randomName(),
+			age: Math.ceil(Math.random() * 30 + 23),
+			countChildren: countChildren,
+			children: children,
+			neighbors: neighbors
+		}
+	}
+
+	const randomName = () => names[Math.floor(Math.random() * names.length)];
+
+	const randomChild = (): Child => ({
+		name: randomName(),
+		age: Math.ceil(Math.random() * 12)
+	});
+
+	const complexObjectValidation = ref<Person>(randomPerson());
+	const v$4 = useValidation({
+		objectToValidate: complexObjectValidation,
+		validation: {
+			name: {},
+			age: {},
+			countChildren: {},
+			children: {
+				$each: {
+					name: {}
+				}
+			}
+		},
+		delayReactiveValidation: false
+	});
 </script>
 
 <template>
@@ -155,7 +210,46 @@
 					</div>
 				</div>
 			</section>
-
+		</form>
+		<form class="form">
+			<h2>Complex Object Validation</h2>
+			<section>
+				<div class="field">
+					<label>
+						Name
+						<input v-model="complexObjectValidation.name"/>
+						<span v-if="v$4.propertyState.name.isValidating"></span>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$4.propertyState.name.errorMessages">{{error}}</p>
+					</div>
+				</div>
+				<div class="field">
+					<label>
+						Age
+						<input v-model="complexObjectValidation.age"/>
+						<span v-if="v$4.propertyState.age.isValidating"></span>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$4.propertyState.age.errorMessages">{{error}}</p>
+					</div>
+				</div>
+				<section>
+					<h2>Children</h2>
+					<div v-for="child,i in complexObjectValidation.children">
+						<div class="field">
+							<label>
+								Name
+								<input v-model="child.name"/>
+								<span v-if="v$4.propertyState.children.arrayState[i].name.isValidating"></span>
+							</label>
+							<div class="input-errors">
+								<p v-for="error in v$4.propertyState.age.errorMessages">{{error}}</p>
+							</div>
+						</div>
+					</div>
+				</section>
+			</section>
 		</form>
 	</div>
 </template>
