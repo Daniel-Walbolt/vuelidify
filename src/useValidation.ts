@@ -309,6 +309,7 @@ async function invokeLazyPropertyValidators<
 	function processValidators(ret: BaseValidationReturn[]) {
 		let temp: BaseValidationReturn | undefined;
 
+		// Only update the validation config if this is the latest validation iteration
 		if (iterationId != propertyConfig.validationIterationId) {
 			return;
 		}
