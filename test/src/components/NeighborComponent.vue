@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="">
-	import { Primitive, ValidationState } from 'vue-final-form';
-	import { Child, Person } from '../types';
+	import { ValidationState,  } from 'vue-final-form';
+	import { Person } from '../types';
 	import ChildComponent from './ChildComponent.vue';
 
 	interface Props {
@@ -44,12 +44,25 @@
 			:validation="props.validation.children.arrayState[i]"
 		/>
 	</section>
-	<h3>Neighbors</h3>
-	<div class="form">
-		<NeighborComponent
-			v-for="neighbor,i in person.neighbors"
-			:person="neighbor"
-			:validation="props.validation.neighbors.arrayState[i]"
-		/>
-	</div>
+	<template v-if="person.neighbors && person.neighbors.length > 0">
+		<h3>Neighbors</h3>
+		<div class="form">
+			<template v-for="neighbor,i in person.neighbors">
+				<p>Neighbor {{ i }}</p>
+				<NeighborComponent
+					:person="neighbor"
+					:validation="props.validation.neighbors.arrayState[i]"
+				/>
+			</template>
+		</div>
+	</template>
+	<hr class="hr"/>
 </template>
+
+<style scoped>
+	hr { 
+		margin: 1rem 0px;
+		border-color: rgb(60,60,60);
+		width: 25%;
+	}
+</style>

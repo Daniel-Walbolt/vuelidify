@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { ref, watch } from "vue";
-	import { minimumLength, useValidation, minValue } from "vue-final-form"
+	import { minimumLength, useValidation, minValue, validateIf } from "vue-final-form"
 	import { Child, Person } from "./types";
 	import ChildComponent from "./components/ChildComponent.vue";
 import NeighborComponent from "./components/NeighborComponent.vue";
@@ -93,6 +93,28 @@ import { PartialPersonValidation } from "./separateValidation";
 		addObjectToArray();
 	}
 
+	const simpleValidateIfTest = ref({
+		isValidated: false,
+		name: ""
+	});
+	const v$4 = useValidation({
+		objectToValidate: simpleValidateIfTest,
+		validation: {
+			name: {
+				$reactive: [input => {
+					if (input.parent.isValidated == false) {
+						return undefined;
+					}
+					console.log("Returning validators");
+					return [
+						minimumLength(15)
+					]
+				}]
+			}
+		},
+		delayReactiveValidation: false
+	})
+
 	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
 	const randomPerson = (genNeighbors: boolean = true): Person => {
 		const countChildren = Math.ceil(Math.random() * 10);
@@ -120,7 +142,7 @@ import { PartialPersonValidation } from "./separateValidation";
 	});
 
 	const complexObjectValidation = ref<Person>(randomPerson());
-	const v$4 = useValidation({
+	const v$5 = useValidation({
 		objectToValidate: complexObjectValidation,
 		validation: {
 			...PartialPersonValidation,
@@ -200,8 +222,28 @@ import { PartialPersonValidation } from "./separateValidation";
 			</section>
 		</form>
 		<form class="form">
+			<h2>Async ValidateIf Example</h2>
+			<section>
+				<div class="field">
+					<label>
+						Should Validate
+						<input v-model="simpleValidateIfTest.isValidated" type="checkbox"/>
+					</label>
+				</div>
+				<div class="field">
+					<label>
+						Name
+						<input v-model="simpleValidateIfTest.name" type="number"/>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$4.propertyState.name.errorMessages">{{error}}</p>
+					</div>
+				</div>
+			</section>
+		</form>
+		<form class="form">
 			<h2>Complex Object Validation</h2>
-			<NeighborComponent :person="complexObjectValidation" :validation="v$4.propertyState"/>
+			<NeighborComponent :person="complexObjectValidation" :validation="v$5.propertyState"/>
 		</form>
 	</div>
 </template>
