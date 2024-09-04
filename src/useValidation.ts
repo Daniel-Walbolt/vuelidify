@@ -49,6 +49,18 @@ type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 		$reactive?: AsyncValidator<T, KParent, Args, FValidationReturn>[];
 		$lazy?: AsyncValidator<T, KParent, Args, FValidationReturn>[];
 	}
+	/** 
+	 * Stores the latest run of validators--indexed by the validator's ID.
+	 * 
+	 * Is used for comparing the current and previous run of validation.
+	 */
+	validatorMap: {
+		[key: string]: {
+			/** The ID of the validator which is also used for the error messages */
+			validatorId: string;
+			validator: Validator<T, KParent, Args, FValidationReturn>;
+		}
+	}
 
 	/** Getter for the current value of the property this validation config is for. */
 	property: Readonly<Ref<T>>;
@@ -309,7 +321,6 @@ async function invokeLazyPropertyValidators<
 	function processValidators(ret: BaseValidationReturn[]) {
 		let temp: BaseValidationReturn | undefined;
 
-		// Only update the validation config if this is the latest validation iteration
 		if (iterationId != propertyConfig.validationIterationId) {
 			return;
 		}
@@ -412,63 +423,32 @@ function invokeValidators<
 	/** The callback function for handling resolved validation promises */
 	thenCallback: (ret: BaseValidationReturn<any>[]) => any
 ) {
-	const allPromises: Promise<BaseValidationReturn>[] = [];
-	const allResults: BaseValidationReturn<any>[] = [];
-	const allSyncValidators: SyncValidator<G, KParent, Args, FValidationReturn>[] = [];
-	const allAsyncValidators: AsyncValidator<G, KParent, Args, FValidationReturn>[] = [];
-	/** Internal function to reduce repeated code. Takes the array of validators returned from a validator and adds them to the normal validator process. */
-	function handleReturnedValidators(ret: Validator<G, KParent, Args, FValidationReturn>[]) {
-		// Assume the array is an array of invokable validators.
-		// TypeScript should warn the user for putting in anything else.
-		const typedValidationReturn = ret as Validator<G, KParent, Args, FValidationReturn>[];
-		// Enable support for returning a list of validators to run after a validator was ran.
-		// This feature was added for the validateIf() validator to handle async validators asynchronously from the synchronous validators.
-		// This recursive call could theoretically be infinite, but the developer controls this.
-		const { syncResults, syncValidators, asyncPromises, asyncValidators } = invokeValidators(property, parent, args, typedValidationReturn, thenCallback);
-		allResults.push(...syncResults);
-		allPromises.push(...asyncPromises);
-	}
+	const promises: Promise<BaseValidationReturn>[] = [];
+	const results: BaseValidationReturn<any>[] = [];
+	const syncValidators: SyncValidator<G, KParent, Args, FValidationReturn>[] = [];
+	const asyncValidators: AsyncValidator<G, KParent, Args, FValidationReturn>[] = [];
 	for (const validator of validators) {
+		// The parent can be undefinable when using singular property validation.
+		// In these cases, the type the user sees is accurate, and the type problem here is inconsequential.
 		const validationReturn = validator({
 			value: property,
-			parent: parent,
+			parent: parent!,
 			args: args
 		});
-
 		if (validationReturn instanceof Promise) {
-			allPromises.push(
-				validationReturn.then(ret => {
-					if (ret === undefined) {
-						return undefined;
-					}
-					if (Array.isArray(ret)) {
-						handleReturnedValidators(ret);
-						return undefined;
-					}
-					return thenCallback([ret]);
-				})
-			)
-			allAsyncValidators.push(validator as AsyncValidator<G, KParent, Args, FValidationReturn>);
-		}
-		else if (Array.isArray(validationReturn)) {
-			handleReturnedValidators(validationReturn);
+			promises.push(validationReturn.then(ret => ret ? thenCallback([ret]) : undefined));
+			asyncValidators.push(validator as AsyncValidator<G, KParent, Args, FValidationReturn>);
 		}
 		else {
-			// This check was added to support returning an array of promises for the validateIf() validator.
-			if (validationReturn !== undefined) {
-				allResults.push(validationReturn);
-			}
-			allSyncValidators.push(validator as SyncValidator<G, KParent, Args, FValidationReturn>);
+			results.push(validationReturn);
+			syncValidators.push(validator as SyncValidator<G, KParent, Args, FValidationReturn>);
 		}
 	}
 	return {
-		syncResults: allResults,
-		/** The promised results from the async validators */
-		asyncPromises: allPromises,
-		/** The validators that were called and returned synchronously */
-		syncValidators: allSyncValidators,
-		/** The validators that were called and returned promises */
-		asyncValidators: allAsyncValidators
+		syncResults: results,
+		asyncPromises: promises,
+		syncValidators: syncValidators,
+		asyncValidators: asyncValidators
 	};
 }
 
