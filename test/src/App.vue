@@ -3,8 +3,8 @@
 	import { minimumLength, useValidation, minValue, validateIf } from "vue-final-form"
 	import { Child, Person } from "./types";
 	import ChildComponent from "./components/ChildComponent.vue";
-import NeighborComponent from "./components/NeighborComponent.vue";
-import { PartialPersonValidation } from "./separateValidation";
+	import NeighborComponent from "./components/NeighborComponent.vue";
+	import { PartialPersonValidation } from "./separateValidation";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -105,8 +105,14 @@ import { PartialPersonValidation } from "./separateValidation";
 					if (input.parent.isValidated == false) {
 						return undefined;
 					}
-					console.log("Returning validators");
 					return [
+						async input => {
+							await new Promise(resolve => setTimeout(resolve, 500));
+							return {
+								isValid: Math.random() > 0.5,
+								errorMessage: "Async failed"
+							}
+						},
 						minimumLength(15)
 					]
 				}]
@@ -234,6 +240,7 @@ import { PartialPersonValidation } from "./separateValidation";
 					<label>
 						Name
 						<input v-model="simpleValidateIfTest.name" type="number"/>
+						<span v-if="v$4.propertyState.name.isValidating"></span>
 					</label>
 					<div class="input-errors">
 						<p v-for="error in v$4.propertyState.name.errorMessages">{{error}}</p>
