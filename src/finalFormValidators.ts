@@ -20,34 +20,16 @@ export function required<T,P,V,R>(): SyncValidator<T, P, V, R> {
  * @returns Asynchronous validator
  */
 export function validateIf<T,P,V,R>(
-	condition: (parent: P, args: V) => boolean,
+	condition: ((params: ValidatorParams<T, P, V>) => boolean) | ((params: ValidatorParams<T, P, V>) => Promise<boolean>),
 	validators: (SyncValidator<T, P, V, R> | AsyncValidator<T, P, V, R>)[]
 ): AsyncValidator<T,P, V, R> {
 	return async (params: ValidatorParams<T, P, V>) => {
-		if (condition(params.parent, params.args) == false) {
+		if (condition(params) == false) {
 			return {
 				isValid: true
 			}
 		}
-		const promises: Promise<BaseValidationReturn | undefined>[] = [];
-		const results: BaseValidationReturn<R>[] = [];
-		for (const validator of validators) {
-			const validationReturn = validator(params);
-			if (validationReturn instanceof Promise) {
-				promises.push(validationReturn);
-			} 
-			else {
-				results.push(validationReturn);
-			}
-		}
-		const asyncResults = await Promise.all(promises);
-		results.push(...reduceUndefined(asyncResults));
-		const failedValidationErrorMessages = results.filter(x => !x.isValid).map((x => x.errorMessage));
-		const errorMessages = flatMap(failedValidationErrorMessages);
-		return {
-			isValid: results.every(x => x.isValid == true),
-			errorMessage: errorMessages
-		}
+		return validators;
 	}
 }
 

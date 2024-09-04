@@ -101,7 +101,7 @@ export type ArrayValidatorTypes<
 	/** The validators for the array that are invoked only when {@link validate()} is called. */
 	$lazy?: Validator<T, KParent, Args, FValidationReturn>[];
 }
-/** Shorthand type for accepting either a Sync or Async validator. */
+/** A synchronous or asynchronous validator. */
 export type Validator<
 	T,
 	KParent,
@@ -119,9 +119,8 @@ export type ValidatorTypes<
 	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn>
 
 export type BaseValidator<T, K, V, F> = (input: ValidatorParams<T, K, V>) => F
-
-export type SyncValidator<T, K, V, F> = BaseValidator<T,K,V,BaseValidationReturn<F>>
-export type AsyncValidator<T, K, V, F> = BaseValidator<T,K,V,Promise<BaseValidationReturn<F> | undefined>>
+export type SyncValidator<T, K, V, F> = BaseValidator<T,K,V,BaseValidationReturn<F> | Array<Validator<T,K,V,F>>>
+export type AsyncValidator<T, K, V, F> = BaseValidator<T,K,V,Promise<BaseValidationReturn<F> | Array<Validator<T,K,V,F>> | undefined>>
 
 export type BaseValidationReturn<F = any> = {
 	/** An identifer for this validation result. Guaranteed to be unique within each instance of the composable. */

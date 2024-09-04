@@ -61,12 +61,12 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
     /** The validators for the array that are invoked only when {@link validate()} is called. */
     $lazy?: Validator<T, KParent, Args, FValidationReturn>[];
 };
-/** Shorthand type for accepting either a Sync or Async validator. */
+/** A synchronous or asynchronous validator. */
 type Validator<T, KParent, Args, FValidationReturn> = (SyncValidator<T, KParent, Args, FValidationReturn> | AsyncValidator<T, KParent, Args, FValidationReturn>);
 type ValidatorTypes<T, KParent, Args, FValidationReturn> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn> : PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn>;
 type BaseValidator<T, K, V, F> = (input: ValidatorParams<T, K, V>) => F;
-type SyncValidator<T, K, V, F> = BaseValidator<T, K, V, BaseValidationReturn<F>>;
-type AsyncValidator<T, K, V, F> = BaseValidator<T, K, V, Promise<BaseValidationReturn<F> | undefined>>;
+type SyncValidator<T, K, V, F> = BaseValidator<T, K, V, BaseValidationReturn<F> | Array<Validator<T, K, V, F>>>;
+type AsyncValidator<T, K, V, F> = BaseValidator<T, K, V, Promise<BaseValidationReturn<F> | Array<Validator<T, K, V, F>> | undefined>>;
 type BaseValidationReturn<F = any> = {
     /** An identifer for this validation result. Guaranteed to be unique within each instance of the composable. */
     identifier?: string;
@@ -140,7 +140,7 @@ declare function required<T, P, V, R>(): SyncValidator<T, P, V, R>;
  * @param validators the validators that get executed if the condition returns true.
  * @returns Asynchronous validator
  */
-declare function validateIf<T, P, V, R>(condition: (parent: P, args: V) => boolean, validators: (SyncValidator<T, P, V, R> | AsyncValidator<T, P, V, R>)[]): AsyncValidator<T, P, V, R>;
+declare function validateIf<T, P, V, R>(condition: ((params: ValidatorParams<T, P, V>) => boolean) | ((params: ValidatorParams<T, P, V>) => Promise<boolean>), validators: (SyncValidator<T, P, V, R> | AsyncValidator<T, P, V, R>)[]): AsyncValidator<T, P, V, R>;
 /**
  * Makes sure the string to validate has a length >= to the provided length. Undefined strings are treated as 0 length.
  * @param minLength
