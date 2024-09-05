@@ -1,4 +1,3 @@
-import * as vue from 'vue';
 import { Ref } from 'vue';
 
 /** Shorthand union for conditional types scattered around Final Form */
@@ -177,7 +176,7 @@ declare function useValidation<T, Args = undefined, FValidationReturn = unknown>
     hasValidated: boolean;
     validate: () => Promise<boolean>;
     isValidating: boolean;
-    propertyState: vue.UnwrapRef<Readonly<ValidationState<T, FValidationReturn>>>;
+    propertyState: ValidationState<T, FValidationReturn>;
     isValid: boolean;
     setReference: (reference: T) => void;
     isDirty: boolean;

@@ -1,1 +1,593 @@
-var p=(a,t,e)=>new Promise((n,s)=>{var o=l=>{try{V(e.next(l))}catch(u){s(u)}},i=l=>{try{V(e.throw(l))}catch(u){s(u)}},V=l=>l.done?n(l.value):Promise.resolve(l.value).then(o,i);V((e=e.apply(a,t)).next())});function x(a){let t=0,e;return(...n)=>{var o;let s=++t;return e=(o=e==null?void 0:e.then(()=>{if(t==s)return e=a(...n).then(i=>(e=void 0,i)),e}))!=null?o:a(...n).then(i=>(e=void 0,i)),e}}function b(a,t){let e=0,n;return(...s)=>new Promise(o=>{let i=++e,V=new Date().getTime();n!=null||(n=V-t);let l=V-n-t;l<0?new Promise(u=>setTimeout(u,-1*l)).then(()=>{n=new Date().getTime(),i==e&&o(a(...s)),o(void 0)}):(n=V,o(a(...s)))})}function z(a,t=e=>e){return a.reduce((e,n)=>{if(n!=null){let s=t(n);s!=null&&e.push(s)}return e},[])}function O(a){return a.reduce((t,e)=>{if(e!=null)if(e instanceof Array)for(let n of e)n!=null&&t.push(n);else t.push(e);return t},[])}function E(){return a=>({isValid:a.value!=null&&String(a.value).trim().length>0,errorMessage:"This field is required"})}function D(a,t){return e=>p(this,null,function*(){return a(e)==!1?{isValid:!0}:t})}function J(a){return t=>{var n;let e=String((n=t.value)!=null?n:"");return{isValid:e.length>=a,errorMessage:`Too short (${e.length} / ${a})`}}}function Q(a){return t=>{var e,n,s,o;return{isValid:((n=(e=t.value)==null?void 0:e.length)!=null?n:0)<=a,errorMessage:`Too long (${(o=(s=t.value)==null?void 0:s.length)!=null?o:0} / ${a})`}}}function U(a){return t=>({isValid:t.value!=null&&t.value>=a,errorMessage:`Must be atleast ${a}`})}function Z(){return a=>({isValid:a.value?RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(a.value):!1,errorMessage:"Invalid email format"})}import{ref as A,computed as m,watch as j,reactive as F}from"vue";var w=A(0);function M(a){var R;(R=a.delayReactiveValidation)!=null||(a.delayReactiveValidation=!0);let{objectToValidate:t,validation:e,delayReactiveValidation:n,args:s}=a,o=A(!1),i=m(()=>l.some(P=>P.validationState.isValidating)),V=m(()=>l.every(g=>g.reactiveIsValid.value&&g.lazyIsValid.value)),l=[],u=F({}),f=A(JSON.stringify(a.objectToValidate.value)),d=m(()=>f.value!==JSON.stringify(a.objectToValidate.value));if((e==null?void 0:e.$reactive)!=null||(e==null?void 0:e.$lazy)!=null||(e==null?void 0:e.$each)!=null){let v=I(t,e);u=F(v.validationState),l=[v]}else{let P=t,g=e,v=G(P.value,g);u=F(v.state),l=v.validationConfigs}j(a.objectToValidate,()=>{n?o.value==!0&&K(l,t,s,!0,!1):K(l,t,s,!0,!1)},{deep:!0});function y(){return p(this,null,function*(){let P=yield K(l,t,s,!0,!0);return o.value=!0,P})}function c(P){f.value=JSON.stringify(P)}return F({hasValidated:o,validate:y,isValidating:i,propertyState:u,isValid:V,setReference:c,isDirty:d})}function k(a,t,e,n){return p(this,null,function*(){var f,d;if(a.validation.$reactive==null)return!0;a.validatingReactive.value=!0;let s=!0,o=!0,i=0,V=a.validation.$reactive;(a.syncValidators.$reactive||a.asyncValidators.$reactive)&&(s=!1,V=((f=a.syncValidators.$reactive)!=null?f:[]).concat((d=a.asyncValidators.$reactive)!=null?d:[]));function l(r){let y;if(n==a.validationIterationId)for(let c=0;c<r.length;c++)r[c].isValid==!1&&(o=!1),r[c].identifier=`validator-reactive-${a.id}-${i++}`,y=a.reactiveValidationResults.value.find(R=>R.identifier==r[c].identifier),y!=null?Object.assign(y,r[c]):a.reactiveValidationResults.value.push(r[c])}let u=h(a.property.value,t,e,V,l);if(s){let r=[];for(let y of u.asyncValidators)r.push(b(y,1e3));a.asyncValidators.$reactive=r,a.syncValidators.$reactive=u.syncValidators}return l(u.syncResults),yield Promise.all(u.asyncPromises),n==a.validationIterationId&&(a.reactiveIsValid.value=o,a.validatingReactive.value=!1),a.reactiveIsValid.value})}function B(a,t,e,n){return p(this,null,function*(){var f,d;if(a.validation.$lazy==null)return!0;a.validatingLazy.value=!0;let s=!0,o=0,i=!0,V=a.validation.$lazy;(a.syncValidators.$lazy||a.asyncValidators.$lazy)&&(i=!1,V=((f=a.syncValidators.$lazy)!=null?f:[]).concat((d=a.asyncValidators.$lazy)!=null?d:[]));function l(r){let y;if(n==a.validationIterationId)for(let c=0;c<r.length;c++)r[c].isValid==!1&&(s=!1),r[c].identifier=`validator-lazy-${a.id}-${o++}`,y=a.lazyValidationResults.value.find(R=>R.identifier==r[c].identifier),y!=null?Object.assign(y,r[c]):a.lazyValidationResults.value.push(r[c])}let u=h(a.property.value,t,e,V,l);if(i){let r=[];for(let y of u.asyncValidators)r.push(b(y,500));a.asyncValidators.$lazy=r,a.syncValidators.$lazy=u.syncValidators}return l(u.syncResults),yield Promise.all(u.asyncPromises),n==a.validationIterationId&&(a.lazyIsValid.value=s,a.validatingLazy.value=!1),a.lazyIsValid.value})}function K(a,t,e,n,s){return p(this,null,function*(){let o=[];for(let i of a){let V=++i.validationIterationId;if(n&&o.push(k(i,t.value,e,V)),s&&o.push(B(i,t.value,e,V)),i.elementValidation!=null){let l=[];for(let u in i.arrayConfigMap)l.push(...i.arrayConfigMap[u].validationConfigs);o.push(K(l,t,e,n,s))}}return Promise.all(o).then(i=>i.every(V=>V==!0))})}function h(a,t,e,n=[],s){let o=[],i=[],V=[],l=[];function u(f){let d=f,{syncResults:r,syncValidators:y,asyncPromises:c,asyncValidators:R}=h(a,t,e,d,s);i.push(...r),o.push(...c)}for(let f of n){let d=f({value:a,parent:t,args:e});d instanceof Promise?(o.push(d.then(r=>{if(r!==void 0){if(Array.isArray(r)){u(r);return}return s([r])}})),l.push(f)):Array.isArray(d)?u(d):(d!==void 0&&i.push(d),V.push(f))}return{syncResults:i,asyncPromises:o,syncValidators:V,asyncValidators:l}}function I(a,t){var V,l,u,f;let e=t.$each!=null,n=F({isValid:m(()=>{var y,c;let d=(y=i.lazyIsValid.value)!=null?y:!1,r=(c=i.reactiveIsValid.value)!=null?c:!1;return d&&r}),isValidating:m(()=>i.validatingReactive.value||i.validatingLazy.value),isErrored:m(()=>n.validationResults.some(d=>d.isValid==!1)),errorMessages:m(()=>O(z(n.validationResults,d=>d.isValid?void 0:d.errorMessage))),validationResults:m(()=>{var d,r;return((d=i.reactiveValidationResults.value)!=null?d:[]).concat((r=i.lazyValidationResults.value)!=null?r:[])}),arrayState:m(()=>{if(Array.isArray(a.value)===!1)return;console.time("array state");let d=a.value,r=i.elementValidation,y=i.arrayConfigMap,c=(r==null?void 0:r.$reactive)!=null||(r==null?void 0:r.$lazy)!=null,R,P=[];for(let v=0;v<d.length;v++)if(d[v].$ffId===void 0&&Object.defineProperty(d[v],"$ffId",{value:`${i.id}-${i.elementId++}`,writable:!1,configurable:!1,enumerable:!1}),R=d[v].$ffId,P.push(R),!y[R])if(c){let S=r,$=m(()=>d[v]),T=I($,S);y[R]={validationConfigs:[T],validationState:T.validationState}}else{let S=d[v],T=G(S,r);y[R]={validationConfigs:T.validationConfigs,validationState:T.state}}let g=[];for(let v=0;v<P.length;v++)g.push(y[P[v]].validationState);return console.timeEnd("array state"),g})}),s=!(((l=(V=t.$lazy)==null?void 0:V.length)!=null?l:-1)>0),o=!(((f=(u=t.$reactive)==null?void 0:u.length)!=null?f:-1)>0),i={id:w.value++,validationIterationId:0,reactiveIsValid:A(o),reactiveValidationResults:A([]),validatingReactive:A(!1),lazyIsValid:A(s),lazyValidationResults:A([]),validatingLazy:A(!1),validation:t,syncValidators:{},asyncValidators:{},property:a,validationState:n,arrayConfigMap:{},hasElementValidation:e,elementId:0,elementValidation:t.$each};return i}function G(a,t){let e=[],n={};console.log("Performing complex validation setup",t),t!=null&&s(a,t);function s(o,i){var V,l,u;for(let f in i){let d=m(()=>o[f]),r=((V=i[f])==null?void 0:V.$reactive)!=null||((l=i[f])==null?void 0:l.$lazy)!=null||((u=i[f])==null?void 0:u.$each)!=null;if(r){let y=i[f],c=I(d,y);e.push(c),n[f]=c.validationState}else if(r==!1){let y={},c=i[f];n[f]=y,s(d,c)}}}return{validationConfigs:e,state:n}}export{x as bufferAsync,Z as isEmailSync,Q as maximumLength,U as minValue,J as minimumLength,E as required,b as throttleQueueAsync,M as useValidation,D as validateIf};
+var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var __async = (__this, __arguments, generator) => {
+  return new Promise((resolve, reject) => {
+    var fulfilled = (value) => {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var rejected = (value) => {
+      try {
+        step(generator.throw(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+    step((generator = generator.apply(__this, __arguments)).next());
+  });
+};
+
+// src/finalFormUtilities.ts
+function bufferAsync(func) {
+  let id = 0;
+  let queuedFunc = void 0;
+  return (...params) => {
+    var _a;
+    const currentId = ++id;
+    queuedFunc = (_a = queuedFunc == null ? void 0 : queuedFunc.then(() => {
+      if (id == currentId) {
+        queuedFunc = func(...params).then((response) => {
+          queuedFunc = void 0;
+          return response;
+        });
+        return queuedFunc;
+      }
+      return void 0;
+    })) != null ? _a : func(...params).then((response) => {
+      queuedFunc = void 0;
+      return response;
+    });
+    return queuedFunc;
+  };
+}
+function throttleQueueAsync(func, delay) {
+  let id = 0;
+  let previousExecTime = void 0;
+  return (...params) => new Promise((resolve) => {
+    const currentId = ++id;
+    const nowTime = (/* @__PURE__ */ new Date()).getTime();
+    previousExecTime != null ? previousExecTime : previousExecTime = nowTime - delay;
+    const remaining = nowTime - previousExecTime - delay;
+    if (remaining < 0) {
+      new Promise((resolve2) => setTimeout(resolve2, -1 * remaining)).then(() => {
+        previousExecTime = (/* @__PURE__ */ new Date()).getTime();
+        if (currentId == id) {
+          resolve(func(...params));
+        }
+        resolve(void 0);
+      });
+    } else {
+      previousExecTime = nowTime;
+      resolve(func(...params));
+    }
+  });
+}
+function reduceUndefined(array, getter = (val) => val) {
+  return array.reduce((results, item) => {
+    if (item != void 0) {
+      const target = getter(item);
+      if (target != void 0) {
+        results.push(target);
+      }
+    }
+    return results;
+  }, []);
+}
+function flatMap(array) {
+  return array.reduce((results, item) => {
+    if (item != void 0) {
+      if (item instanceof Array) {
+        for (const subitem of item) {
+          if (subitem != void 0) {
+            results.push(subitem);
+          }
+        }
+      } else {
+        results.push(item);
+      }
+    }
+    return results;
+  }, []);
+}
+
+// src/finalFormValidators.ts
+function required() {
+  return (params) => ({
+    isValid: params.value != void 0 && String(params.value).trim().length > 0,
+    errorMessage: "This field is required"
+  });
+}
+function validateIf(condition, validators) {
+  return (params) => __async(this, null, function* () {
+    if (condition(params) == false) {
+      return {
+        isValid: true
+      };
+    }
+    return validators;
+  });
+}
+function minimumLength(minLength) {
+  return (params) => {
+    var _a;
+    const val = String((_a = params.value) != null ? _a : "");
+    return {
+      isValid: val.length >= minLength,
+      errorMessage: `Too short (${val.length} / ${minLength})`
+    };
+  };
+}
+function maximumLength(maxLength) {
+  return (params) => {
+    var _a, _b, _c, _d;
+    return {
+      isValid: ((_b = (_a = params.value) == null ? void 0 : _a.length) != null ? _b : 0) <= maxLength,
+      errorMessage: `Too long (${(_d = (_c = params.value) == null ? void 0 : _c.length) != null ? _d : 0} / ${maxLength})`
+    };
+  };
+}
+function minValue(minValue2) {
+  return (params) => ({
+    isValid: params.value != void 0 && params.value >= minValue2,
+    errorMessage: `Must be atleast ${minValue2}`
+  });
+}
+function isEmailSync() {
+  return (params) => ({
+    isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
+    errorMessage: "Invalid email format"
+  });
+}
+
+// src/useValidation.ts
+import { ref as ref2, computed as computed2, watch, reactive as reactive2 } from "vue";
+
+// src/services/validatorProcessing.ts
+import { computed, reactive, ref } from "vue";
+function uniqueId() {
+  return `${Date.now()}-${Math.random() * 1e3}`;
+}
+function processValidators(validators, markReactive) {
+  const processedValidators = [];
+  for (const validator of validators) {
+    processedValidators.push({
+      validatorId: uniqueId(),
+      validator,
+      isLazy: !markReactive,
+      isReactive: markReactive,
+      optimized: false
+    });
+  }
+  return processedValidators;
+}
+function configureValidationOnProperty(object, validation) {
+  var _a, _b, _c, _d;
+  const isArrayValidation = validation.$each != void 0;
+  const validationState = reactive({
+    isValid: computed(() => {
+      var _a2, _b2;
+      const isLazyValid = (_a2 = validationConfig.lazyIsValid.value) != null ? _a2 : false;
+      const isReactiveValid = (_b2 = validationConfig.reactiveIsValid.value) != null ? _b2 : false;
+      return isLazyValid && isReactiveValid;
+    }),
+    /** State indicating that validators are currently being called. */
+    isValidating: computed(() => validationConfig.validatingReactive.value || validationConfig.validatingLazy.value),
+    isErrored: computed(() => validationState.validationResults.some((x) => x.isValid == false)),
+    /** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
+    errorMessages: computed(() => flatMap(reduceUndefined(validationState.validationResults, (val) => val.isValid ? void 0 : val.errorMessage))),
+    validationResults: computed(() => {
+      var _a2, _b2;
+      return ((_a2 = validationConfig.reactiveValidationResults.value) != null ? _a2 : []).concat((_b2 = validationConfig.lazyValidationResults.value) != null ? _b2 : []);
+    }),
+    arrayState: computed(() => {
+      if (Array.isArray(object.value) === false) {
+        return void 0;
+      }
+      const arr = object.value;
+      const elValidation = validationConfig.elementValidation;
+      const validationMap = validationConfig.arrayConfigMap;
+      const isPrimitiveOrArray = (elValidation == null ? void 0 : elValidation.$reactive) != void 0 || (elValidation == null ? void 0 : elValidation.$lazy) != void 0;
+      let tempId;
+      const objectIds = [];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].$ffId === void 0) {
+          Object.defineProperty(
+            arr[i],
+            `$ffId`,
+            {
+              value: `${validationConfig.id}-${validationConfig.elementId++}`,
+              writable: false,
+              configurable: false,
+              enumerable: false
+            }
+          );
+        }
+        tempId = arr[i].$ffId;
+        objectIds.push(tempId);
+        if (validationMap[tempId]) {
+          continue;
+        }
+        if (isPrimitiveOrArray) {
+          const typedValidation = elValidation;
+          const typedObject = computed(() => arr[i]);
+          const validationConfig2 = configureValidationOnProperty(typedObject, typedValidation);
+          validationMap[tempId] = {
+            validationConfigs: [validationConfig2],
+            validationState: validationConfig2.validationState
+          };
+        } else {
+          const typedObject = arr[i];
+          const typedValidation = elValidation;
+          const validationSetup = setupNestedPropertiesForValidation(typedObject, typedValidation);
+          validationMap[tempId] = {
+            validationConfigs: validationSetup.validationConfigs,
+            validationState: validationSetup.state
+          };
+        }
+      }
+      const elemValidationState = [];
+      for (let i = 0; i < objectIds.length; i++) {
+        elemValidationState.push(validationMap[objectIds[i]].validationState);
+      }
+      return elemValidationState;
+    })
+  });
+  const initIsLazyValid = !(((_b = (_a = validation.$lazy) == null ? void 0 : _a.length) != null ? _b : -1) > 0);
+  const initIsReactiveValid = !(((_d = (_c = validation.$reactive) == null ? void 0 : _c.length) != null ? _d : -1) > 0);
+  const reactiveValidators = validation.$reactive ? processValidators(validation.$reactive, true) : [];
+  const lazyValidators = validation.$lazy ? processValidators(validation.$lazy, false) : [];
+  const validationConfig = {
+    id: uniqueId(),
+    validationIterationId: 0,
+    reactiveIsValid: ref(initIsReactiveValid),
+    reactiveValidationResults: ref([]),
+    validatingReactive: ref(false),
+    lazyIsValid: ref(initIsLazyValid),
+    lazyValidationResults: ref([]),
+    validatingLazy: ref(false),
+    property: object,
+    validation,
+    validationState,
+    latestProcessedValidators: reactiveValidators.concat(lazyValidators),
+    reactiveProcessedValidators: reactiveValidators,
+    lazyProcessedValidators: lazyValidators,
+    arrayConfigMap: {},
+    hasElementValidation: isArrayValidation,
+    elementId: 0,
+    elementValidation: validation.$each
+  };
+  return validationConfig;
+}
+function setupNestedPropertiesForValidation(object, validation) {
+  const validationConfigs = [];
+  const state = {};
+  if (validation != void 0) {
+    recursiveSetup(object, validation);
+  }
+  function recursiveSetup(rObject, rValidation) {
+    var _a, _b, _c;
+    for (const key in rValidation) {
+      const property = computed(() => rObject[key]);
+      const isPrimitiveOrArray = ((_a = rValidation[key]) == null ? void 0 : _a.$reactive) != void 0 || ((_b = rValidation[key]) == null ? void 0 : _b.$lazy) != void 0 || ((_c = rValidation[key]) == null ? void 0 : _c.$each) != void 0;
+      if (isPrimitiveOrArray) {
+        const propertyValidation = rValidation[key];
+        const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation);
+        validationConfigs.push(validatedPropertyConfig);
+        state[key] = validatedPropertyConfig.validationState;
+      } else if (isPrimitiveOrArray == false) {
+        const nestedState = {};
+        const nestedValidation = rValidation[key];
+        state[key] = nestedState;
+        recursiveSetup(
+          property,
+          nestedValidation
+        );
+      }
+    }
+  }
+  return {
+    /** All the validation configs from all the validators the user defined */
+    validationConfigs,
+    /** The object that can be used to represent that state of validation for the provided object. */
+    state
+  };
+}
+
+// src/services/validatorInvocation.ts
+function invokeAndOptimizeValidators(property, parent, args, latestProcessedValidators = [], thenCallback, shouldOptimize = true) {
+  const allPromises = [];
+  const allResults = [];
+  const optimizedValidators = [];
+  for (const processedValidator of latestProcessedValidators) {
+    const shouldOptimizeValidator = !processedValidator.optimized;
+    let validator = processedValidator.validator;
+    const validationReturn = processedValidator.validator({
+      value: property,
+      parent,
+      args
+    });
+    if (validationReturn instanceof Promise) {
+      allPromises.push(
+        validationReturn.then((ret) => {
+          if (ret === void 0) {
+            return void 0;
+          }
+          if (Array.isArray(ret)) {
+            const { asyncPromises, optimizedValidators: optimizedValidators2, syncResults } = handleReturnedValidators(
+              property,
+              parent,
+              args,
+              thenCallback,
+              processedValidator,
+              ret
+            );
+            allPromises.push(...asyncPromises);
+            allResults.push(...syncResults);
+            optimizedValidators2.push(...optimizedValidators2);
+            return void 0;
+          }
+          return thenCallback(processedValidator, ret);
+        })
+      );
+      if (shouldOptimize && shouldOptimizeValidator) {
+        validator = throttleQueueAsync(validator, 500);
+      }
+    } else if (Array.isArray(validationReturn)) {
+      if (processedValidator.spawnedValidators != void 0) {
+        const { asyncPromises, optimizedValidators: optimizedValidators2, syncResults } = invokeAndOptimizeValidators(
+          property,
+          parent,
+          args,
+          processedValidator.spawnedValidators,
+          thenCallback,
+          false
+        );
+        allPromises.push(...asyncPromises);
+        allResults.push(...syncResults);
+        optimizedValidators2.push(...optimizedValidators2);
+      } else {
+        const { asyncPromises, optimizedValidators: optimizedValidators2, syncResults } = handleReturnedValidators(
+          property,
+          parent,
+          args,
+          thenCallback,
+          processedValidator,
+          validationReturn
+        );
+        allPromises.push(...asyncPromises);
+        allResults.push(...syncResults);
+        optimizedValidators2.push(...optimizedValidators2);
+      }
+    } else {
+      if (validationReturn !== void 0) {
+        allResults.push(validationReturn);
+        thenCallback(processedValidator, validationReturn);
+      }
+    }
+    optimizedValidators.push(__spreadProps(__spreadValues({}, processedValidator), {
+      validator,
+      optimized: true
+    }));
+  }
+  return {
+    syncResults: allResults,
+    /** The promised results from the async validators */
+    asyncPromises: allPromises,
+    /** The updated processed validator objects */
+    optimizedValidators
+  };
+}
+function handleReturnedValidators(property, parent, args, thenCallback, parentProcessedValidator, ret) {
+  const processedRetValidators = processValidators(ret, parentProcessedValidator.isReactive);
+  const { asyncPromises, optimizedValidators, syncResults } = invokeAndOptimizeValidators(
+    property,
+    parent,
+    args,
+    processedRetValidators,
+    thenCallback,
+    false
+  );
+  parentProcessedValidator.spawnedValidators = optimizedValidators;
+  return {
+    asyncPromises,
+    syncResults,
+    optimizedValidators
+  };
+}
+
+// src/useValidation.ts
+function useValidation(validationConfig) {
+  var _a;
+  (_a = validationConfig.delayReactiveValidation) != null ? _a : validationConfig.delayReactiveValidation = true;
+  const { objectToValidate: object, validation, delayReactiveValidation, args } = validationConfig;
+  const hasValidated = ref2(false);
+  const isValidating = computed2(() => validationConfigs.some((x) => x.validationState.isValidating));
+  const isValid = computed2(() => {
+    const allValidatorsValid = validationConfigs.every((x) => x.reactiveIsValid.value && x.lazyIsValid.value);
+    return allValidatorsValid;
+  });
+  let validationConfigs = [];
+  let propertyState = reactive2({});
+  const dirtyReference = ref2(JSON.stringify(validationConfig.objectToValidate.value));
+  const isDirty = computed2(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
+  const isPrimitiveOrArray = (validation == null ? void 0 : validation.$reactive) != void 0 || (validation == null ? void 0 : validation.$lazy) != void 0 || (validation == null ? void 0 : validation.$each) != void 0;
+  if (isPrimitiveOrArray) {
+    const typedValidation = validation;
+    const typedObject = object;
+    const validatedPropertyConfig = configureValidationOnProperty(typedObject, typedValidation);
+    propertyState = reactive2(validatedPropertyConfig.validationState);
+    validationConfigs = [validatedPropertyConfig];
+  } else {
+    const typedObject = object;
+    const typedValidation = validation;
+    const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
+    propertyState = reactive2(validationSetup.state);
+    validationConfigs = validationSetup.validationConfigs;
+  }
+  watch(
+    validationConfig.objectToValidate,
+    () => {
+      if (delayReactiveValidation) {
+        if (hasValidated.value == true) {
+          invokeAllValidators(validationConfigs, object, args, true, false);
+        }
+      } else {
+        invokeAllValidators(validationConfigs, object, args, true, false);
+      }
+    },
+    { deep: true }
+  );
+  function validate() {
+    return __async(this, null, function* () {
+      const isValid2 = yield invokeAllValidators(validationConfigs, object, args, true, true);
+      hasValidated.value = true;
+      return isValid2;
+    });
+  }
+  function setReference(reference) {
+    dirtyReference.value = JSON.stringify(reference);
+  }
+  return reactive2({
+    hasValidated,
+    validate,
+    isValidating,
+    propertyState: computed2(() => propertyState),
+    isValid,
+    setReference,
+    isDirty
+  });
+}
+function invokeReactivePropertyValidators(propertyConfig, parent, args, iterationId) {
+  return __async(this, null, function* () {
+    if (propertyConfig.reactiveProcessedValidators == void 0) {
+      return true;
+    }
+    propertyConfig.validatingReactive.value = true;
+    let allValid = true;
+    let localId = 0;
+    const reactiveValidators = propertyConfig.reactiveProcessedValidators;
+    function processValidators2(processedValidator, ret) {
+      let temp;
+      if (iterationId != propertyConfig.validationIterationId) {
+        return;
+      }
+      if (ret.isValid == false) {
+        allValid = false;
+      }
+      ret.identifier = `reactive-${processedValidator.validatorId}`;
+      temp = propertyConfig.reactiveValidationResults.value.find((x) => x.identifier == ret.identifier);
+      if (temp != void 0) {
+        Object.assign(temp, ret);
+      } else {
+        propertyConfig.reactiveValidationResults.value.push(ret);
+      }
+    }
+    const reactiveValidationResults = invokeAndOptimizeValidators(
+      propertyConfig.property.value,
+      parent,
+      args,
+      reactiveValidators,
+      processValidators2
+    );
+    yield Promise.all(reactiveValidationResults.asyncPromises);
+    if (iterationId == propertyConfig.validationIterationId) {
+      propertyConfig.reactiveIsValid.value = allValid;
+      propertyConfig.validatingReactive.value = false;
+    }
+    return propertyConfig.reactiveIsValid.value;
+  });
+}
+function invokeLazyPropertyValidators(propertyConfig, parent, args, iterationId) {
+  return __async(this, null, function* () {
+    if (propertyConfig.validation.$lazy == void 0) {
+      return true;
+    }
+    propertyConfig.validatingLazy.value = true;
+    let allValid = true;
+    let localId = 0;
+    const lazyValidators = propertyConfig.lazyProcessedValidators;
+    function processValidators2(processedValidator, ret) {
+      let temp;
+      if (iterationId != propertyConfig.validationIterationId) {
+        return;
+      }
+      if (ret.isValid == false) {
+        allValid = false;
+      }
+      ret.identifier = `lazy-${processedValidator.validatorId}`;
+      temp = propertyConfig.lazyValidationResults.value.find((x) => x.identifier == ret.identifier);
+      if (temp != void 0) {
+        Object.assign(temp, ret);
+      } else {
+        propertyConfig.lazyValidationResults.value.push(ret);
+      }
+    }
+    const lazyValidationResults = invokeAndOptimizeValidators(
+      propertyConfig.property.value,
+      parent,
+      args,
+      lazyValidators,
+      processValidators2
+    );
+    yield Promise.all(lazyValidationResults.asyncPromises);
+    if (iterationId == propertyConfig.validationIterationId) {
+      propertyConfig.lazyIsValid.value = allValid;
+      propertyConfig.validatingLazy.value = false;
+    }
+    return propertyConfig.lazyIsValid.value;
+  });
+}
+function invokeAllValidators(validationConfigs, parent, args, reactive3, lazy) {
+  return __async(this, null, function* () {
+    const validatorPromises = [];
+    for (const validationConfig of validationConfigs) {
+      const iterationId = ++validationConfig.validationIterationId;
+      if (reactive3) {
+        validatorPromises.push(invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
+      }
+      if (lazy) {
+        validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
+      }
+      if (validationConfig.elementValidation != void 0) {
+        const elementValidationConfigs = [];
+        for (const key in validationConfig.arrayConfigMap) {
+          elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
+        }
+        validatorPromises.push(invokeAllValidators(elementValidationConfigs, parent, args, reactive3, lazy));
+      }
+    }
+    return Promise.all(validatorPromises).then((response) => response.every((x) => x == true));
+  });
+}
+export {
+  bufferAsync,
+  isEmailSync,
+  maximumLength,
+  minValue,
+  minimumLength,
+  required,
+  throttleQueueAsync,
+  useValidation,
+  validateIf
+};
