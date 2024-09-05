@@ -54,7 +54,7 @@ type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * 
 	 * Is used for comparing the current and previous run of validation.
 	 */
-	validatorMap: {
+	latestValidatorMap: {
 		[key: string]: {
 			/** The ID of the validator which is also used for the error messages */
 			validatorId: string;
@@ -188,7 +188,7 @@ export function useValidation<
 		hasValidated,
 		validate,
 		isValidating,
-		propertyState: propertyState as Readonly<typeof propertyState>,
+		propertyState: computed(() => propertyState),
 		isValid,
 		setReference,
 		isDirty
@@ -600,6 +600,7 @@ function configureValidationOnProperty<G, KParent, Args, FValidationReturn>(
 		asyncValidators: {},
 		property: object,
 		validationState: validationState,
+		latestValidatorMap: {},
 		arrayConfigMap: {},
 		hasElementValidation: isArrayValidation,
 		elementId: 0,
