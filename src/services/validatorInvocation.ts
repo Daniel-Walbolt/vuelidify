@@ -133,7 +133,7 @@ function handleReturnedValidators<
 	);
 	// Enable support for returning a list of validators to run after a validator was ran.
 	// This feature was added for the validateIf() validator to handle async validators asynchronously from the synchronous validators.
-	const { asyncPromises, optimizedValidators, syncResults } = invokeAndOptimizeValidators(
+	const { asyncPromises, optimizedValidators: nestedValidators, syncResults } = invokeAndOptimizeValidators(
 		property,
 		parent,
 		args,
@@ -143,9 +143,15 @@ function handleReturnedValidators<
 		++recursionCount
 	);
 
+	const spawnedValidatorsMap: ProcessedValidator<G, KParent, Args, FValidationReturn>["spawnedValidators"] = {}
+	for (const processedValidator of nestedValidators) {
+		spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
+	}
+	parentProcessedValidator.spawnedValidators = spawnedValidatorsMap;
+
 	return {
 		asyncPromises,
 		syncResults,
-		optimizedValidators
+		optimizedValidators: nestedValidators
 	};
 }
