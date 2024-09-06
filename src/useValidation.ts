@@ -162,6 +162,7 @@ async function invokeReactivePropertyValidators<
 		}
 	}
 
+	console.time("Reactive Validation");
 	const reactiveValidationResults = invokeAndOptimizeValidators(
 		propertyConfig.property.value,
 		parent,
@@ -169,7 +170,8 @@ async function invokeReactivePropertyValidators<
 		reactiveValidators,
 		processValidators
 	);
-	
+	console.timeEnd("Reactive Validation");
+
 	propertyConfig.reactiveProcessedValidators = reactiveValidationResults.optimizedValidators;
 	// Wait for all the asynchronous validators to finish before returning.
 	await Promise.all(reactiveValidationResults.asyncPromises);
