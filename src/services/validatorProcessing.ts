@@ -4,7 +4,7 @@ import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, Proper
 import { flatMap, reduceUndefined } from "../finalFormUtilities";
 
 function uniqueId() {
-	return `${Date.now()}-${Math.random() * 1000}`
+	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
 /**
@@ -21,12 +21,18 @@ export function processValidators<
 >(
 	validators: Validator<G, KParent, Args, FValidationReturn>[],
 	/** Mark the processed validators as reactive or lazy */
-	markReactive: boolean
+	markReactive: boolean,
+	/** Change how the ID is assigned. Will use the provided ID and simply attach the validator's index to it. */
+	useExistingIdWithIndex?: string
 ): ProcessedValidator<G, KParent, Args, FValidationReturn>[] {
 	const processedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
-	for (const validator of validators) {
+	let getId = (index: number) => uniqueId();
+	if (useExistingIdWithIndex != undefined) {
+		getId = (index: number) => `${useExistingIdWithIndex}-${index}`
+	}
+	for (const [index,validator] of validators.entries()) {
 		processedValidators.push({
-			validatorId: uniqueId(),
+			validatorId: getId(index),
 			validator: validator,
 			isLazy: !markReactive,
 			isReactive: markReactive,
