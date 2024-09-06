@@ -29,14 +29,16 @@ export function invokeAndOptimizeValidators<
 	// Collect all the promised results and synchronous results in lists to return later.
 	const allPromises: Promise<BaseValidationReturn>[] = [];
 	const allResults: BaseValidationReturn<any>[] = [];
-	const validatorsWhichReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
+	// Add validators to this list that returned validators from a previous run, but did not this time.
+	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
 
 	for (const processedValidator of latestProcessedValidators) {
 		const shouldOptimizeValidator = !processedValidator.optimized;
+		let checkForValidatorReturn = false;
 		if (processedValidator.previouslyReturnedValidators) {
-			// Add this validator to a list to make it simpler to loop over
-			// the validators that may have error messages displaying from the previous run.
-			validatorsWhichReturnedValidators.push(processedValidator);
+			processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
+			processedValidator.spawnedValidators = {}; // This will be set later on if this validator does return validators again.
+			checkForValidatorReturn = true;
 		}
 		processedValidator.previouslyReturnedValidators = false;
 		const validationReturn = processedValidator.validator({
@@ -63,6 +65,9 @@ export function invokeAndOptimizeValidators<
 						allPromises.push(...asyncPromises);
 						allResults.push(...syncResults);
 						return;
+					}
+					else if (checkForValidatorReturn) {
+						validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
 					}
 					thenCallback(processedValidator, ret);
 				})
@@ -95,6 +100,9 @@ export function invokeAndOptimizeValidators<
 			allResults.push(...syncResults);
 		}
 		else {
+			if (checkForValidatorReturn) {
+				validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
+			}
 			// This check was added to support returning an array of promises for the validateIf() validator.
 			if (validationReturn !== undefined) {
 				allResults.push(validationReturn);
@@ -106,7 +114,7 @@ export function invokeAndOptimizeValidators<
 		syncResults: allResults,
 		/** The promised results from the async validators */
 		asyncPromises: allPromises,
-		validatorsWhichReturnedValidators
+		validatorsWhichPreviouslyReturnedValidators
 	};
 }
 
@@ -134,7 +142,7 @@ function handleReturnedValidators<
 	);
 	// Enable support for returning a list of validators to run after a validator was ran.
 	// This feature was added for the validateIf() validator to handle async validators asynchronously from the synchronous validators.
-	const { asyncPromises, optimizedValidators: nestedValidators, syncResults } = invokeAndOptimizeValidators(
+	const { asyncPromises, syncResults } = invokeAndOptimizeValidators(
 		property,
 		parent,
 		args,
@@ -145,7 +153,7 @@ function handleReturnedValidators<
 	);
 
 	const spawnedValidatorsMap: ProcessedValidator<G, KParent, Args, FValidationReturn>["spawnedValidators"] = {}
-	for (const processedValidator of nestedValidators) {
+	for (const processedValidator of processedRetValidators) {
 		spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
 	}
 	parentProcessedValidator.spawnedValidators = spawnedValidatorsMap;
@@ -153,7 +161,6 @@ function handleReturnedValidators<
 
 	return {
 		asyncPromises,
-		syncResults,
-		optimizedValidators: nestedValidators
+		syncResults
 	};
 }
