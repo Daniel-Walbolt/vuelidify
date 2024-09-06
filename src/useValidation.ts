@@ -187,7 +187,9 @@ async function invokeReactivePropertyValidators<
 					// Remove the error messages associated with the previously ran validator.
 					const identifier = `reactive-${processedValidator.validatorId}`;
 					const index = propertyConfig.reactiveValidationResults.value.findIndex(x => x.identifier === identifier);
-					propertyConfig.reactiveValidationResults.value.splice(index);
+					if (index !== -1) {
+						propertyConfig.reactiveValidationResults.value.splice(index);
+					}
 				}
 			}
 		}
