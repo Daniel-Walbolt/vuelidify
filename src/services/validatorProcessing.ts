@@ -37,7 +37,9 @@ export function processValidators<
 			isLazy: !markReactive,
 			isReactive: markReactive,
 			optimized: false,
-			previouslyReturnedValidators: false
+			previouslyReturnedValidators: false,
+			previouslySpawnedValidators: {},
+			spawnedValidators: {}
 		});
 	}
 	return processedValidators;
