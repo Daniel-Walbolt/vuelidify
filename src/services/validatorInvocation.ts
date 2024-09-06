@@ -23,7 +23,8 @@ export function invokeAndOptimizeValidators<
 	latestProcessedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [],
 	/** The callback function for handling resolved validation promises */
 	thenCallback: ThenCallback<G, KParent, Args, FValidationReturn>,
-	shouldOptimize: boolean = true
+	shouldOptimize: boolean = true,
+	recursionCount: number = 1
 ) {
 	// Collect all the promised results and synchronous results in lists to return later.
 	const allPromises: Promise<BaseValidationReturn>[] = [];
@@ -34,9 +35,6 @@ export function invokeAndOptimizeValidators<
 
 	for (const processedValidator of latestProcessedValidators) {
 		const shouldOptimizeValidator = !processedValidator.optimized;
-		if (processedValidator.optimized) {
-			console.log("Validator already optimized.");
-		}
 		let validator = processedValidator.validator;
 		const validationReturn = processedValidator.validator({
 			value: property,
@@ -56,18 +54,17 @@ export function invokeAndOptimizeValidators<
 							args,
 							thenCallback,
 							processedValidator,
-							ret
+							ret,
+							recursionCount
 						);
 						allPromises.push(...asyncPromises);
 						allResults.push(...syncResults);
-						optimizedValidators.push(...optimizedValidators);
 						return;
 					}
 					thenCallback(processedValidator, ret);
 				})
 			);
 			if (shouldOptimize && shouldOptimizeValidator) {
-				console.log("Optimizing validator");
 				// Optimize async requests by adding a throttle to them.
 				validator = throttleQueueAsync<typeof validator, Awaited<ReturnType<typeof validator>>>(validator, 500);
 			}
@@ -84,11 +81,11 @@ export function invokeAndOptimizeValidators<
 				args,
 				thenCallback,
 				processedValidator,
-				validationReturn
+				validationReturn,
+				recursionCount
 			);
 			allPromises.push(...asyncPromises);
 			allResults.push(...syncResults);
-			optimizedValidators.push(...optimizedValidators);
 		}
 		else {
 			// This check was added to support returning an array of promises for the validateIf() validator.
@@ -125,10 +122,15 @@ function handleReturnedValidators<
 	/** The callback function for handling resolved validation promises */
 	thenCallback: ThenCallback<G, KParent, Args, FValidationReturn>,
 	parentProcessedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
-	ret: Validator<G, KParent, Args, FValidationReturn>[]
+	ret: Validator<G, KParent, Args, FValidationReturn>[],
+	recursionCount: number
 ) {
 	// Process the returned validators
-	const processedRetValidators = processValidators(ret, parentProcessedValidator.isReactive);
+	const processedRetValidators = processValidators(
+		ret,
+		parentProcessedValidator.isReactive,
+		parentProcessedValidator.validatorId
+	);
 	// Enable support for returning a list of validators to run after a validator was ran.
 	// This feature was added for the validateIf() validator to handle async validators asynchronously from the synchronous validators.
 	const { asyncPromises, optimizedValidators, syncResults } = invokeAndOptimizeValidators(
@@ -137,8 +139,10 @@ function handleReturnedValidators<
 		args,
 		processedRetValidators,
 		thenCallback,
-		false
+		false,
+		++recursionCount
 	);
+
 	return {
 		asyncPromises,
 		syncResults,
