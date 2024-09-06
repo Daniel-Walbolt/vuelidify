@@ -106,8 +106,6 @@ export function invokeAndOptimizeValidators<
 		syncResults: allResults,
 		/** The promised results from the async validators */
 		asyncPromises: allPromises,
-		/** The updated processed validator objects */
-		optimizedValidators: optimizedValidators,
 		validatorsWhichReturnedValidators
 	};
 }
