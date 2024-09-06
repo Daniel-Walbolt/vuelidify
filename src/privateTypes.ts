@@ -17,9 +17,12 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	isLazy: boolean;
 	/** Used for determining whether or not to optimize this validator. */
 	optimized: boolean;
-	spawnedValidators?: {
+	previouslySpawnedValidators: {
 		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
-	},
+	};
+	spawnedValidators: {
+		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
+	};
 	previouslyReturnedValidators: boolean;
 	// Any additional information can be added here.
 }
