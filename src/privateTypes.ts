@@ -54,13 +54,14 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	lazyIsValid: Ref<boolean | undefined>;
 	lazyValidationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	validatingLazy: Ref<boolean>;
+
 	/**
-	 * Contains all the validators that were ran previously. Will include validators that were returned from other validators.
+	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
 	 */
-	latestProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
-	/** Constant list of the processed reactive validators given by the user. Does not change length when validators return validators! */
 	reactiveProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
-	/** Constant list of the processed lazy validators given by the user. Does not change length when validators return validators! */
+	/**
+	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
+	 */
 	lazyProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
 
 	/** Getter for the current value of the property this validation config is for. */
