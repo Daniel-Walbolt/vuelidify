@@ -29,13 +29,16 @@ export function invokeAndOptimizeValidators<
 	// Collect all the promised results and synchronous results in lists to return later.
 	const allPromises: Promise<BaseValidationReturn>[] = [];
 	const allResults: BaseValidationReturn<any>[] = [];
-	// Prepare a new array of the processed validators to return.
-	// If optimizations are made to the validator, they will be put into new objects.
-	const optimizedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
+	const validatorsWhichReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
 
 	for (const processedValidator of latestProcessedValidators) {
 		const shouldOptimizeValidator = !processedValidator.optimized;
-		let validator = processedValidator.validator;
+		if (processedValidator.previouslyReturnedValidators) {
+			// Add this validator to a list to make it simpler to loop over
+			// the validators that may have error messages displaying from the previous run.
+			validatorsWhichReturnedValidators.push(processedValidator);
+		}
+		processedValidator.previouslyReturnedValidators = false;
 		const validationReturn = processedValidator.validator({
 			value: property,
 			parent: parent,
@@ -48,7 +51,7 @@ export function invokeAndOptimizeValidators<
 						return undefined;
 					}
 					if (Array.isArray(ret)) {
-						const { asyncPromises, optimizedValidators, syncResults } = handleReturnedValidators(
+						const { asyncPromises, syncResults } = handleReturnedValidators(
 							property,
 							parent,
 							args,
@@ -65,8 +68,12 @@ export function invokeAndOptimizeValidators<
 				})
 			);
 			if (shouldOptimize && shouldOptimizeValidator) {
+				processedValidator.optimized = true;
 				// Optimize async requests by adding a throttle to them.
-				validator = throttleQueueAsync<typeof validator, Awaited<ReturnType<typeof validator>>>(validator, 500);
+				processedValidator.validator = throttleQueueAsync<
+						typeof processedValidator.validator,
+						Awaited<ReturnType<typeof processedValidator.validator>>
+					>(processedValidator.validator, 500);
 			}
 		}
 		else if (Array.isArray(validationReturn)) {
@@ -75,7 +82,7 @@ export function invokeAndOptimizeValidators<
 			// So if async calls are returned in this array they will NOT be throttled.
 			// This is because the list of validators returned COULD be dynamic, although it's very unlikely.
 			// It's impossible to know which validator is a previously ran validator because there's no ID attached to the function.
-			const { asyncPromises, optimizedValidators, syncResults } = handleReturnedValidators(
+			const { asyncPromises, syncResults } = handleReturnedValidators(
 				property,
 				parent,
 				args,
@@ -94,18 +101,14 @@ export function invokeAndOptimizeValidators<
 				thenCallback(processedValidator, validationReturn);
 			}
 		}
-		optimizedValidators.push({
-			...processedValidator,
-			validator: validator,
-			optimized: true
-		});
 	}
 	return {
 		syncResults: allResults,
 		/** The promised results from the async validators */
 		asyncPromises: allPromises,
 		/** The updated processed validator objects */
-		optimizedValidators: optimizedValidators
+		optimizedValidators: optimizedValidators,
+		validatorsWhichReturnedValidators
 	};
 }
 
@@ -148,6 +151,7 @@ function handleReturnedValidators<
 		spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
 	}
 	parentProcessedValidator.spawnedValidators = spawnedValidatorsMap;
+	parentProcessedValidator.previouslyReturnedValidators = true;
 
 	return {
 		asyncPromises,
