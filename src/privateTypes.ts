@@ -19,7 +19,8 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	optimized: boolean;
 	spawnedValidators?: {
 		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
-	}
+	},
+	previouslyReturnedValidators: boolean;
 	// Any additional information can be added here.
 }
 

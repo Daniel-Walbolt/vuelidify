@@ -36,7 +36,8 @@ export function processValidators<
 			validator: validator,
 			isLazy: !markReactive,
 			isReactive: markReactive,
-			optimized: false
+			optimized: false,
+			previouslyReturnedValidators: false
 		});
 	}
 	return processedValidators;
@@ -164,7 +165,6 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		property: object,
 		validation: validation,
 		validationState: validationState,
-		latestProcessedValidators: reactiveValidators.concat(lazyValidators),
 		reactiveProcessedValidators: reactiveValidators,
 		lazyProcessedValidators: lazyValidators,
 		arrayConfigMap: {},
