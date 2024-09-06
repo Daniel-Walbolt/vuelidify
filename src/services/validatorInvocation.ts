@@ -139,7 +139,6 @@ function handleReturnedValidators<
 		thenCallback,
 		false
 	);
-	parentProcessedValidator.spawnedValidators = optimizedValidators;
 	return {
 		asyncPromises,
 		syncResults,
