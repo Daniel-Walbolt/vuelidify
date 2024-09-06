@@ -107,6 +107,7 @@
 					}
 					return [
 						async input => {
+							console.log("Async promise activated");
 							await new Promise(resolve => setTimeout(resolve, 500));
 							return {
 								isValid: Math.random() > 0.5,
