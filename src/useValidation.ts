@@ -172,7 +172,6 @@ async function invokeReactivePropertyValidators<
 	);
 	console.timeEnd("Reactive Validation");
 
-	propertyConfig.reactiveProcessedValidators = reactiveValidationResults.optimizedValidators;
 	// Wait for all the asynchronous validators to finish before returning.
 	await Promise.all(reactiveValidationResults.asyncPromises);
 
@@ -242,7 +241,6 @@ async function invokeLazyPropertyValidators<
 		processValidators
 	);
 
-	propertyConfig.lazyProcessedValidators = lazyValidationResults.optimizedValidators;
 	// Wait for all the asynchronous validators to finish before returning.
 	await Promise.all(lazyValidationResults.asyncPromises);
 
