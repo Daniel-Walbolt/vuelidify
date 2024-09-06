@@ -132,8 +132,6 @@ async function invokeReactivePropertyValidators<
 	
 	// Assume every validator returns true. If any return false, this property will be set to false.
 	let allValid = true;
-	// Local ID for identifying each validator in the array.
-	let localId = 0;
 
 	// Get the specified reactive validators and run them.
 	const reactiveValidators = propertyConfig.reactiveProcessedValidators;
@@ -206,8 +204,6 @@ async function invokeLazyPropertyValidators<
 
 	// Assume every validator returns true. If any return false, this property will be set to false.
 	let allValid = true;
-	// Local ID for identifying each validator in the array.
-	let localId = 0;
 
 	// Get the specified reactive validators and run them.
 	const lazyValidators = propertyConfig.lazyProcessedValidators;
