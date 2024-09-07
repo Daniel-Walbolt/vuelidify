@@ -179,10 +179,6 @@ export async function invokeReactivePropertyValidators<
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
 ) {
-	// Early return optimization
-	if (propertyConfig.reactiveProcessedValidators == undefined) {
-		return true;
-	}
 	propertyConfig.validatingReactive.value = true;
 	
 	// Assume every validator returns true. If any return false, this property will be set to false.
@@ -269,10 +265,6 @@ export async function invokeLazyPropertyValidators<
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
 ) {
-	// Early return optimization
-	if (propertyConfig.validation.$lazy == undefined) {
-		return true;
-	}
 	propertyConfig.validatingLazy.value = true;
 
 	// Assume every validator returns true. If any return false, this property will be set to false.
@@ -345,12 +337,11 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	const validatorPromises: Promise<boolean | undefined>[] = [];
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
-		// Check if we should validate reactive validators
-		if (reactive) {
+		if (reactive && validationConfig.validation.$reactive != undefined) {
 			validatorPromises.push(invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		// Check if we should validate lazy validators
-		if (lazy) {
+		if (lazy && validationConfig.validation.$lazy != undefined) {
 			validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		
