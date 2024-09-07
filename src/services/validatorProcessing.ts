@@ -74,7 +74,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		validationResults: computed(() => (validationConfig.reactiveValidationResults.value ?? []).concat(validationConfig.lazyValidationResults.value ?? [])),
 		arrayState: computed(() => {
 			// Array state should be undefined until the object is actually an array.
-			if (Array.isArray(object.value) === false) {
+			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
 				return undefined;
 			}
 			// Declare some variables for readability
@@ -113,7 +113,6 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					continue;
 				}
 
-				// Setup validation for each object in the array
 				if (isPrimitiveOrArrayValidation(elValidation)) {
 					const typedValidation = elValidation as PrimitiveValidatorTypes<Primitive | undefined, KParent, Args | undefined, FValidationReturn>;
 					const typedObject = computed(() => arr[i]) as Ref<Primitive>;
