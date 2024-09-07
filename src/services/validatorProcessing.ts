@@ -26,7 +26,7 @@ export function processValidators<
 	useExistingIdWithIndex?: string
 ): ProcessedValidator<G, KParent, Args, FValidationReturn>[] {
 	const processedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
-	let getId = (index: number) => uniqueId();
+	let getId = (index: number) => `${markReactive ? "reactive" : "lazy"}-${uniqueId()}`;
 	if (useExistingIdWithIndex != undefined) {
 		getId = (index: number) => `${useExistingIdWithIndex}-${index}`
 	}
