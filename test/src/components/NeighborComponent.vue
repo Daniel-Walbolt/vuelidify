@@ -35,6 +35,12 @@
 				<p v-for="error in props.validation.age.errorMessages">{{error}}</p>
 			</div>
 		</div>
+		<div class="field">
+			<label>
+				Validate Children
+				<input v-model="person.validateChildren" type="checkbox"/>
+			</label>
+		</div>
 	</section>
 	<h3>Children</h3>
 	<section>

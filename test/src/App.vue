@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { ref, watch } from "vue";
-	import { minimumLength, useValidation, minValue, validateIf } from "vue-final-form"
+	import { minimumLength, useValidation, minValue, validateIf, throttleQueueAsync, bufferAsync } from "vue-final-form"
 	import { Child, Person } from "./types";
 	import ChildComponent from "./components/ChildComponent.vue";
 	import NeighborComponent from "./components/NeighborComponent.vue";
@@ -101,14 +101,13 @@
 		objectToValidate: simpleValidateIfTest,
 		validation: {
 			name: {
-				$reactive: [input => {
+				$reactive: [async input => {
 					if (input.parent.isValidated == false) {
 						return undefined;
 					}
 					return [
 						async input => {
-							console.log("Async promise activated");
-							await new Promise(resolve => setTimeout(resolve, 500));
+							await new Promise(resolve => setTimeout(resolve, 1000));
 							return {
 								isValid: Math.random() > 0.5,
 								errorMessage: "Async failed"
@@ -120,6 +119,11 @@
 			}
 		},
 		delayReactiveValidation: false
+	});
+
+	const testAsyncFunction = bufferAsync(async () => {
+		console.log("Async promise activated");
+		await new Promise(resolve => setTimeout(resolve, 500));
 	})
 
 	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
@@ -135,6 +139,8 @@
 		return {
 			name: randomName(),
 			age: Math.ceil(Math.random() * 30 + 23),
+			validateChildren: true,
+			validateNeighbors: true,
 			countChildren: countChildren,
 			children: children,
 			neighbors: neighbors
