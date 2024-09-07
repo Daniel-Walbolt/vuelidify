@@ -85,7 +85,7 @@ type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidat
     arrayResults?: ValidationState<U, FValidationReturn>[];
 };
 /** The general validation object type for Final Form. */
-type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, T, Args, FValidationReturn> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn> : undefined;
+type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     objectToValidate: Readonly<Ref<T | undefined | null>>;
     validation: FinalFormValidation<T, Args, FValidationReturn, T>;
