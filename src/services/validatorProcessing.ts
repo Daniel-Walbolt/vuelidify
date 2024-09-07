@@ -135,11 +135,15 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 
 			// Generate the list of validation states
 			const elemValidationState: RecursiveValidationState<any, FValidationReturn>[] = [];
+			// Generate a new validation map to get rid of old data.
+			const prunedValidationMap: typeof validationMap = {};
 			// Loop over the array of object IDs and assemble the array of corresponding validation states.
 			// Each index in this array should be the validation state of the object at the same index in the array being validated.
-			for (let i = 0; i < objectIds.length; i++) {
-				elemValidationState.push(validationMap[objectIds[i]].validationState);
+			for (const objectId of objectIds) {
+				elemValidationState.push(validationMap[objectId].validationState);
+				prunedValidationMap[objectId] = validationMap[objectId];
 			}
+			validationConfig.arrayConfigMap = prunedValidationMap;
 			return elemValidationState;
 		})
 	});
