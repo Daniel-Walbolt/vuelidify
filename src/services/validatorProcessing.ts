@@ -2,6 +2,7 @@ import { computed, reactive, Ref, ref } from "vue";
 import { ArrayValidationState, ArrayValidatorTypes, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from "../../dist";
 import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { flatMap, reduceUndefined } from "../finalFormUtilities";
+import { FinalFormValidation } from "../finalFormTypes";
 
 function uniqueId() {
 	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -80,10 +81,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 			const arr = object.value;
 			const elValidation = validationConfig.elementValidation;
 			const validationMap = validationConfig.arrayConfigMap;
-			
-			// Determines whether or not the validation is for a primitive or array.
-			const isPrimitiveOrArray = elValidation?.$reactive != undefined || elValidation?.$lazy != undefined;
-			
+
 			/** Stores the ID for the object that is currently being handled in the loop */
 			let tempId;
 			/** Stores the IDs of objects, indicating their order in the array */
@@ -115,8 +113,8 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					continue;
 				}
 
-				// Setup validation for each object in the array			
-				if (isPrimitiveOrArray) {
+				// Setup validation for each object in the array
+				if (isPrimitiveOrArrayValidation(elValidation)) {
 					const typedValidation = elValidation as PrimitiveValidatorTypes<Primitive | undefined, KParent, Args | undefined, FValidationReturn>;
 					const typedObject = computed(() => arr[i]) as Ref<Primitive>;
 					const validationConfig = configureValidationOnProperty(typedObject, typedValidation);
@@ -202,17 +200,14 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 			const property = computed(() => rObject[key]);
 			// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
 			// We can distinguish if this is a validatable property (array or primitive)
-			const isPrimitiveOrArray = (rValidation[key] as PrimitiveOrArrayValidation)?.$reactive != undefined ||
-				(rValidation[key] as PrimitiveOrArrayValidation)?.$lazy != undefined ||
-				(rValidation[key] as PrimitiveOrArrayValidation)?.$each != undefined;
-			if (isPrimitiveOrArray) {
+			if (isPrimitiveOrArrayValidation(validation)) {
 				const propertyValidation = rValidation[key] as unknown as ValidatorTypes<G[keyof G], KParent, Args, FValidationReturn>;
 				const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation);
 				validationConfigs.push(validatedPropertyConfig);
 				state[key] = validatedPropertyConfig.validationState;
 			}
 			// Lastly, the property is an object with nested properties. The types for validation require a nested object in this case.
-			else if (isPrimitiveOrArray == false) {
+			else {
 				// The property can be null, undefined, or a nested object.
 				const nestedState = {} as RecursiveValidationState<G[keyof G], FValidationReturn>
 				const nestedValidation = rValidation[key] as RecursiveValidation<G[keyof G], KParent, Args, FValidationReturn>;
@@ -231,4 +226,10 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 		/** The object that can be used to represent that state of validation for the provided object. */
 		state
 	}
+}
+
+function isPrimitiveOrArrayValidation(validation: FinalFormValidation<any, any, any, any>): validation is PrimitiveOrArrayValidation {
+	return (validation as PrimitiveOrArrayValidation)?.$reactive !== undefined ||
+		(validation as PrimitiveOrArrayValidation)?.$lazy !== undefined ||
+		(validation as PrimitiveOrArrayValidation)?.$each !== undefined
 }
