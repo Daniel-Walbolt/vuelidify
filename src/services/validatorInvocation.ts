@@ -124,11 +124,13 @@ function recursiveInvokeAndOptimizeValidators<
 		});
 		if (validationReturn instanceof Promise) {
 			// Check how long this async validator takes to return.
-			// If the duration is longer than the throttle duration, add a throttle to the validator.
 			const past = Date.now();
 			allPromises.push(
-				validationReturn.then(ret => {
+				validationReturn.then(async ret => {
 					if (ret === undefined) {
+						if (checkForValidatorReturn) {
+							validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
+						}
 						return undefined;
 					}
 					const duration = Date.now() - past;
@@ -162,8 +164,8 @@ function recursiveInvokeAndOptimizeValidators<
 							ret,
 							recursionCount
 						);
-						allPromises.push(...asyncPromises);
 						allResults.push(...syncResults);
+						await Promise.all(asyncPromises); // Wait for all spawned validators to finish
 						return;
 					}
 					else if (checkForValidatorReturn) {
