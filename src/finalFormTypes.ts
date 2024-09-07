@@ -51,18 +51,21 @@ export type RecursiveValidation<
 	T extends IndexableObject,
 	KParent, 
 	ValidationArgs,
-	FValidationReturn
+	FValidationReturn,
+	ArrParent,
+	NLevel extends number
 > = {
 	// If the type of the property on the object is not a primitive, then it requires a nested validation object.
-	[key in keyof Partial<T>]: FinalFormValidation<T[key], ValidationArgs, FValidationReturn, KParent>;
+	[key in keyof Partial<T>]: FinalFormValidation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 }
 
 export type PrimitiveValidation<
 	T extends Primitive | undefined | null, 
 	KParent,
 	Args,
-	FValidationReturn
-> = PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn>;
+	FValidationReturn,
+	ArrParent
+> = PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
 
 type IndexableObject = {
 	[key: string]: any;
@@ -73,12 +76,13 @@ export type PrimitiveValidatorTypes<
 	T,
 	KParent,
 	Args,
-	FValidationReturn
+	FValidationReturn,
+	ArrParent
 > = {
 	/** The validators for this property that are invoked whenever the form is changed. */
-	$reactive?: Validator<T, KParent, Args, FValidationReturn>[];
+	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 	/** The validators for this property that are invoked only after {@link validate()} is invoked. */
-	$lazy?: Validator<T, KParent, Args, FValidationReturn>[];
+	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 }
 
 export type ArrayValidatorTypes<
@@ -86,7 +90,9 @@ export type ArrayValidatorTypes<
 	T extends Array<U>,
 	KParent,
 	Args,
-	FValidationReturn
+	FValidationReturn,
+	ArrParent,
+	NLevel extends number
 > = {
 	/**
 	 * Can only be used with object arrays. Not string, number, or boolean (primitive) arrays.
@@ -95,11 +101,11 @@ export type ArrayValidatorTypes<
 	 * 
 	 * Element validation requires much more logic, which may introduce performance problems for large arrays.
 	 */
-	$each?: FinalFormValidation<U, Args, FValidationReturn, KParent>;
+	$each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent & { [key in NLevel]: U }, Increment<NLevel>>;
 	/** The validators for the array that are invoked whenever the form is changed. */
-	$reactive?: Validator<T, KParent, Args, FValidationReturn>[];
+	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 	/** The validators for the array that are invoked only when {@link validate()} is called. */
-	$lazy?: Validator<T, KParent, Args, FValidationReturn>[];
+	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 }
 /** A synchronous or asynchronous validator. */
 export type Validator<
@@ -107,20 +113,23 @@ export type Validator<
 	KParent,
 	Args,
 	FValidationReturn,
-> = (SyncValidator<T, KParent, Args, FValidationReturn> | AsyncValidator<T, KParent, Args, FValidationReturn>);
+	ArrParent
+> = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
 
 export type ValidatorTypes<
 	T,
 	KParent,
 	Args,
-	FValidationReturn
+	FValidationReturn,
+	ArrParent,
+	NLevel extends number
 > = T extends Array<infer U>
-	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn>
-	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn>
+	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
+	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>
 
-export type BaseValidator<T, K, V, F> = (input: ValidatorParams<T, K, V>) => F
-export type SyncValidator<T, K, V, F> = BaseValidator<T,K,V,BaseValidationReturn<F> | Array<Validator<T,K,V,F>>>
-export type AsyncValidator<T, K, V, F> = BaseValidator<T,K,V,Promise<BaseValidationReturn<F> | Array<Validator<T,K,V,F>> | undefined>>
+export type BaseValidator<T, K, V, F, A> = (input: ValidatorParams<T, K, V, A>) => F
+export type SyncValidator<T, K, V, F, A> = BaseValidator<T,K,V,BaseValidationReturn<F> | Array<Validator<T,K,V,F,A>>, A>
+export type AsyncValidator<T, K, V, F, A> = BaseValidator<T,K,V,Promise<BaseValidationReturn<F> | Array<Validator<T,K,V,F,A>> | undefined>, A>
 
 export type BaseValidationReturn<F = any> = {
 	/** An identifer for this validation result. Guaranteed to be unique within each instance of the composable. */
@@ -147,15 +156,17 @@ export type FinalFormValidation<
 	T,
 	Args = undefined,
 	FValidationReturn = undefined,
-	KParent = T
+	KParent = T,
+	ArrParent = Array<any>,
+	NLevel extends number = 0
 > = T extends Array<infer U>
-	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn>
+	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 	: T extends IndexableObject
-		? RecursiveValidation<T, KParent, Args, FValidationReturn>
+		? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 		: T extends boolean // boolean is separate from Primitive because TS would otherwise split boolean into true | false here. Resulting in undefined nested types.
-			? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn>
+			? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
 			: T extends Primitive
-				? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn>
+				? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
 				: undefined;
 
 export type ValidationConfig<
@@ -177,11 +188,33 @@ export type ValidationConfig<
 }
 
 /** The parameter passed into validator functions */
-export type ValidatorParams<T, KParent, Args> = {
-	/** The current value of the property */
-	value: T,
-	/** The object that was passed into the FinalForm validation composable to be validated. */
-	parent: KParent,
-	/** User provided object for validating with data outside of the base object. */
-	args: Args
+export type ValidatorParams<T, KParent, Args, ArrParent> = {
+		/** The current value of the property */
+		value: T,
+		/** The object that was passed into the FinalForm validation composable to be validated. */
+		parent: KParent
+	} &
+	(Args extends undefined ? {} : { args: Args }) &
+	(ArrParent extends undefined ? {} : { arrayParent: ArrParent })
+
+
+/** Type that increments a provided integer (0-19). */
+type Increment<N extends number> = [
+	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
+	...number[]
+][N];
+
+type Foo = {
+	name: string,
+	age: number
 }
+type Test<F extends number> = Array<any> & {
+	[key in F]: Foo
+}
+type Test2<F extends number> = Test<F> & {
+	[key in Increment<F>]: string
+}
+
+const test: Test2<0> = [{ name: "Falicia", age: 5 }, ""]
+const index0 = test[0];
+const index1 = test[1];

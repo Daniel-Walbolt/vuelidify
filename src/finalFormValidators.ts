@@ -1,13 +1,12 @@
-import { AsyncValidator, BaseValidationReturn, SyncValidator, ValidatorParams } from "./finalFormTypes";
-import { flatMap, reduceUndefined } from "./finalFormUtilities";
+import { AsyncValidator, SyncValidator, ValidatorParams } from "./finalFormTypes";
 
 /** 
  * Makes sure the object is not undefined and the trim length is greater than 0.
  * @param value
  * @returns Synchronous validator
  */
-export function required<T,P,V,R>(): SyncValidator<T, P, V, R> {
-	return (params: ValidatorParams<T, P, V>) => ({
+export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value != undefined && String(params.value).trim().length > 0,
 		errorMessage: "This field is required"
 	});
@@ -19,11 +18,11 @@ export function required<T,P,V,R>(): SyncValidator<T, P, V, R> {
  * @param validators the validators that get executed if the condition returns true.
  * @returns Asynchronous validator
  */
-export function validateIf<T,P,V,R>(
-	condition: ((params: ValidatorParams<T, P, V>) => boolean) | ((params: ValidatorParams<T, P, V>) => Promise<boolean>),
-	validators: (SyncValidator<T, P, V, R> | AsyncValidator<T, P, V, R>)[]
-): AsyncValidator<T,P, V, R> {
-	return async (params: ValidatorParams<T, P, V>) => {
+export function validateIf<T,P,V,R,A>(
+	condition: ((params: ValidatorParams<T, P, V, A>) => boolean) | ((params: ValidatorParams<T, P, V, A>) => Promise<boolean>),
+	validators: (SyncValidator<T, P, V, R, A> | AsyncValidator<T, P, V, R, A>)[]
+): AsyncValidator<T, P, V, R, A> {
+	return async (params: ValidatorParams<T, P, V, A>) => {
 		if (condition(params) == false) {
 			return {
 				isValid: true
@@ -38,8 +37,8 @@ export function validateIf<T,P,V,R>(
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minimumLength<T extends string | number | undefined | null,P,V,R>(minLength: number): SyncValidator<T, P, V, R> {
-	return (params: ValidatorParams<T, P, V>) => {
+export function minimumLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => {
 		const val = String(params.value ?? "");
 		return {
 			isValid: val.length >= minLength,
@@ -53,8 +52,8 @@ export function minimumLength<T extends string | number | undefined | null,P,V,R
  * @param maxLength 
  * @return Synchronous validator
  */
-export function maximumLength<T extends string | undefined | null, P, V, R>(maxLength: number): SyncValidator<T, P, V, R> {
-	return (params: ValidatorParams<T, P, V>) => ({
+export function maximumLength<T extends string | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: (params.value?.length ?? 0) <= maxLength,
 		errorMessage: `Too long (${params.value?.length ?? 0} / ${maxLength})`
 	});
@@ -65,8 +64,8 @@ export function maximumLength<T extends string | undefined | null, P, V, R>(maxL
  * @param minValue 
  * @returns Synchronous validator
  */
-export function minValue<T extends number | undefined | null, P, V, R>(minValue: number): SyncValidator<T, P, V, R> {
-	return (params: ValidatorParams<T, P, V>) => ({
+export function minValue<T extends number | undefined | null, P, V, R, A>(minValue: number): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value != undefined && params.value >= minValue,
 		errorMessage: `Must be atleast ${minValue}`
 	})
@@ -76,8 +75,8 @@ export function minValue<T extends number | undefined | null, P, V, R>(minValue:
  * Checks if the string value is a valid looking email using RegEx.
  * @returns Synchronous validator
  */
-export function isEmailSync<T extends string | undefined | null, P, V, R>(): SyncValidator<T, P, V, R> {
-	return (params: ValidatorParams<T, P, V>) => ({
+export function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
 		errorMessage: "Invalid email format"
 	});

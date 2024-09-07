@@ -53,7 +53,7 @@ export function useValidation<
 	if (isPrimitiveOrArray) {
 		// The user is attempting to add validation onto a singular property instead of an object.
 		// Assert the type of the provided ref to a more accurate type that describes the state of this branch.
-		const typedValidation = validation as PrimitiveValidatorTypes<Primitive | undefined, T, Args | undefined, FValidationReturn>;
+		const typedValidation = validation as PrimitiveValidatorTypes<Primitive | undefined, T, Args | undefined, FValidationReturn, any>;
 		const typedObject = object as Ref<Primitive>;
 		const validatedPropertyConfig = configureValidationOnProperty(typedObject, typedValidation);
 		propertyState = reactive(validatedPropertyConfig.validationState) as any; // typescript can't comprehend this type
@@ -61,7 +61,7 @@ export function useValidation<
 	}
 	else {
 		const typedObject = object as Ref<IndexableObject>;
-		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn>;
+		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn, any, number>;
 		const validationSetup = setupNestedPropertiesForValidation<IndexableObject, T, Args, FValidationReturn>(typedObject.value, typedValidation);
 		propertyState = reactive(validationSetup.state) as ValidationState<T, FValidationReturn>;
 		validationConfigs = validationSetup.validationConfigs;

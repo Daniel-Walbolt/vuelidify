@@ -1,8 +1,8 @@
 import { Ref } from "vue";
-import { AsyncValidator, BaseValidationReturn, Validator } from "../../dist";
 import { bufferAsync, throttleQueueAsync } from "../finalFormUtilities";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { processValidators } from "./validatorProcessing";
+import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../finalFormTypes";
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
@@ -117,11 +117,17 @@ function recursiveInvokeAndOptimizeValidators<
 			checkForValidatorReturn = true;
 		}
 		processedValidator.previouslyReturnedValidators = false;
-		const validationReturn = processedValidator.validator({
+
+		// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
+		// This will require a cast to the type the validator expects in order to avoid type errors.
+		const params: ValidatorParams<G, KParent, unknown, unknown> = {
 			value: property,
 			parent: parent,
-			args: args
-		});
+			args: args,
+			arrayParent: propertyConfig.elementParent
+		}
+		const validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
+
 		if (validationReturn instanceof Promise) {
 			// Check how long this async validator takes to return.
 			const past = Date.now();
@@ -150,7 +156,7 @@ function recursiveInvokeAndOptimizeValidators<
 							processedValidator.validator = bufferAsync<
 									typeof processedValidator.validator,
 									Awaited<ReturnType<typeof processedValidator.validator>>
-								>(processedValidator.validator as AsyncValidator<G, KParent, Args, FValidationReturn>);
+								>(processedValidator.validator as AsyncValidator<G, KParent, Args, FValidationReturn, undefined>);
 						}
 					}
 					if (Array.isArray(ret)) {
@@ -226,11 +232,11 @@ function handleReturnedValidators<
 	iterationId: number,
 	processValidatorResult: ResultProcessor<G, KParent, Args, FValidationReturn>,
 	parentProcessedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
-	ret: Validator<G, KParent, Args, FValidationReturn>[],
+	returnedValidators: Validator<G, KParent, Args, FValidationReturn, any>[],
 	recursionCount: number
 ) {
 	const processedRetValidators = processValidators(
-		ret,
+		returnedValidators,
 		parentProcessedValidator.isReactive,
 		parentProcessedValidator.validatorId
 	);

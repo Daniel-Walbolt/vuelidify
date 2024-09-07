@@ -1,5 +1,5 @@
-import { Ref } from "vue";
-import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, FinalFormValidation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes } from "../dist";
+import { ComputedRef, Ref } from "vue";
+import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, FinalFormValidation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes } from "./finalFormTypes";
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
@@ -7,12 +7,12 @@ export type IndexableObject = {
 }
 
 /** Type specifically used for casting validation objects in order to appease TypeScript. */
-export type PrimitiveOrArrayValidation = PrimitiveValidatorTypes<Primitive, any, any, any> & ArrayValidatorTypes<any, any[], any, any, any>;
+export type PrimitiveOrArrayValidation = PrimitiveValidatorTypes<Primitive, any, any, any, any> & ArrayValidatorTypes<any, any[], any, any, any, any, number>;
 
 export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
-	validator: Validator<T, KParent, Args, FValidationReturn>;
+	validator: Validator<T, KParent, Args, FValidationReturn, any>;
 	isReactive: boolean;
 	isLazy: boolean;
 	/** Used for determining whether or not to optimize this validator. */
@@ -73,7 +73,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	property: Readonly<Ref<T>>;
 
 	/** The user specified validation object for this property */
-	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn>>;
+	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn, any, number>>;
 	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
 	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>>;
 	
@@ -84,12 +84,13 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
-	elementValidation: Readonly<FinalFormValidation<any, Args, FValidationReturn, KParent> | undefined>;
+	elementValidation: Readonly<FinalFormValidation<any, Args, FValidationReturn, KParent, any> | undefined>;
+	/** Stores the closest array element object to this property. Only used if there are arrays with validation. */
+	elementParent?: ComputedRef<unknown>;
 }
 
 /** Stores the state and the validation configs of an element within an array */
 export type ElementValidationConfig<T, KParent, Args, FValidationReturn> = {
-	elementParent: T,
 	/** 
 	 * The list of validation configs that can be used to validate this element.
 	 * Each one should modify a portion of the {@link validationState} 

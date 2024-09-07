@@ -160,7 +160,15 @@
 		validation: {
 			...PartialPersonValidation,
 			neighbors: {
-				$each: PartialPersonValidation
+				$each: {
+					children: {
+						$each: {
+							name: {
+								$reactive: []
+							}
+						}
+					}
+				}
 			}
 		},
 		delayReactiveValidation: false

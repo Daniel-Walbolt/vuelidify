@@ -19,6 +19,11 @@ var __async = (__this, __arguments, generator) => {
   });
 };
 
+// src/finalFormTypes.ts
+var test = [{ name: "Falicia", age: 5 }, ""];
+var index0 = test[0];
+var index1 = test[1];
+
 // src/finalFormUtilities.ts
 function bufferAsync(func) {
   let id = 0;
@@ -169,7 +174,7 @@ function processValidators(validators, markReactive, useExistingIdWithIndex) {
   }
   return processedValidators;
 }
-function configureValidationOnProperty(object, validation) {
+function configureValidationOnProperty(object, validation, elementParent) {
   var _a, _b, _c, _d;
   const isArrayValidation = validation.$each != void 0;
   const validationState = reactive({
@@ -189,13 +194,12 @@ function configureValidationOnProperty(object, validation) {
       return ((_a2 = validationConfig.reactiveValidationResults.value) != null ? _a2 : []).concat((_b2 = validationConfig.lazyValidationResults.value) != null ? _b2 : []);
     }),
     arrayState: computed(() => {
-      if (Array.isArray(object.value) === false) {
+      if (Array.isArray(object.value) === false || validationConfig.elementValidation === void 0) {
         return void 0;
       }
       const arr = object.value;
       const elValidation = validationConfig.elementValidation;
       const validationMap = validationConfig.arrayConfigMap;
-      const isPrimitiveOrArray = (elValidation == null ? void 0 : elValidation.$reactive) != void 0 || (elValidation == null ? void 0 : elValidation.$lazy) != void 0;
       let tempId;
       const objectIds = [];
       for (let i = 0; i < arr.length; i++) {
@@ -216,10 +220,10 @@ function configureValidationOnProperty(object, validation) {
         if (validationMap[tempId]) {
           continue;
         }
-        if (isPrimitiveOrArray) {
+        if (isPrimitiveOrArrayValidation(elValidation)) {
           const typedValidation = elValidation;
           const typedObject = computed(() => arr[i]);
-          const validationConfig2 = configureValidationOnProperty(typedObject, typedValidation);
+          const validationConfig2 = configureValidationOnProperty(typedObject, typedValidation, typedObject);
           validationMap[tempId] = {
             validationConfigs: [validationConfig2],
             validationState: validationConfig2.validationState
@@ -227,7 +231,7 @@ function configureValidationOnProperty(object, validation) {
         } else {
           const typedObject = arr[i];
           const typedValidation = elValidation;
-          const validationSetup = setupNestedPropertiesForValidation(typedObject, typedValidation);
+          const validationSetup = setupNestedPropertiesForValidation(typedObject, typedValidation, typedObject);
           validationMap[tempId] = {
             validationConfigs: validationSetup.validationConfigs,
             validationState: validationSetup.state
@@ -235,9 +239,12 @@ function configureValidationOnProperty(object, validation) {
         }
       }
       const elemValidationState = [];
-      for (let i = 0; i < objectIds.length; i++) {
-        elemValidationState.push(validationMap[objectIds[i]].validationState);
+      const prunedValidationMap = {};
+      for (const objectId of objectIds) {
+        elemValidationState.push(validationMap[objectId].validationState);
+        prunedValidationMap[objectId] = validationMap[objectId];
       }
+      validationConfig.arrayConfigMap = prunedValidationMap;
       return elemValidationState;
     })
   });
@@ -262,27 +269,26 @@ function configureValidationOnProperty(object, validation) {
     arrayConfigMap: {},
     hasElementValidation: isArrayValidation,
     elementId: 0,
-    elementValidation: validation.$each
+    elementValidation: validation.$each,
+    elementParent
   };
   return validationConfig;
 }
-function setupNestedPropertiesForValidation(object, validation) {
+function setupNestedPropertiesForValidation(object, validation, elementParent) {
   const validationConfigs = [];
   const state = {};
   if (validation != void 0) {
     recursiveSetup(object, validation);
   }
   function recursiveSetup(rObject, rValidation) {
-    var _a, _b, _c;
     for (const key in rValidation) {
       const property = computed(() => rObject[key]);
-      const isPrimitiveOrArray = ((_a = rValidation[key]) == null ? void 0 : _a.$reactive) != void 0 || ((_b = rValidation[key]) == null ? void 0 : _b.$lazy) != void 0 || ((_c = rValidation[key]) == null ? void 0 : _c.$each) != void 0;
-      if (isPrimitiveOrArray) {
+      if (isPrimitiveOrArrayValidation(validation)) {
         const propertyValidation = rValidation[key];
-        const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation);
+        const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation, computed(() => elementParent));
         validationConfigs.push(validatedPropertyConfig);
         state[key] = validatedPropertyConfig.validationState;
-      } else if (isPrimitiveOrArray == false) {
+      } else {
         const nestedState = {};
         const nestedValidation = rValidation[key];
         state[key] = nestedState;
@@ -299,6 +305,9 @@ function setupNestedPropertiesForValidation(object, validation) {
     /** The object that can be used to represent that state of validation for the provided object. */
     state
   };
+}
+function isPrimitiveOrArrayValidation(validation) {
+  return (validation == null ? void 0 : validation.$reactive) !== void 0 || (validation == null ? void 0 : validation.$lazy) !== void 0 || (validation == null ? void 0 : validation.$each) !== void 0;
 }
 
 // src/services/validatorInvocation.ts
@@ -361,11 +370,13 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
       checkForValidatorReturn = true;
     }
     processedValidator.previouslyReturnedValidators = false;
-    const validationReturn = processedValidator.validator({
+    const params = {
       value: property,
       parent,
-      args
-    });
+      args,
+      arrayParent: propertyConfig.elementParent
+    };
+    const validationReturn = processedValidator.validator(params);
     if (validationReturn instanceof Promise) {
       const past = Date.now();
       allPromises.push(
@@ -434,9 +445,9 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
     validatorsWhichPreviouslyReturnedValidators
   };
 }
-function handleReturnedValidators(propertyConfig, parent, args, iterationId, processValidatorResult, parentProcessedValidator, ret, recursionCount) {
+function handleReturnedValidators(propertyConfig, parent, args, iterationId, processValidatorResult, parentProcessedValidator, returnedValidators, recursionCount) {
   const processedRetValidators = processValidators(
-    ret,
+    returnedValidators,
     parentProcessedValidator.isReactive,
     parentProcessedValidator.validatorId
   );
