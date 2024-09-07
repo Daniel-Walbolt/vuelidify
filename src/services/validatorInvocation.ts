@@ -236,39 +236,6 @@ function handleReturnedValidators<
 	return response;
 }
 
-function processValidatorResult<
-	G, 
-	KParent,
-	Args,
-	FValidationReturn
->(
-	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
-	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
-	ret: BaseValidationReturn,
-	/** Must match latest iteration ID on property config before updating any state. */
-	iterationId: number,
-	/** Is this result from a reactive or lazy validator? */
-	isReactive: boolean
-) {
-	let temp: BaseValidationReturn | undefined;
-	// Don't perform any updates if this isn't the latest iteration
-	if (iterationId != propertyConfig.validationIterationId) {
-		return;
-	}
-
-	ret.identifier = `${isReactive ? "reactive" : "lazy"}-${processedValidator.validatorId}`;
-
-	// Check if this validation result already exists.
-	// Replace it if it does, otherwise add it.
-	temp = propertyConfig.reactiveValidationResults.value.find(x => x.identifier == ret.identifier);
-	if (temp != undefined) {
-		Object.assign(temp, ret); 
-	}
-	else {
-		propertyConfig.reactiveValidationResults.value.push(ret);
-	}
-}
-
 /** Invokes all reactive validators for a property and returns whether or not they all passed. */
 export async function invokeReactivePropertyValidators<
 	G,
