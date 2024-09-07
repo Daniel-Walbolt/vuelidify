@@ -1,6 +1,6 @@
 import { Ref } from "vue";
-import { BaseValidationReturn, Validator } from "../../dist";
-import { throttleQueueAsync } from "../finalFormUtilities";
+import { AsyncValidator, BaseValidationReturn, Validator } from "../../dist";
+import { bufferAsync, throttleQueueAsync } from "../finalFormUtilities";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { processValidators } from "./validatorProcessing";
 
@@ -8,6 +8,9 @@ type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
 	ret: BaseValidationReturn<any>
 ) => void;
+
+/** The duration of throttling that is put onto validators that take longer than this time to return. */
+const ThrottleDurationMs = 500;
 
 /** 
  * Handles invoking and optimization of the provided list of validators.
@@ -78,7 +81,6 @@ export async function invokeAndOptimizeValidators<
 			}
 		}
 	}
-
 	return isAllValid;
 }
 
@@ -121,10 +123,33 @@ function recursiveInvokeAndOptimizeValidators<
 			args: args
 		});
 		if (validationReturn instanceof Promise) {
+			// Check how long this async validator takes to return.
+			// If the duration is longer than the throttle duration, add a throttle to the validator.
+			const past = Date.now();
 			allPromises.push(
 				validationReturn.then(ret => {
 					if (ret === undefined) {
 						return undefined;
+					}
+					const duration = Date.now() - past;
+					if (shouldOptimize && duration > ThrottleDurationMs && isValidatorAlreadyOptimized === false) {
+						processedValidator.optimized = true;
+						if (duration < (2 * ThrottleDurationMs)) {
+							// Moderately slow validators will receive a throttle.
+							// Calls will overlap, but it shouldn't overwhelm the server
+							processedValidator.validator = throttleQueueAsync<
+									typeof processedValidator.validator,
+									Awaited<ReturnType<typeof processedValidator.validator>>
+								>(processedValidator.validator, ThrottleDurationMs);
+						}
+						else {
+							// Slow validators will receive a buffer.
+							// Calls will never overlap
+							processedValidator.validator = bufferAsync<
+									typeof processedValidator.validator,
+									Awaited<ReturnType<typeof processedValidator.validator>>
+								>(processedValidator.validator as AsyncValidator<G, KParent, Args, FValidationReturn>);
+						}
 					}
 					if (Array.isArray(ret)) {
 						const { asyncPromises, syncResults } = handleReturnedValidators(
@@ -147,14 +172,6 @@ function recursiveInvokeAndOptimizeValidators<
 					processValidatorResult(processedValidator, ret);
 				})
 			);
-			if (shouldOptimize && isValidatorAlreadyOptimized === false) {
-				processedValidator.optimized = true;
-				// Optimize async requests by adding a throttle to them.
-				processedValidator.validator = throttleQueueAsync<
-						typeof processedValidator.validator,
-						Awaited<ReturnType<typeof processedValidator.validator>>
-					>(processedValidator.validator, 500);
-			}
 		}
 		else if (Array.isArray(validationReturn)) {
 			// Assume the array is full of validators. TypeScript should warn them from returning any other type of array.
