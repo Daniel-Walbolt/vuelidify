@@ -89,6 +89,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 
 /** Stores the state and the validation configs of an element within an array */
 export type ElementValidationConfig<T, KParent, Args, FValidationReturn> = {
+	elementParent: T,
 	/** 
 	 * The list of validation configs that can be used to validate this element.
 	 * Each one should modify a portion of the {@link validationState} 

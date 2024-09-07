@@ -118,6 +118,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					const typedObject = computed(() => arr[i]) as Ref<Primitive>;
 					const validationConfig = configureValidationOnProperty(typedObject, typedValidation);
 					validationMap[tempId] = {
+						elementParent: arr[i],
 						validationConfigs: [validationConfig],
 						validationState: validationConfig.validationState
 					};
@@ -127,6 +128,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					const typedValidation = elValidation as RecursiveValidation<typeof typedObject, KParent, Args, FValidationReturn>;
 					const validationSetup = setupNestedPropertiesForValidation(typedObject, typedValidation);
 					validationMap[tempId] = {
+						elementParent: arr[i],
 						validationConfigs: validationSetup.validationConfigs,
 						validationState: validationSetup.state
 					};
@@ -181,7 +183,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 /** Recursive function that analyzes the object provided, relates properties to validators, and creates validation state for each property. */
 export function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, Args, FValidationReturn>(
 	object: G,
-	validation: RecursiveValidation<G, KParent, Args, FValidationReturn> | undefined,
+	validation: RecursiveValidation<G, KParent, Args, FValidationReturn> | undefined
 ) {
 	// Store the validation configurations for all relevant properties.
 	const validationConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[] = [];
