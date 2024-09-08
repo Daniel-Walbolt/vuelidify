@@ -51,7 +51,8 @@ export function processValidators<
 export function configureValidationOnProperty<G, KParent, Args, FValidationReturn>(
 	object: Ref<G>,
 	validation: ValidatorTypes<G, KParent, Args, FValidationReturn, any, number>,
-	elementParent?: ComputedRef<any>
+	/** Specify the getters for the array parents that came before this property. */
+	arrayParents: ComputedRef<any>[] = []
 ) {
 	const isArrayValidation = (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each != undefined;
 
@@ -113,22 +114,30 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					continue;
 				}
 
+				const objectGetter = computed(() => arr[i]) as ComputedRef<any>;
 				if (isPrimitiveOrArrayValidation(elValidation)) {
 					const typedValidation = elValidation as PrimitiveValidatorTypes<Primitive | undefined, KParent, Args | undefined, FValidationReturn, any>;
-					const typedObject = computed(() => arr[i]) as ComputedRef<Primitive>;
-					const validationConfig = configureValidationOnProperty(typedObject, typedValidation, typedObject);
+					const elValidationConfig = configureValidationOnProperty(
+						objectGetter as ComputedRef<Primitive>,
+						typedValidation,
+						validationConfig.arrayParents.concat(objectGetter)
+					);
 					validationMap[tempId] = {
-						validationConfigs: [validationConfig],
-						validationState: validationConfig.validationState
+						validationConfigs: [elValidationConfig],
+						validationState: elValidationConfig.validationState
 					};
 				}
 				else {
 					const typedObject = arr[i] as IndexableObject;
 					const typedValidation = elValidation as RecursiveValidation<typeof typedObject, KParent, Args, FValidationReturn, any, number>;
-					const validationSetup = setupNestedPropertiesForValidation(typedObject, typedValidation, typedObject);
+					const elValidationSetup = setupNestedPropertiesForValidation(
+						typedObject,
+						typedValidation,
+						validationConfig.arrayParents.concat(objectGetter)
+					);
 					validationMap[tempId] = {
-						validationConfigs: validationSetup.validationConfigs,
-						validationState: validationSetup.state
+						validationConfigs: elValidationSetup.validationConfigs,
+						validationState: elValidationSetup.state
 					};
 				}
 			}
@@ -174,7 +183,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		hasElementValidation: isArrayValidation,
 		elementId: 0,
 		elementValidation: (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each,
-		elementParent: elementParent
+		arrayParents: reactive(arrayParents),
 	}
 	return validationConfig;
 }
@@ -183,12 +192,11 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 export function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, Args, FValidationReturn>(
 	object: G,
 	validation: RecursiveValidation<G, KParent, Args, FValidationReturn, any, number> | undefined,
-	elementParent?: G
+	arrayParents: ComputedRef<any>[] = []
 ) {
-	// Store the validation configurations for all relevant properties.
-	const validationConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[] = [];
-	const state: ValidationState<IndexableObject , FValidationReturn> = {} as any;
-	if (validation != undefined) {
+	const resultConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[] = [];
+	const resultState: ValidationState<IndexableObject, FValidationReturn> = {} as any;
+	if (validation !== undefined) {
 		recursiveSetup(object, validation);
 	}
 
@@ -205,18 +213,18 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 			const property = computed(() => rObject[key]);
 			// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
 			// We can distinguish if this is a validatable property (array or primitive)
-			if (isPrimitiveOrArrayValidation(validation)) {
+			if (isPrimitiveOrArrayValidation(rValidation[key])) {
 				const propertyValidation = rValidation[key] as unknown as ValidatorTypes<G[keyof G], KParent, Args, FValidationReturn, any, number>;
-				const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation, computed(() => elementParent));
-				validationConfigs.push(validatedPropertyConfig);
-				state[key] = validatedPropertyConfig.validationState;
+				const validatedPropertyConfig = configureValidationOnProperty(property, propertyValidation, arrayParents);
+				resultConfigs.push(validatedPropertyConfig);
+				resultState[key] = validatedPropertyConfig.validationState;
 			}
 			// Lastly, the property is an object with nested properties. The types for validation require a nested object in this case.
 			else {
 				// The property can be null, undefined, or a nested object.
 				const nestedState = {} as RecursiveValidationState<G[keyof G], FValidationReturn>
 				const nestedValidation = rValidation[key] as RecursiveValidation<G[keyof G], KParent, Args, FValidationReturn, any, number>;
-				state[key] = nestedState;
+				resultState[key] = nestedState;
 				recursiveSetup(
 					property,
 					nestedValidation
@@ -227,9 +235,9 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 
 	return {
 		/** All the validation configs from all the validators the user defined */
-		validationConfigs,
+		validationConfigs: resultConfigs,
 		/** The object that can be used to represent that state of validation for the provided object. */
-		state
+		state: resultState
 	}
 }
 

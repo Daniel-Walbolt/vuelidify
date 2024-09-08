@@ -120,11 +120,11 @@ function recursiveInvokeAndOptimizeValidators<
 
 		// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
 		// This will require a cast to the type the validator expects in order to avoid type errors.
-		const params: ValidatorParams<G, KParent, unknown, unknown> = {
+		const params: ValidatorParams<G, KParent, unknown, any[]> = {
 			value: property,
 			parent: parent,
 			args: args,
-			arrayParent: propertyConfig.elementParent
+			arrayParents: propertyConfig.arrayParents.map(x => x.value)
 		}
 		const validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
 

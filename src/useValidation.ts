@@ -1,8 +1,7 @@
-import { BaseValidationReturn, Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState, Validator } from "./finalFormTypes";
+import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState } from "./finalFormTypes";
 import { Ref, ref, computed, watch, reactive } from "vue";
-import { throttleQueueAsync } from "./finalFormUtilities";
-import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from "./privateTypes";
-import { invokeAndOptimizeValidators, invokeValidatorConfigs } from "./services/validatorInvocation";
+import { IndexableObject, PrimitiveOrArrayValidation, PropertyValidationConfig } from "./privateTypes";
+import { invokeValidatorConfigs } from "./services/validatorInvocation";
 import { configureValidationOnProperty, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
 
 /** 
@@ -63,6 +62,7 @@ export function useValidation<
 		const typedObject = object as Ref<IndexableObject>;
 		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn, any, number>;
 		const validationSetup = setupNestedPropertiesForValidation<IndexableObject, T, Args, FValidationReturn>(typedObject.value, typedValidation);
+		console.log(validationSetup.validationConfigs);
 		propertyState = reactive(validationSetup.state) as ValidationState<T, FValidationReturn>;
 		validationConfigs = validationSetup.validationConfigs;
 	}

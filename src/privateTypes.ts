@@ -85,8 +85,12 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
 	elementValidation: Readonly<FinalFormValidation<any, Args, FValidationReturn, KParent, any> | undefined>;
-	/** Stores the closest array element object to this property. Only used if there are arrays with validation. */
-	elementParent?: ComputedRef<unknown>;
+	/** 
+	 * An array of all the array elements that were traversed through during validation.
+	 * 
+	 * Add to list using computed getters, because this is wrapped as a reactive object.
+	 */
+	arrayParents: ComputedRef<any>[]
 }
 
 /** Stores the state and the validation configs of an element within an array */

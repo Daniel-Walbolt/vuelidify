@@ -101,7 +101,7 @@ export type ArrayValidatorTypes<
 	 * 
 	 * Element validation requires much more logic, which may introduce performance problems for large arrays.
 	 */
-	$each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent & { [key in NLevel]: U }, Increment<NLevel>>;
+	$each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent extends undefined ? Array<any> & { [key in NLevel]: U } : ArrParent & { [key in NLevel]: U }, Increment<NLevel>>;
 	/** The validators for the array that are invoked whenever the form is changed. */
 	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 	/** The validators for the array that are invoked only when {@link validate()} is called. */
@@ -157,7 +157,7 @@ export type FinalFormValidation<
 	Args = undefined,
 	FValidationReturn = undefined,
 	KParent = T,
-	ArrParent = Array<any>,
+	ArrParent = undefined,
 	NLevel extends number = 0
 > = T extends Array<infer U>
 	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
@@ -195,7 +195,7 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		parent: KParent
 	} &
 	(Args extends undefined ? {} : { args: Args }) &
-	(ArrParent extends undefined ? {} : { arrayParent: ArrParent })
+	(ArrParent extends undefined ? {} : { arrayParents: ArrParent })
 
 
 /** Type that increments a provided integer (0-19). */
@@ -203,18 +203,3 @@ type Increment<N extends number> = [
 	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
 	...number[]
 ][N];
-
-type Foo = {
-	name: string,
-	age: number
-}
-type Test<F extends number> = Array<any> & {
-	[key in F]: Foo
-}
-type Test2<F extends number> = Test<F> & {
-	[key in Increment<F>]: string
-}
-
-const test: Test2<0> = [{ name: "Falicia", age: 5 }, ""]
-const index0 = test[0];
-const index1 = test[1];
