@@ -54,7 +54,9 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
      *
      * Element validation requires much more logic, which may introduce performance problems for large arrays.
      */
-    $each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent & {
+    $each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent extends undefined ? Array<any> & {
+        [key in NLevel]: U;
+    } : ArrParent & {
         [key in NLevel]: U;
     }, Increment<NLevel>>;
     /** The validators for the array that are invoked whenever the form is changed. */
@@ -87,7 +89,7 @@ type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidat
     arrayResults?: ValidationState<U, FValidationReturn>[];
 };
 /** The general validation object type for Final Form. */
-type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = Array<any>, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
+type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     objectToValidate: Readonly<Ref<T | undefined | null>>;
     validation: FinalFormValidation<T, Args, FValidationReturn, T>;
@@ -110,7 +112,7 @@ type ValidatorParams<T, KParent, Args, ArrParent> = {
 } & (Args extends undefined ? {} : {
     args: Args;
 }) & (ArrParent extends undefined ? {} : {
-    arrayParent: ArrParent;
+    arrayParents: ArrParent;
 });
 /** Type that increments a provided integer (0-19). */
 type Increment<N extends number> = [
