@@ -1,10 +1,9 @@
 <script setup lang="ts">
-	import { ref, watch } from "vue";
-	import { minimumLength, useValidation, minValue, validateIf, throttleQueueAsync, bufferAsync } from "vue-final-form"
+	import { ref } from "vue";
+	import { minimumLength, useValidation, minValue, validateIf, bufferAsync } from "vue-final-form"
 	import { Child, Person } from "./types";
-	import ChildComponent from "./components/ChildComponent.vue";
-	import NeighborComponent from "./components/NeighborComponent.vue";
 	import { PartialPersonValidation } from "./separateValidation";
+	import NeighborComponent from "./components/NeighborComponent.vue";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -128,10 +127,10 @@
 
 	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
 	const randomPerson = (genNeighbors: boolean = true): Person => {
-		const countChildren = Math.ceil(Math.random() * 10);
+		const countChildren = Math.ceil(Math.random() * 1);
 		const children = []
 		for (let i = 0; i < countChildren; i++) { children.push(randomChild()); }
-		const countNeighbors = Math.ceil(Math.random() * 10);
+		const countNeighbors = Math.ceil(Math.random() * 2);
 		const neighbors = [];
 		if (genNeighbors) {
 			for (let i = 0; i < countNeighbors; i++) { neighbors.push(randomPerson(false)); }
@@ -161,18 +160,45 @@
 			...PartialPersonValidation,
 			neighbors: {
 				$each: {
+					name: {
+						$reactive: [minimumLength(10), input => {
+							console.log(input.arrayParents);
+							return {
+								isValid: true
+							}
+						}]
+					},
+					age: {
+					},
+					countChildren: {},
 					children: {
 						$each: {
 							name: {
-								$reactive: []
+								$reactive: [async params => {
+									if (params.arrayParents[0].validateChildren === false) {
+										return;
+									}
+									return [
+										minimumLength(10),
+										async input => {
+											await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
+											return {
+												isValid: Math.random() > 0.5,
+												errorMessage: "Async failed"
+											}
+										}
+									];
+								}]
 							}
 						}
 					}
-				}
+				},
 			}
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
+		args: true
 	});
+	console.log(complexObjectValidation.value)
 </script>
 
 <template>
