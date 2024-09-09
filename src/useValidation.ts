@@ -71,7 +71,7 @@ export function useValidation<
 	 * Watch the object for any changes.
 	 * This is the alternative to watching every property individually.
 	 * This may be more costly on performance, but does allow for property inter-dependence.
-	 * Editing one property will validate every other.
+	 * Editing one property will invoke the reactive validators of every other and itself.
 	 */
 	watch(
 		validationConfig.objectToValidate,
@@ -88,7 +88,7 @@ export function useValidation<
 		{ deep: true }
 	);
 
-	/** Calls all reactive and lazy validators. Returns whether or not all validators passed.*/
+	/** Invokes all reactive and lazy validators. Returns whether or not all validators passed.*/
 	async function validate() {
 		const isValid = await invokeValidatorConfigs(validationConfigs, object, args, true, true);
 		hasValidated.value = true;
