@@ -81,9 +81,9 @@ export function reduceUndefined<T, K = T>(
 	getter: (value: T) => K = (val) => val as unknown as K
 ) {
 	return array.reduce((results: NonNullable<K>[], item) => {
-		if (item != undefined) {
+		if (item !== undefined) {
 			const target = getter(item);
-			if (target != undefined) {
+			if (target !== undefined) {
 				results.push(target);
 			}
 		}
@@ -100,10 +100,10 @@ export function flatMap<T>(
 	array: (T | T[])[]
 ) {
 	return array.reduce((results: NonNullable<T>[], item) => {
-		if (item != undefined) {
+		if (item !== undefined) {
 			if (item instanceof Array) {
 				for (const subitem of item) {
-					if (subitem != undefined) {
+					if (subitem !== undefined) {
 						results.push(subitem);
 					}
 				}
