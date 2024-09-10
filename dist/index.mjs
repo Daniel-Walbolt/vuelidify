@@ -543,10 +543,12 @@ function invokeValidatorConfigs(validationConfigs, parent, args, reactive3, lazy
         validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
       }
       if (validationConfig.elementValidation !== void 0) {
+        console.time("Assembling array");
         const elementValidationConfigs = [];
         for (const key in validationConfig.arrayConfigMap) {
           elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
         }
+        console.timeEnd("Assembling array");
         validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive3, lazy));
       }
     }
@@ -591,7 +593,9 @@ function useValidation(validationConfig) {
           invokeValidatorConfigs(validationConfigs, object, args, true, false);
         }
       } else {
+        console.time("Reactive validation");
         invokeValidatorConfigs(validationConfigs, object, args, true, false);
+        console.timeEnd("Reactive validation");
       }
     },
     { deep: true }

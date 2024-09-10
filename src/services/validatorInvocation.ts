@@ -377,7 +377,25 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
 		if (reactive && validationConfig.validation.$reactive !== undefined) {
-			validatorPromises.push(invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
+			propertyConfig.validatingReactive.value = true;
+
+			// Get the specified reactive validators and run them.
+			const reactiveValidators = propertyConfig.reactiveProcessedValidators;
+			const isAllValid = await invokeAndOptimizeValidators(
+				propertyConfig,
+				parent,
+				args,
+				reactiveValidators,
+				iterationId
+			);
+		
+			// Only update the validation config if this is the latest validation iteration
+			if (iterationId === propertyConfig.validationIterationId) {
+				propertyConfig.reactiveIsValid.value = isAllValid;
+				propertyConfig.validatingReactive.value = false;
+			}
+		
+			return propertyConfig.reactiveIsValid.value;
 		}
 		// Check if we should validate lazy validators
 		if (lazy && validationConfig.validation.$lazy !== undefined) {
