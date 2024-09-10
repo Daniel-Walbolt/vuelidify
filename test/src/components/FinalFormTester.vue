@@ -44,29 +44,48 @@ import { randomPerson } from "../dataGen";
 	});
 
 	const objectArrayTest = ref([
-		{ name: "" }
+		{ name: "12345" }
 	]);
+	const randomRef = ref(4);
+	setInterval(() => {
+		randomRef.value += 100;
+		console.log(randomRef.value)
+	}, 100);
 	const v$3 = useValidation({
 		objectToValidate: objectArrayTest,
 		validation: {
 			$each: {
 				name: {
-					$reactive: [minimumLength(5), async input => {
-						await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
-						return {
-							isValid: input.value.length > 6,
-							errorMessage: "Async failed"
+					$reactive: [minimumLength(5),
+						input => {
+							return {
+								isValid: randomRef.value > 1000,
+								errorMessage: "Ref not greater than 1000"
+							}
 						}
-					}]
+						// async input => {
+						// 	await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
+						// 	return {
+						// 		isValid: input.value.length > 6,
+						// 		errorMessage: "Async failed"
+						// 	}
+						// }
+					]
 				}
 			}
 		},
 		delayReactiveValidation: false
 	});
 
+	// setInterval(async () => {
+	// 	console.time("Array validation");
+	// 	await v$3.validate();
+	// 	console.timeEnd("Array validation");
+	// }, 500)
+
 	function addObjectToArray() {
 		objectArrayTest.value.push({
-			name: ""
+			name: "1234567"
 		});
 	}
 
@@ -173,11 +192,11 @@ import { randomPerson } from "../dataGen";
 	// This validation takes about 1 millisecond with default random data.
 	// This validation takes about 2.5 - 3 millisecond with (true, true, 5, 15) random data (6 neighbors)
 	// This validation takes about 4 milliseconds with 14 neighbors. ^ same random data generator
-	setInterval(async () => {
-		console.time("Validation");
-		await v$5.validate();
-		console.timeEnd("Validation");
-	}, 2000);
+	// setInterval(async () => {
+	// 	console.time("Validation");
+	// 	await v$5.validate();
+	// 	console.timeEnd("Validation");
+	// }, 2000);
 </script>
 
 <template>
