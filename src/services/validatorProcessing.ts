@@ -54,8 +54,6 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 	/** Specify the getters for the array parents that came before this property. */
 	arrayParents: ComputedRef<any>[] = []
 ) {
-	const isArrayValidation = (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each != undefined;
-
 	// Create a reactive object for the validation state just for convenience.
 	// Users don't have to type .value on any of the these properties in
 	// JavaScript or in the Vue templates while still having reactivity.
@@ -76,7 +74,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		arrayState: computed(() => {
 			// Array state should be undefined until the object is actually an array.
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
-				return undefined;
+				return [];
 			}
 			// Declare some variables for readability
 			const arr = object.value;
@@ -180,7 +178,6 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		reactiveProcessedValidators: reactiveValidators,
 		lazyProcessedValidators: lazyValidators,
 		arrayConfigMap: {},
-		hasElementValidation: isArrayValidation,
 		elementId: 0,
 		elementValidation: (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each,
 		arrayParents: reactive(arrayParents),
