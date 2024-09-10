@@ -1,8 +1,9 @@
-import { Ref } from "vue";
+import { computed, Ref } from "vue";
 import { bufferAsync, throttleQueueAsync } from "../finalFormUtilities";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { processValidators } from "./validatorProcessing";
 import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../finalFormTypes";
+import { SyncValidator } from "../../dist";
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
@@ -109,7 +110,6 @@ function recursiveInvokeAndOptimizeValidators<
 	// Add validators to this list that returned validators from a previous run, but did not this time.
 	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
 	for (const processedValidator of validators) {
-		const isValidatorAlreadyOptimized = processedValidator.optimized;
 		let checkForValidatorReturn = false;
 		if (processedValidator.previouslyReturnedValidators) {
 			processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
@@ -118,15 +118,21 @@ function recursiveInvokeAndOptimizeValidators<
 		}
 		processedValidator.previouslyReturnedValidators = false;
 
-		// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
-		// This will require a cast to the type the validator expects in order to avoid type errors.
-		const params: ValidatorParams<G, KParent, unknown, any[]> = {
-			value: property,
-			parent: parent,
-			args: args,
-			arrayParents: propertyConfig.arrayParents.map(x => x.value)
+		let validationReturn: ReturnType<Validator<G, KParent, Args, FValidationReturn, any>>;
+		if (processedValidator.computedValidator === undefined) {
+			// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
+			// This will require a cast to the type the validator expects in order to avoid type errors.
+			const params: ValidatorParams<G, KParent, unknown, any[]> = {
+				value: property,
+				parent: parent,
+				args: args,
+				arrayParents: propertyConfig.arrayParents.map(x => x.value)
+			}
+			validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
 		}
-		const validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
+		else {
+			validationReturn = processedValidator.computedValidator.value;
+		}
 
 		if (validationReturn instanceof Promise) {
 			// Check how long this async validator takes to return.
@@ -140,7 +146,9 @@ function recursiveInvokeAndOptimizeValidators<
 						return undefined;
 					}
 					const duration = Date.now() - past;
-					if (shouldOptimize && duration > ThrottleDurationMs && isValidatorAlreadyOptimized === false) {
+
+					// Optionally optimize async validator
+					if (shouldOptimize && duration > ThrottleDurationMs && processedValidator.optimized === false) {
 						processedValidator.optimized = true;
 						if (duration < (2 * ThrottleDurationMs)) {
 							// Moderately slow validators will receive a throttle.
@@ -159,6 +167,8 @@ function recursiveInvokeAndOptimizeValidators<
 								>(processedValidator.validator as AsyncValidator<G, KParent, Args, FValidationReturn, undefined>);
 						}
 					}
+
+					// Check if this validator returned validators
 					if (Array.isArray(ret)) {
 						const { asyncPromises, syncResults } = handleReturnedValidators(
 							propertyConfig,
@@ -183,7 +193,7 @@ function recursiveInvokeAndOptimizeValidators<
 		}
 		else if (Array.isArray(validationReturn)) {
 			// Assume the array is full of validators. TypeScript should warn them from returning any other type of array.
-			// We can't optimize these validators because we're not keeping track of them for subsequent runs.
+			// We can't optimize these validators because they might not come back in subsequent runs.
 			// So if async calls are returned in this array they will NOT be throttled.
 			// This is because the list of validators returned COULD be dynamic, although it's very unlikely.
 			// It's impossible to know which validator is a previously ran validator because there's no ID attached to the function.
@@ -204,8 +214,24 @@ function recursiveInvokeAndOptimizeValidators<
 			if (checkForValidatorReturn) {
 				validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
 			}
-			// This check was added to support returning an array of promises for the validateIf() validator.
 			if (validationReturn !== undefined) {
+				if (shouldOptimize && processedValidator.optimized === false) {
+					const typedValidator = processedValidator.validator as SyncValidator<G, KParent, Args, FValidationReturn, any>;
+					// Optimize sync validators into computed functions
+					processedValidator.computedValidator = computed<ReturnType<typeof typedValidator>>(() => {
+						console.log("computed ran instead");
+						const params: ValidatorParams<G, KParent, unknown, any[]> = {
+							value: propertyConfig.property.value, // Setup a reactive dependency on the property value
+							parent: parent,
+							args: args,
+							arrayParents: propertyConfig.arrayParents.map(x => x.value)
+						}
+						return typedValidator(params as unknown as ValidatorParams<G, KParent, Args, any>);
+					})
+					processedValidator.optimized = true;
+					// Replace a validator with a function that just gets the value of the computed.
+					processedValidator.validator = () => processedValidator.computedValidator.value;
+				}
 				allResults.push(validationReturn);
 				processValidatorResult(processedValidator, validationReturn);
 			}

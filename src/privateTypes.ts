@@ -1,5 +1,6 @@
 import { ComputedRef, Ref } from "vue";
 import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, FinalFormValidation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes } from "./finalFormTypes";
+import { SyncValidator } from "../dist";
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
@@ -13,6 +14,7 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
 	validator: Validator<T, KParent, Args, FValidationReturn, any>;
+	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, any>>>
 	isReactive: boolean;
 	isLazy: boolean;
 	/** Used for determining whether or not to optimize this validator. */
