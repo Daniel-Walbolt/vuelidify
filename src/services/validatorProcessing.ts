@@ -34,8 +34,6 @@ export function setupValiators<
 		processedValidators.push({
 			validatorId: getId(index),
 			validator: validator,
-			isLazy: !markReactive,
-			isReactive: markReactive,
 			optimized: false,
 			previouslyReturnedValidators: false,
 			previouslySpawnedValidators: {},

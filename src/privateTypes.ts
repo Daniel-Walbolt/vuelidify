@@ -15,8 +15,6 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	validatorId: string;
 	validator: Validator<T, KParent, Args, FValidationReturn, any>;
 	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, any>>>
-	isReactive: boolean;
-	isLazy: boolean;
 	/** Used for determining whether or not to optimize this validator. */
 	optimized: boolean;
 	previouslySpawnedValidators: {
