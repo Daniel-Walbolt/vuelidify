@@ -142,7 +142,10 @@ function isEmailSync() {
 }
 
 // src/useValidation.ts
-import { ref as ref2, computed as computed2, watch, reactive as reactive2 } from "vue";
+import { ref as ref2, computed as computed3, watch, reactive as reactive2 } from "vue";
+
+// src/services/validatorInvocation.ts
+import { computed as computed2 } from "vue";
 
 // src/services/validatorProcessing.ts
 import { computed, reactive, ref } from "vue";
@@ -365,7 +368,6 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
   const allResults = [];
   const validatorsWhichPreviouslyReturnedValidators = [];
   for (const processedValidator of validators) {
-    const isValidatorAlreadyOptimized = processedValidator.optimized;
     let checkForValidatorReturn = false;
     if (processedValidator.previouslyReturnedValidators) {
       processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
@@ -373,13 +375,18 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
       checkForValidatorReturn = true;
     }
     processedValidator.previouslyReturnedValidators = false;
-    const params = {
-      value: property,
-      parent,
-      args,
-      arrayParents: propertyConfig.arrayParents.map((x) => x.value)
-    };
-    const validationReturn = processedValidator.validator(params);
+    let validationReturn;
+    if (processedValidator.computedValidator === void 0) {
+      const params = {
+        value: property,
+        parent,
+        args,
+        arrayParents: propertyConfig.arrayParents.map((x) => x.value)
+      };
+      validationReturn = processedValidator.validator(params);
+    } else {
+      validationReturn = processedValidator.computedValidator.value;
+    }
     if (validationReturn instanceof Promise) {
       const past = Date.now();
       allPromises.push(
@@ -391,7 +398,7 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
             return void 0;
           }
           const duration = Date.now() - past;
-          if (shouldOptimize && duration > ThrottleDurationMs && isValidatorAlreadyOptimized === false) {
+          if (shouldOptimize && duration > ThrottleDurationMs && processedValidator.optimized === false) {
             processedValidator.optimized = true;
             if (duration < 2 * ThrottleDurationMs) {
               processedValidator.validator = throttleQueueAsync(processedValidator.validator, ThrottleDurationMs);
@@ -437,6 +444,22 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
         validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
       }
       if (validationReturn !== void 0) {
+        if (shouldOptimize && processedValidator.optimized === false) {
+          const typedValidator = processedValidator.validator;
+          processedValidator.computedValidator = computed2(() => {
+            console.log("computed ran instead");
+            const params = {
+              value: propertyConfig.property.value,
+              // Setup a reactive dependency on the property value
+              parent,
+              args,
+              arrayParents: propertyConfig.arrayParents.map((x) => x.value)
+            };
+            return typedValidator(params);
+          });
+          processedValidator.optimized = true;
+          processedValidator.validator = () => processedValidator.computedValidator.value;
+        }
         allResults.push(validationReturn);
         processValidatorResult(processedValidator, validationReturn);
       }
@@ -537,15 +560,15 @@ function useValidation(validationConfig) {
   (_a = validationConfig.delayReactiveValidation) != null ? _a : validationConfig.delayReactiveValidation = true;
   const { objectToValidate: object, validation, delayReactiveValidation, args } = validationConfig;
   const hasValidated = ref2(false);
-  const isValidating = computed2(() => validationConfigs.some((x) => x.validationState.isValidating));
-  const isValid = computed2(() => {
+  const isValidating = computed3(() => validationConfigs.some((x) => x.validationState.isValidating));
+  const isValid = computed3(() => {
     const allValidatorsValid = validationConfigs.every((x) => x.reactiveIsValid.value && x.lazyIsValid.value);
     return allValidatorsValid;
   });
   let validationConfigs = [];
   let propertyState = reactive2({});
   const dirtyReference = ref2(JSON.stringify(validationConfig.objectToValidate.value));
-  const isDirty = computed2(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
+  const isDirty = computed3(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
   const isPrimitiveOrArray = (validation == null ? void 0 : validation.$reactive) != void 0 || (validation == null ? void 0 : validation.$lazy) != void 0 || (validation == null ? void 0 : validation.$each) != void 0;
   if (isPrimitiveOrArray) {
     const typedValidation = validation;
@@ -587,7 +610,7 @@ function useValidation(validationConfig) {
     hasValidated,
     validate,
     isValidating,
-    propertyState: computed2(() => propertyState),
+    propertyState: computed3(() => propertyState),
     isValid,
     setReference,
     isDirty

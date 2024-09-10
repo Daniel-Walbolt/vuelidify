@@ -174,6 +174,9 @@ function isEmailSync() {
 }
 
 // src/useValidation.ts
+var import_vue3 = require("vue");
+
+// src/services/validatorInvocation.ts
 var import_vue2 = require("vue");
 
 // src/services/validatorProcessing.ts
@@ -397,7 +400,6 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
   const allResults = [];
   const validatorsWhichPreviouslyReturnedValidators = [];
   for (const processedValidator of validators) {
-    const isValidatorAlreadyOptimized = processedValidator.optimized;
     let checkForValidatorReturn = false;
     if (processedValidator.previouslyReturnedValidators) {
       processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
@@ -405,13 +407,18 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
       checkForValidatorReturn = true;
     }
     processedValidator.previouslyReturnedValidators = false;
-    const params = {
-      value: property,
-      parent,
-      args,
-      arrayParents: propertyConfig.arrayParents.map((x) => x.value)
-    };
-    const validationReturn = processedValidator.validator(params);
+    let validationReturn;
+    if (processedValidator.computedValidator === void 0) {
+      const params = {
+        value: property,
+        parent,
+        args,
+        arrayParents: propertyConfig.arrayParents.map((x) => x.value)
+      };
+      validationReturn = processedValidator.validator(params);
+    } else {
+      validationReturn = processedValidator.computedValidator.value;
+    }
     if (validationReturn instanceof Promise) {
       const past = Date.now();
       allPromises.push(
@@ -423,7 +430,7 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
             return void 0;
           }
           const duration = Date.now() - past;
-          if (shouldOptimize && duration > ThrottleDurationMs && isValidatorAlreadyOptimized === false) {
+          if (shouldOptimize && duration > ThrottleDurationMs && processedValidator.optimized === false) {
             processedValidator.optimized = true;
             if (duration < 2 * ThrottleDurationMs) {
               processedValidator.validator = throttleQueueAsync(processedValidator.validator, ThrottleDurationMs);
@@ -469,6 +476,22 @@ function recursiveInvokeAndOptimizeValidators(propertyConfig, parent, args, vali
         validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
       }
       if (validationReturn !== void 0) {
+        if (shouldOptimize && processedValidator.optimized === false) {
+          const typedValidator = processedValidator.validator;
+          processedValidator.computedValidator = (0, import_vue2.computed)(() => {
+            console.log("computed ran instead");
+            const params = {
+              value: propertyConfig.property.value,
+              // Setup a reactive dependency on the property value
+              parent,
+              args,
+              arrayParents: propertyConfig.arrayParents.map((x) => x.value)
+            };
+            return typedValidator(params);
+          });
+          processedValidator.optimized = true;
+          processedValidator.validator = () => processedValidator.computedValidator.value;
+        }
         allResults.push(validationReturn);
         processValidatorResult(processedValidator, validationReturn);
       }
@@ -568,31 +591,31 @@ function useValidation(validationConfig) {
   var _a;
   (_a = validationConfig.delayReactiveValidation) != null ? _a : validationConfig.delayReactiveValidation = true;
   const { objectToValidate: object, validation, delayReactiveValidation, args } = validationConfig;
-  const hasValidated = (0, import_vue2.ref)(false);
-  const isValidating = (0, import_vue2.computed)(() => validationConfigs.some((x) => x.validationState.isValidating));
-  const isValid = (0, import_vue2.computed)(() => {
+  const hasValidated = (0, import_vue3.ref)(false);
+  const isValidating = (0, import_vue3.computed)(() => validationConfigs.some((x) => x.validationState.isValidating));
+  const isValid = (0, import_vue3.computed)(() => {
     const allValidatorsValid = validationConfigs.every((x) => x.reactiveIsValid.value && x.lazyIsValid.value);
     return allValidatorsValid;
   });
   let validationConfigs = [];
-  let propertyState = (0, import_vue2.reactive)({});
-  const dirtyReference = (0, import_vue2.ref)(JSON.stringify(validationConfig.objectToValidate.value));
-  const isDirty = (0, import_vue2.computed)(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
+  let propertyState = (0, import_vue3.reactive)({});
+  const dirtyReference = (0, import_vue3.ref)(JSON.stringify(validationConfig.objectToValidate.value));
+  const isDirty = (0, import_vue3.computed)(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
   const isPrimitiveOrArray = (validation == null ? void 0 : validation.$reactive) != void 0 || (validation == null ? void 0 : validation.$lazy) != void 0 || (validation == null ? void 0 : validation.$each) != void 0;
   if (isPrimitiveOrArray) {
     const typedValidation = validation;
     const typedObject = object;
     const validatedPropertyConfig = configureValidationOnProperty(typedObject, typedValidation);
-    propertyState = (0, import_vue2.reactive)(validatedPropertyConfig.validationState);
+    propertyState = (0, import_vue3.reactive)(validatedPropertyConfig.validationState);
     validationConfigs = [validatedPropertyConfig];
   } else {
     const typedObject = object;
     const typedValidation = validation;
     const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
-    propertyState = (0, import_vue2.reactive)(validationSetup.state);
+    propertyState = (0, import_vue3.reactive)(validationSetup.state);
     validationConfigs = validationSetup.validationConfigs;
   }
-  (0, import_vue2.watch)(
+  (0, import_vue3.watch)(
     validationConfig.objectToValidate,
     () => {
       if (delayReactiveValidation) {
@@ -615,11 +638,11 @@ function useValidation(validationConfig) {
   function setReference(reference) {
     dirtyReference.value = JSON.stringify(reference);
   }
-  return (0, import_vue2.reactive)({
+  return (0, import_vue3.reactive)({
     hasValidated,
     validate,
     isValidating,
-    propertyState: (0, import_vue2.computed)(() => propertyState),
+    propertyState: (0, import_vue3.computed)(() => propertyState),
     isValid,
     setReference,
     isDirty
