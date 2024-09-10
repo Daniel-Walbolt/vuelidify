@@ -81,7 +81,9 @@ export function useValidation<
 				}
 			}
 			else {
+				console.time("Reactive validation");
 				invokeValidatorConfigs(validationConfigs, object, args, true, false)
+				console.timeEnd("Reactive validation");
 			}
 		},
 		{ deep: true }
