@@ -557,7 +557,6 @@ function useValidation(validationConfig) {
     const typedObject = object;
     const typedValidation = validation;
     const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
-    console.log(validationSetup.validationConfigs);
     propertyState = reactive2(validationSetup.state);
     validationConfigs = validationSetup.validationConfigs;
   }

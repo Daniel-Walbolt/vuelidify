@@ -589,7 +589,6 @@ function useValidation(validationConfig) {
     const typedObject = object;
     const typedValidation = validation;
     const validationSetup = setupNestedPropertiesForValidation(typedObject.value, typedValidation);
-    console.log(validationSetup.validationConfigs);
     propertyState = (0, import_vue2.reactive)(validationSetup.state);
     validationConfigs = validationSetup.validationConfigs;
   }

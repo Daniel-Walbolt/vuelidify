@@ -4,6 +4,7 @@
 	import { Child, Person } from "../types";
 	import { PartialPersonValidation } from "../separateValidation";
 	import NeighborComponent from "./NeighborComponent.vue";
+import { randomPerson } from "../dataGen";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -125,35 +126,7 @@
 		await new Promise(resolve => setTimeout(resolve, 500));
 	})
 
-	const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
-	const randomPerson = (genNeighbors: boolean = true): Person => {
-		const countChildren = Math.ceil(Math.random() * 1);
-		const children = []
-		for (let i = 0; i < countChildren; i++) { children.push(randomChild()); }
-		const countNeighbors = Math.ceil(Math.random() * 2);
-		const neighbors = [];
-		if (genNeighbors) {
-			for (let i = 0; i < countNeighbors; i++) { neighbors.push(randomPerson(false)); }
-		}
-		return {
-			name: randomName(),
-			age: Math.ceil(Math.random() * 30 + 23),
-			validateChildren: true,
-			validateNeighbors: true,
-			countChildren: countChildren,
-			children: children,
-			neighbors: neighbors
-		}
-	}
-
-	const randomName = () => names[Math.floor(Math.random() * names.length)];
-
-	const randomChild = (): Child => ({
-		name: randomName(),
-		age: Math.ceil(Math.random() * 12)
-	});
-
-	const complexObjectValidation = ref<Person>(randomPerson());
+	const complexObjectValidation = ref<Person>(randomPerson(true, true, 5, 15));
 	const v$5 = useValidation({
 		objectToValidate: complexObjectValidation,
 		validation: {
@@ -162,7 +135,6 @@
 				$each: {
 					name: {
 						$reactive: [minimumLength(10), input => {
-							console.log(input.arrayParents);
 							return {
 								isValid: true
 							}
@@ -180,8 +152,7 @@
 									}
 									return [
 										minimumLength(10),
-										async input => {
-											await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
+										input => {
 											return {
 												isValid: Math.random() > 0.5,
 												errorMessage: "Async failed"
@@ -198,7 +169,15 @@
 		delayReactiveValidation: false,
 		args: true
 	});
-	console.log(complexObjectValidation.value)
+	
+	// This validation takes about 1 millisecond with default random data.
+	// This validation takes about 2.5 - 3 millisecond with (true, true, 5, 15) random data (6 neighbors)
+	// This validation takes about 4 milliseconds with 14 neighbors. ^ same random data generator
+	setInterval(async () => {
+		console.time("Validation");
+		await v$5.validate();
+		console.timeEnd("Validation");
+	}, 2000);
 </script>
 
 <template>

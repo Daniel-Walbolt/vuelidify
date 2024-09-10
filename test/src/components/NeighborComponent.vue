@@ -5,7 +5,7 @@
 
 	interface Props {
 		person: Person;
-		validation: ValidationState<Person, unknown>;
+		validation?: ValidationState<Person, unknown>;
 	}
 
 	// Looks like you currently need to access "props" variable in the template in order to get correct types
@@ -19,20 +19,20 @@
 			<label>
 				Name
 				<input v-model="person.name"/>
-				<span v-if="props.validation.name.isValidating"></span>
+				<span v-if="props.validation?.name.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation.name.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.name.errorMessages">{{error}}</p>
 			</div>
 		</div>
 		<div class="field">
 			<label>
 				Age
 				<input v-model="person.age"/>
-				<span v-if="props.validation.age.isValidating"></span>
+				<span v-if="props.validation?.age.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation.age.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.age.errorMessages">{{error}}</p>
 			</div>
 		</div>
 		<div class="field">
@@ -47,7 +47,7 @@
 		<ChildComponent
 			v-for="child,i in person.children"
 			:child="child"
-			:validation="props.validation.children.arrayState[i]"
+			:validation="props.validation?.children.arrayState[i]"
 		/>
 	</section>
 	<template v-if="person.neighbors && person.neighbors.length > 0">
@@ -57,7 +57,7 @@
 				<p>Neighbor {{ i }}</p>
 				<NeighborComponent
 					:person="neighbor"
-					:validation="props.validation.neighbors.arrayState[i]"
+					:validation="props.validation?.neighbors.arrayState[i]"
 				/>
 			</template>
 		</div>

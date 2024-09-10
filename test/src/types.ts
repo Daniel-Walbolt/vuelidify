@@ -10,5 +10,6 @@ export type Person = {
 	validateNeighbors: boolean;
 	countChildren: number;
 	children: Child[],
-	neighbors: Person[]
+	neighbors: Person[],
+	bestFriend: Person;
 }

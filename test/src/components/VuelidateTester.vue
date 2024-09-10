@@ -1,22 +1,26 @@
 <script setup lang="ts">
-	import { useVuelidate, Validation, ValidationArgs } from "@vuelidate/core";
+	import { useVuelidate, ValidationArgs } from "@vuelidate/core";
 	import { helpers, required } from "@vuelidate/validators";
 	import { ref } from "vue";
-import { throttleQueueAsync } from "../../../dist";
+import { Person } from "../types";
+import { randomPerson } from "../dataGen";
+import NeighborComponent from "./NeighborComponent.vue";
 
 	const simpleObjectTest = ref({
 		name: undefined,
 		age: undefined,
 		isPerson: false
 	});
-	const debouncedFunction = throttleQueueAsync(asyncTestFunction, 500);
+	const refTest = ref(100);
+
 	const rules: ValidationArgs<typeof simpleObjectTest.value> = {
 		name: {
 			required,
 		},
 		age: {
 			required,
-			asyncTest: helpers.withAsync(asyncTestFunction)
+			syncTest: helpers.withMessage("Must be less than 1000", syncTest),
+			asyncTest: helpers.withMessage("Error", helpers.withAsync(asyncTestFunction, [refTest]))
 		},
 		isPerson: {
 			required
@@ -26,6 +30,20 @@ import { throttleQueueAsync } from "../../../dist";
 		$autoDirty: true
 	});
 
+	async function timeValidation() {
+		console.time("Validation");
+		await v$.value.$validate();
+		console.timeEnd("Validation");
+	}
+
+	function syncTest(value) {
+		console.log("test");
+		return {
+			$valid: (value + refTest.value) < 1000,
+			$message: "Must be less than 1000"
+		}
+	}
+
 	async function asyncTestFunction(value) {
 		console.log("Ran async validator");
 		await new Promise(resolve => setTimeout(resolve, 500));
@@ -33,10 +51,32 @@ import { throttleQueueAsync } from "../../../dist";
 			return undefined;
 		}
 		return {
-			$valid: value > 5,
+			$valid: (value + refTest.value) > 5,
 			$message: "Test"
 		};
 	}
+
+	const complexObjectValidation = ref<Person>(randomPerson());
+	const complexRules: ValidationArgs<Person> = {
+		children: {
+			$each: helpers.forEach({
+				age: {
+					syncTest
+				}
+			})
+		}
+	}
+	const v$2 = useVuelidate(complexRules, complexObjectValidation, {
+		$autoDirty: true
+	});
+
+	setInterval(async () => {
+		for (const child of complexObjectValidation.value.children) {
+			child.age += 500;
+		}
+		console.log(await v$2.value.$validate());
+	}, 1000);
+
 </script>
 
 <template>
@@ -64,5 +104,9 @@ import { throttleQueueAsync } from "../../../dist";
 				</div>
 			</div>
 		</section>
+	</form>
+	<form class="form">
+		<h2>Complex Object Validation</h2>
+		<NeighborComponent :person="complexObjectValidation"/>
 	</form>
 </template>

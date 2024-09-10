@@ -1,10 +1,10 @@
 <script setup lang="ts" generic="">
-	import { Primitive, ValidationState } from 'vue-final-form';
+	import { ValidationState } from 'vue-final-form';
 	import { Child } from '../types';
 
 	interface Props {
 		child: Child;
-		validation: ValidationState<Child, unknown>;
+		validation?: ValidationState<Child, unknown>;
 	}
 
 	// Looks like you currently need to access "props" variable in the template in order to get correct types
@@ -19,10 +19,10 @@
 			<label>
 				Name
 				<input v-model="child.name"/>
-				<span v-if="props.validation.name.isValidating"></span>
+				<span v-if="props.validation?.name.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation.name.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.name.errorMessages">{{error}}</p>
 			</div>
 		</div>
 	</div>
