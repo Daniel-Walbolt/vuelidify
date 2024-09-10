@@ -13,7 +13,7 @@ function uniqueId() {
  * @param validators
  * @param markReactive
  */
-export function processValidators<
+export function setupValiators<
 	G,
 	KParent,
 	Args,
@@ -160,8 +160,8 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 	// If there are no reactive validators, reactive validation is automatically valid (true).
 	const initIsReactiveValid = !((validation.$reactive?.length ?? -1) > 0);
 
-	const reactiveValidators = validation.$reactive ? processValidators(validation.$reactive, true) : [];
-	const lazyValidators = validation.$lazy ? processValidators(validation.$lazy, false) : [];
+	const reactiveValidators = validation.$reactive ? setupValiators(validation.$reactive, true) : [];
+	const lazyValidators = validation.$lazy ? setupValiators(validation.$lazy, false) : [];
 
 	const validationConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn> = {
 		id: uniqueId(),

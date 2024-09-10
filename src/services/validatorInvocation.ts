@@ -1,7 +1,7 @@
 import { computed, Ref } from "vue";
 import { bufferAsync, throttleQueueAsync } from "../finalFormUtilities";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
-import { processValidators } from "./validatorProcessing";
+import { setupValiators } from "./validatorProcessing";
 import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../finalFormTypes";
 import { SyncValidator } from "../../dist";
 
@@ -261,7 +261,7 @@ function handleReturnedValidators<
 	returnedValidators: Validator<G, KParent, Args, FValidationReturn, any>[],
 	recursionCount: number
 ) {
-	const processedRetValidators = processValidators(
+	const processedRetValidators = setupValiators(
 		returnedValidators,
 		parentProcessedValidator.isReactive,
 		parentProcessedValidator.validatorId
@@ -373,6 +373,7 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	lazy: boolean
 ): Promise<boolean> {
 	const validatorPromises: Promise<boolean | undefined>[] = [];
+
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
 		if (reactive && validationConfig.validation.$reactive !== undefined) {
