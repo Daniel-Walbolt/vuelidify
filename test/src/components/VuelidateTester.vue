@@ -56,6 +56,24 @@ import NeighborComponent from "./NeighborComponent.vue";
 		};
 	}
 
+	const arrayValidationTest = ref([{ name: "123" }]);
+	for (let i = 0; i < 16; i++) {
+		arrayValidationTest.value.push({ name: "1234" });
+	}
+	const arrayRules: ValidationArgs<typeof arrayValidationTest.value> = {
+		$each: helpers.forEach({
+			name: {
+				syncTest
+			}
+		})
+	}
+	const arrayv$ = useVuelidate(arrayRules, arrayValidationTest);
+	setInterval(async () => {
+		console.time("array validation");
+		await arrayv$.value.$validate();
+		console.timeEnd("array validation");
+	}, 1000);
+
 	const complexObjectValidation = ref<Person>(randomPerson());
 	const complexRules: ValidationArgs<Person> = {
 		children: {
@@ -70,12 +88,14 @@ import NeighborComponent from "./NeighborComponent.vue";
 		$autoDirty: true
 	});
 
-	setInterval(async () => {
-		for (const child of complexObjectValidation.value.children) {
-			child.age += 500;
-		}
-		console.log(await v$2.value.$validate());
-	}, 1000);
+	// setInterval(async () => {
+	// 	for (const child of complexObjectValidation.value.children) {
+	// 		child.age += 500;
+	// 	}
+	// 	console.time("Validation");
+	// 	await v$2.value.$validate();
+	// 	console.timeEnd("Validation");
+	// }, 1000);
 
 </script>
 

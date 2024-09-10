@@ -1,4 +1,29 @@
 <script setup lang="ts">
+	const testArray = [];
+	for (let i = 0; i < 1000; i++) {
+		testArray.push({
+			name: "test",
+			age: 15,
+			child: {
+				name: "test",
+				age: 12,
+				isChild: true
+			}
+		});
+	}
+	let copyTest = [];
+	for (let i = 0; i < 15; i++) {
+		copyTest.push(...testArray);
+	}
+	copyTest = [];
+	console.time("Concat test");
+	copyTest = copyTest.concat(testArray);
+	console.timeEnd("Concat test");
+	copyTest = [];
+	console.time("Spread test");
+	copyTest.push(...testArray);
+	console.timeEnd("Spread test");
+
 </script>
 
 <template>

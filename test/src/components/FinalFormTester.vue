@@ -47,10 +47,10 @@ import { randomPerson } from "../dataGen";
 		{ name: "12345" }
 	]);
 	const randomRef = ref(4);
-	setInterval(() => {
-		randomRef.value += 100;
-		console.log(randomRef.value)
-	}, 100);
+	// setInterval(() => {
+	// 	randomRef.value += 100;
+	// 	console.log(randomRef.value)
+	// }, 100);
 	const v$3 = useValidation({
 		objectToValidate: objectArrayTest,
 		validation: {
