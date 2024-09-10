@@ -62,7 +62,6 @@ export function useValidation<
 		const typedObject = object as Ref<IndexableObject>;
 		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn, any, number>;
 		const validationSetup = setupNestedPropertiesForValidation<IndexableObject, T, Args, FValidationReturn>(typedObject.value, typedValidation);
-		console.log(validationSetup.validationConfigs);
 		propertyState = reactive(validationSetup.state) as ValidationState<T, FValidationReturn>;
 		validationConfigs = validationSetup.validationConfigs;
 	}
