@@ -35,6 +35,7 @@ export function setupValiators<
 			validatorId: getId(index),
 			validator: validator,
 			optimized: false,
+			isReactive: markReactive,
 			previouslyReturnedValidators: false,
 			previouslySpawnedValidators: {},
 			spawnedValidators: {}
@@ -68,7 +69,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		isErrored: computed(() => validationState.validationResults.some(x => x.isValid == false)),
 		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
 		errorMessages: computed(() => flatMap(reduceUndefined(validationState.validationResults, val => val.isValid ? undefined : val.errorMessage))),
-		validationResults: computed(() => (validationConfig.reactiveValidationResults.value ?? []).concat(validationConfig.lazyValidationResults.value ?? [])),
+		validationResults: computed(() => validationConfig.validationResults.value),
 		arrayState: computed(() => {
 			// Array state should be undefined until the object is actually an array.
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
@@ -165,16 +166,15 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		id: uniqueId(),
 		validationIterationId: 0,
 		reactiveIsValid: ref(initIsReactiveValid),
-		reactiveValidationResults: ref([]),
 		validatingReactive: ref(false),
+		reactiveProcessedValidators: reactiveValidators,
 		lazyIsValid: ref(initIsLazyValid),
-		lazyValidationResults: ref([]),
 		validatingLazy: ref(false),
+		lazyProcessedValidators: lazyValidators,
 		property: object,
 		validation: validation,
 		validationState: validationState,
-		reactiveProcessedValidators: reactiveValidators,
-		lazyProcessedValidators: lazyValidators,
+		validationResults: ref([]),
 		arrayConfigMap: {},
 		elementId: 0,
 		elementValidation: (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each,

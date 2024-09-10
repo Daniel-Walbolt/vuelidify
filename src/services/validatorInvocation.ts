@@ -49,12 +49,12 @@ export async function invokeAndOptimizeValidators<
 
 		// Check if this validation result already exists.
 		// Replace it if it does, otherwise add it.
-		const result = propertyConfig.reactiveValidationResults.value.find(x => x.identifier == ret.identifier);
+		const result = propertyConfig.validationResults.value.find(x => x.identifier === ret.identifier);
 		if (result !== undefined) {
 			Object.assign(result, ret); 
 		}
 		else {
-			propertyConfig.reactiveValidationResults.value.push(ret);
+			propertyConfig.validationResults.value.push(ret);
 		}
 	}
 	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators} = recursiveInvokeAndOptimizeValidators(
@@ -74,9 +74,9 @@ export async function invokeAndOptimizeValidators<
 		for (const processedValidator of validatorsWhichPreviouslyReturnedValidators) {
 			for (const validatorId of Object.keys(processedValidator.previouslySpawnedValidators)) {
 				if (processedValidator.spawnedValidators[validatorId] == undefined) {
-					const index = propertyConfig.reactiveValidationResults.value.findIndex(x => x.identifier === validatorId);
+					const index = propertyConfig.validationResults.value.findIndex(x => x.identifier === validatorId);
 					if (index !== -1) {
-						propertyConfig.reactiveValidationResults.value.splice(index);
+						propertyConfig.validationResults.value.splice(index);
 					}
 				}
 			}
@@ -373,7 +373,7 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	lazy: boolean
 ): Promise<boolean> {
 	const validatorPromises: Promise<boolean | undefined>[] = [];
-
+	
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
 		if (reactive && validationConfig.validation.$reactive !== undefined) {

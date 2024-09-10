@@ -17,6 +17,8 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, any>>>
 	/** Used for determining whether or not to optimize this validator. */
 	optimized: boolean;
+	/** Does this validator belong to reactive or lazy validation. Used when assigning IDs to spawned validators. */
+	isReactive: boolean;
 	previouslySpawnedValidators: {
 		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
 	};
@@ -49,25 +51,23 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * Is undefined if it has not been validated yet. Is always true if there are no reactive validators.
 	 */
 	reactiveIsValid: Ref<boolean | undefined>;
-	reactiveValidationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	validatingReactive: Ref<boolean>;
+	/**
+	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
+	 */
+	reactiveProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
 
 	/** 
 	 * Determines if all lazy validators on this property have passed or failed.
 	 * Is undefined if it has not been validated yet. Is always true if there are no lazy validators.
 	 */
 	lazyIsValid: Ref<boolean | undefined>;
-	lazyValidationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	validatingLazy: Ref<boolean>;
-
-	/**
-	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
-	 */
-	reactiveProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
 	/**
 	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
 	 */
 	lazyProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
+
 
 	/** Getter for the current value of the property this validation config is for. */
 	property: Readonly<Ref<T>>;
@@ -76,6 +76,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn, any, number>>;
 	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
 	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>>;
+	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	
 	/** Contains the validation configs for every element in the array. */
 	arrayConfigMap: { [key: number]: ElementValidationConfig<unknown, KParent, Args, FValidationReturn> },
