@@ -81,8 +81,6 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	
 	/** Contains the validation configs for every element in the array. */
 	arrayConfigMap: { [key: number]: ElementValidationConfig<unknown, KParent, Args, FValidationReturn> },
-	/** Stores whether or not this property is an array AND has validation defined to be ran on each of its elements */
-	hasElementValidation: Readonly<boolean>;
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
