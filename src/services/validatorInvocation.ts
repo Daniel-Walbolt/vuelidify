@@ -6,6 +6,7 @@ import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from
 import { SyncValidator } from "../../dist";
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
+	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
 	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
 	ret: BaseValidationReturn<any>
 ) => void;
@@ -23,17 +24,19 @@ export async function invokeAndOptimizeValidators<
 	Args,
 	FValidationReturn
 >(
-	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
+	propertyConfigs: PropertyValidationConfig<G, KParent, Args, FValidationReturn>[],
 	parent: KParent | null | undefined,
 	args: Args,
-	validators: ProcessedValidator<G, KParent, Args, FValidationReturn>[],
 	/** Must match latest iteration ID on property config before updating any state. */
-	iterationId: number
+	iterationId: number,
+	validateReactive: boolean,
+	validateLazy: boolean,
 ) {
 	let isAllValid = true;
 	
 	// Create a callback to process the result of each validator.
 	const resultProcessor: ResultProcessor<G, KParent, Args, FValidationReturn> = (
+		propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
 		processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
 		ret: BaseValidationReturn<any>
 	) => {
@@ -58,25 +61,26 @@ export async function invokeAndOptimizeValidators<
 		}
 	}
 	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators} = recursiveInvokeAndOptimizeValidators(
-		propertyConfig,
+		propertyConfigs,
 		parent,
 		args,
-		validators,
 		iterationId,
 		resultProcessor,
+		validateReactive,
+		validateLazy,
 		true,
 		1
 	);
 	await Promise.all(asyncPromises);
 
-	if (iterationId === propertyConfig.validationIterationId) {
+	if (iterationId === propertyConfigs.validationIterationId) {
 		// Remove the error messages of validators that were ran in the previous run but not in this run.
 		for (const processedValidator of validatorsWhichPreviouslyReturnedValidators) {
 			for (const validatorId of Object.keys(processedValidator.previouslySpawnedValidators)) {
 				if (processedValidator.spawnedValidators[validatorId] == undefined) {
-					const index = propertyConfig.validationResults.value.findIndex(x => x.identifier === validatorId);
+					const index = propertyConfigs.validationResults.value.findIndex(x => x.identifier === validatorId);
 					if (index !== -1) {
-						propertyConfig.validationResults.value.splice(index);
+						propertyConfigs.validationResults.value.splice(index);
 					}
 				}
 			}
@@ -94,21 +98,30 @@ function recursiveInvokeAndOptimizeValidators<
 	Args,
 	FValidationReturn
 >(
-	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
+	propertyConfigs: PropertyValidationConfig<G, KParent, Args, FValidationReturn>[],
 	parent: KParent | null | undefined,
 	args: Args,
-	validators: ProcessedValidator<G, KParent, Args, FValidationReturn>[],
 	iterationId: number,
 	processValidatorResult: ResultProcessor<G, KParent, Args, FValidationReturn>,
+	validateReactive: boolean,
+	validateLazy: boolean,
 	shouldOptimize: boolean,
 	recursionCount: number
 ) {
-	const property = propertyConfig.property.value;
 	// Collect all the promised results and synchronous results in lists to return later.
 	const allPromises: Promise<BaseValidationReturn>[] = [];
 	const allResults: BaseValidationReturn<any>[] = [];
 	// Add validators to this list that returned validators from a previous run, but did not this time.
 	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
+	for (const validationConfig of propertyConfigs) {
+		let validators;
+		if (validateReactive) { validators.push(...validationConfig.reactiveProcessedValidators); }
+		if (validateLazy) { validators.push(...validationConfig.lazyProcessedValidators); }
+		const property = validationConfig.property.value;
+		for (const processedValidator of validators) {
+			
+		}
+	}
 	for (const processedValidator of validators) {
 		let checkForValidatorReturn = false;
 		if (processedValidator.previouslyReturnedValidators) {
@@ -303,13 +316,13 @@ export async function invokeReactivePropertyValidators<
 	propertyConfig.isValidatingReactive.value = true;
 
 	// Get the specified reactive validators and run them.
-	const reactiveValidators = propertyConfig.reactiveProcessedValidators;
 	const isAllValid = await invokeAndOptimizeValidators(
 		propertyConfig,
 		parent,
 		args,
-		reactiveValidators,
-		iterationId
+		iterationId,
+		true,
+		false
 	);
 
 	// Only update the validation config if this is the latest validation iteration
