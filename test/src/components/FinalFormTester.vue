@@ -59,8 +59,8 @@ import { randomPerson } from "../dataGen";
 					$reactive: [minimumLength(5),
 						input => {
 							return {
-								isValid: randomRef.value > 1000,
-								errorMessage: "Ref not greater than 1000"
+								isValid: randomRef.value > 100,
+								errorMessage: "Failed"
 							}
 						}
 						// async input => {
