@@ -300,7 +300,7 @@ export async function invokeReactivePropertyValidators<
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number
 ) {
-	propertyConfig.validatingReactive.value = true;
+	propertyConfig.isValidatingReactive.value = true;
 
 	// Get the specified reactive validators and run them.
 	const reactiveValidators = propertyConfig.reactiveProcessedValidators;
@@ -314,11 +314,11 @@ export async function invokeReactivePropertyValidators<
 
 	// Only update the validation config if this is the latest validation iteration
 	if (iterationId === propertyConfig.validationIterationId) {
-		propertyConfig.reactiveIsValid.value = isAllValid;
-		propertyConfig.validatingReactive.value = false;
+		propertyConfig.isReactiveValid.value = isAllValid;
+		propertyConfig.isValidatingReactive.value = false;
 	}
 
-	return propertyConfig.reactiveIsValid.value;
+	return propertyConfig.isReactiveValid.value;
 }
 
 /** Invokes all lazy validators for a property and returns whether or not they all passed. */
@@ -334,7 +334,7 @@ export async function invokeLazyPropertyValidators<
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
 ) {
-	propertyConfig.validatingLazy.value = true;
+	propertyConfig.isValidatingLazy.value = true;
 
 	// Get the specified reactive validators and run them.
 	const lazyValidators = propertyConfig.lazyProcessedValidators;
@@ -348,11 +348,11 @@ export async function invokeLazyPropertyValidators<
 
 	// Only update the validation config if this is the latest validation iteration
 	if (iterationId === propertyConfig.validationIterationId) {
-		propertyConfig.lazyIsValid.value = isAllValid;
-		propertyConfig.validatingLazy.value = false;
+		propertyConfig.isLazyValid.value = isAllValid;
+		propertyConfig.isValidatingLazy.value = false;
 	}
 
-	return propertyConfig.lazyIsValid.value;
+	return propertyConfig.isLazyValid.value;
 }
 
 /** 
@@ -372,34 +372,16 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	reactive: boolean,
 	lazy: boolean
 ): Promise<boolean> {
-	const validatorPromises: Promise<boolean | undefined>[] = [];
+	const validatorPromises: boolean[] = [];
 	
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
 		if (reactive && validationConfig.validation.$reactive !== undefined) {
-			propertyConfig.validatingReactive.value = true;
-
-			// Get the specified reactive validators and run them.
-			const reactiveValidators = propertyConfig.reactiveProcessedValidators;
-			const isAllValid = await invokeAndOptimizeValidators(
-				propertyConfig,
-				parent,
-				args,
-				reactiveValidators,
-				iterationId
-			);
-		
-			// Only update the validation config if this is the latest validation iteration
-			if (iterationId === propertyConfig.validationIterationId) {
-				propertyConfig.reactiveIsValid.value = isAllValid;
-				propertyConfig.validatingReactive.value = false;
-			}
-		
-			return propertyConfig.reactiveIsValid.value;
+			validatorPromises.push(await invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		// Check if we should validate lazy validators
 		if (lazy && validationConfig.validation.$lazy !== undefined) {
-			validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
+			validatorPromises.push(await invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		
 		// Check if there are array elements to validate. Each element can have its own lazy or reactive properties.
@@ -408,7 +390,7 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 			for (const key in validationConfig.arrayConfigMap) {
 				elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
 			}
-			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
+			validatorPromises.push(await invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
 		}
 	}
 	// Return true if all promises returned true, otherwise false.

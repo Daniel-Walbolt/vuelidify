@@ -26,7 +26,7 @@ export function useValidation<
 	const hasValidated = ref(false);
 	const isValidating = computed(() => validationConfigs.some(x => x.validationState.isValidating));
 	const isValid = computed(() => {
-		const allValidatorsValid = validationConfigs.every(x => x.reactiveIsValid.value && x.lazyIsValid.value);
+		const allValidatorsValid = validationConfigs.every(x => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
 	});
 	/** List of objects that relates validation to the object's properties. */

@@ -59,13 +59,13 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 	const validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>> = reactive({
 		isValid: computed(() => {
 			// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
-			const isLazyValid = validationConfig.lazyIsValid.value ?? false;
+			const isLazyValid = validationConfig.isLazyValid.value ?? false;
 			// If the reactive validators are undefined then they haven't been called yet. The property can not be guaranteed to be valid.
-			const isReactiveValid = validationConfig.reactiveIsValid.value ?? false;
+			const isReactiveValid = validationConfig.isReactiveValid.value ?? false;
 			return isLazyValid && isReactiveValid;
 		}),
 		/** State indicating that validators are currently being called. */
-		isValidating: computed(() => validationConfig.validatingReactive.value || validationConfig.validatingLazy.value),
+		isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
 		isErrored: computed(() => validationState.validationResults.some(x => x.isValid == false)),
 		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
 		errorMessages: computed(() => flatMap(reduceUndefined(validationState.validationResults, val => val.isValid ? undefined : val.errorMessage))),
@@ -165,11 +165,11 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 	const validationConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn> = {
 		id: uniqueId(),
 		validationIterationId: 0,
-		reactiveIsValid: ref(initIsReactiveValid),
-		validatingReactive: ref(false),
+		isReactiveValid: ref(initIsReactiveValid),
+		isValidatingReactive: ref(false),
 		reactiveProcessedValidators: reactiveValidators,
-		lazyIsValid: ref(initIsLazyValid),
-		validatingLazy: ref(false),
+		isLazyValid: ref(initIsLazyValid),
+		isValidatingLazy: ref(false),
 		lazyProcessedValidators: lazyValidators,
 		property: object,
 		validation: validation,

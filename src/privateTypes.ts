@@ -50,8 +50,8 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * Shows if all reactive validators on this property have passed or failed.
 	 * Is undefined if it has not been validated yet. Is always true if there are no reactive validators.
 	 */
-	reactiveIsValid: Ref<boolean | undefined>;
-	validatingReactive: Ref<boolean>;
+	isReactiveValid: Ref<boolean | undefined>;
+	isValidatingReactive: Ref<boolean>;
 	/**
 	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
 	 */
@@ -61,8 +61,8 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * Determines if all lazy validators on this property have passed or failed.
 	 * Is undefined if it has not been validated yet. Is always true if there are no lazy validators.
 	 */
-	lazyIsValid: Ref<boolean | undefined>;
-	validatingLazy: Ref<boolean>;
+	isLazyValid: Ref<boolean | undefined>;
+	isValidatingLazy: Ref<boolean>;
 	/**
 	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
 	 */
