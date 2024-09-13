@@ -33,9 +33,14 @@ import { randomPerson } from "../dataGen";
 				$reactive: [input => {
 					const isNotAPerson = input.value == false;
 					const isYoungerThanZero = input.parent.age < 0;
-					return {
+					if (isNotAPerson)
+						return {
 						isValid: isYoungerThanZero  && isNotAPerson || isYoungerThanZero == false && isNotAPerson == false,
 						errorMessage: isNotAPerson ? "" : "People are at least 0 years old!"
+					}; else {
+						return [
+							
+						]
 					}
 				}]
 			}
