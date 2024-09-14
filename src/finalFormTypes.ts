@@ -144,19 +144,21 @@ export type BaseValidationReturn<F = any> = {
 	 */
 	name?: string;
 	/** 
-	 * ID assigned to the validation result which is unique to each validator.
+	 * A unique identifier for this validation result which is unique to each validator.
 	 *
 	 * Used internally, but can be used as your element's ID or key attribute.
 	 */
 	id?: string;
-	/** Used to determine whether a property passed this validator or not. */
+	/** Used to determine if validation was successful or not. */
 	isValid: boolean;
 	/** The message or messages to display if isValid is false. */
 	errorMessage?: string | string[];
 	/**
-	 * User specified object that can be returned from each validator.
+	 * Return a custom object from this validator.
 	 * 
-	 * Can be used to add to FinalForm's base features (e.g. severity levels)
+	 * Should be used for more sophisticated return types than a boolean.
+	 * 
+	 * i.e. password strength, severity levels, functions, etc.
 	 */
 	custom?: F
 }
