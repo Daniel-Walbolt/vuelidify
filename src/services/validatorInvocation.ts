@@ -53,10 +53,16 @@ export async function invokeAndOptimizeValidators<
 		// Replace it if it does, otherwise add it.
 		const result = propertyConfig.validationResults.value.find(x => x.id === ret.id);
 		if (result !== undefined) {
-			Object.assign(result, ret); 
+			Object.assign(result, ret);
+			if (ret.name !== undefined && propertyConfig.namedValidationResults[ret.name] !== undefined) {
+				Object.assign(propertyConfig.namedValidationResults[ret.name], ret);
+			}
 		}
 		else {
 			propertyConfig.validationResults.value.push(ret);
+			if (ret.name !== undefined) {
+				propertyConfig.namedValidationResults[ret.name] = ret;
+			}
 		}
 	}
 	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators} = recursiveInvokeAndOptimizeValidators(
@@ -221,7 +227,6 @@ function recursiveInvokeAndOptimizeValidators<
 					const typedValidator = processedValidator.validator as SyncValidator<G, KParent, Args, FValidationReturn, any>;
 					// Optimize sync validators into computed functions
 					processedValidator.computedValidator = computed<ReturnType<typeof typedValidator>>(() => {
-						console.log("computed ran instead");
 						const params: ValidatorParams<G, KParent, unknown, any[]> = {
 							value: propertyConfig.property.value, // Setup a reactive dependency on the property value
 							parent: parent,

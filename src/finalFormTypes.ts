@@ -34,7 +34,10 @@ export type PrimitiveValidationState<FValidationReturn> = {
 	isErrored: boolean;
 	/** Easy collection of the error messages from the raw validation returns */
 	errorMessages: string | string[];
-	validationResults: BaseValidationReturn<FValidationReturn>[];
+	results: {
+		[key: string]: BaseValidationReturn<FValidationReturn>;
+	},
+	resultsArray: BaseValidationReturn<FValidationReturn>[];
 }
 
 export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {

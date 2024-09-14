@@ -66,10 +66,11 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		}),
 		/** State indicating that validators are currently being called. */
 		isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
-		isErrored: computed(() => validationState.validationResults.some(x => x.isValid == false)),
+		isErrored: computed(() => validationState.resultsArray.some(x => x.isValid == false)),
 		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
-		errorMessages: computed(() => flatMap(reduceUndefined(validationState.validationResults, val => val.isValid ? undefined : val.errorMessage))),
-		validationResults: computed(() => validationConfig.validationResults.value),
+		errorMessages: computed(() => flatMap(reduceUndefined(validationState.resultsArray, val => val.isValid ? undefined : val.errorMessage))),
+		results: computed(() => validationConfig.namedValidationResults.value),
+		resultsArray: computed(() => validationConfig.validationResults.value),
 		arrayState: computed(() => {
 			// Array state should be undefined until the object is actually an array.
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
@@ -175,6 +176,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		validation: validation,
 		validationState: validationState,
 		validationResults: ref([]),
+		namedValidationResults: ref({}),
 		arrayConfigMap: {},
 		elementId: 0,
 		elementValidation: (validation as ArrayValidatorTypes<unknown, any, KParent, Args, FValidationReturn, any, number>).$each,

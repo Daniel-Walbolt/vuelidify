@@ -77,6 +77,9 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
 	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>>;
 	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
+	namedValidationResults: Ref<{
+		[key: string]: BaseValidationReturn<FValidationReturn>;
+	}>
 	
 	/** Contains the validation configs for every element in the array. */
 	arrayConfigMap: { [key: number]: ElementValidationConfig<unknown, KParent, Args, FValidationReturn> },
