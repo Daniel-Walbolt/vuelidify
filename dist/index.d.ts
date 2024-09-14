@@ -21,7 +21,10 @@ type PrimitiveValidationState<FValidationReturn> = {
     isErrored: boolean;
     /** Easy collection of the error messages from the raw validation returns */
     errorMessages: string | string[];
-    validationResults: BaseValidationReturn<FValidationReturn>[];
+    results: {
+        [key: string]: BaseValidationReturn<FValidationReturn>;
+    };
+    resultsArray: BaseValidationReturn<FValidationReturn>[];
 };
 type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
     /**
@@ -71,8 +74,20 @@ type BaseValidator<T, K, V, F, A> = (input: ValidatorParams<T, K, V, A>) => F;
 type SyncValidator<T, K, V, F, A> = BaseValidator<T, K, V, BaseValidationReturn<F> | Array<Validator<T, K, V, F, A>>, A>;
 type AsyncValidator<T, K, V, F, A> = BaseValidator<T, K, V, Promise<BaseValidationReturn<F> | Array<Validator<T, K, V, F, A>> | undefined>, A>;
 type BaseValidationReturn<F = any> = {
-    /** An identifer for this validation result. Guaranteed to be unique within each instance of the composable. */
-    identifier?: string;
+    /**
+     * Assign this validator's result a name.
+     * The result will then be added to a map using the name as the key
+     * so you can easily access the result.
+     *
+     * Note, the map entry will not exist until this validator has been run at least once, so account for undefined.
+     */
+    name?: string;
+    /**
+     * ID assigned to the validation result which is unique to each validator.
+     *
+     * Used internally, but can be used as your element's ID or key attribute.
+     */
+    id?: string;
     /** Used to determine whether a property passed this validator or not. */
     isValid: boolean;
     /** The message or messages to display if isValid is false. */
