@@ -51,17 +51,17 @@ export async function invokeAndOptimizeValidators<
 
 		// Check if this validation result already exists.
 		// Replace it if it does, otherwise add it.
-		const result = propertyConfig.validationResults.value.find(x => x.id === ret.id);
-		if (result !== undefined) {
-			Object.assign(result, ret);
+		const existingResult = propertyConfig.validationResults.value.find(x => x.id === ret.id);
+		if (existingResult !== undefined) {
+			Object.assign(existingResult, ret);
 			if (ret.name !== undefined && propertyConfig.namedValidationResults[ret.name] !== undefined) {
-				Object.assign(propertyConfig.namedValidationResults[ret.name], ret);
+				Object.assign(propertyConfig.namedValidationResults.value[ret.name], ret);
 			}
 		}
 		else {
 			propertyConfig.validationResults.value.push(ret);
 			if (ret.name !== undefined) {
-				propertyConfig.namedValidationResults[ret.name] = ret;
+				propertyConfig.namedValidationResults.value[ret.name] = ret;
 			}
 		}
 	}
