@@ -31,17 +31,18 @@ import { randomPerson } from "../dataGen";
 			},
 			isPerson: {
 				$reactive: [input => {
+					console.log("hello");
 					const isNotAPerson = input.value == false;
 					const isYoungerThanZero = input.parent.age < 0;
-					if (isNotAPerson)
 						return {
-						isValid: isYoungerThanZero  && isNotAPerson || isYoungerThanZero == false && isNotAPerson == false,
-						errorMessage: isNotAPerson ? "" : "People are at least 0 years old!"
-					}; else {
-						return [
-							
-						]
-					}
+							name: "test",
+							isValid: (isYoungerThanZero && isNotAPerson) || (!isNotAPerson && !isYoungerThanZero),
+							errorMessage: "People are at least 0 years old!",
+							custom: {
+								severity: 10,
+								passwordStrength: 3
+							}
+						};
 				}]
 			}
 		},
@@ -249,6 +250,7 @@ import { randomPerson } from "../dataGen";
 					</label>
 					<div class="input-errors">
 						<p v-for="error in v$2.propertyState.isPerson.errorMessages">{{error}}</p>
+						{{ v$2.propertyState.isPerson.results }}
 					</div>
 				</div>
 			</section>
