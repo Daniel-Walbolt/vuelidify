@@ -1,0 +1,57 @@
+name: CI-CD
+# MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
+
+on:
+    push:
+        branches:
+            - 'main'
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  ref: 'main'
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '20.x'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Compile build
+              run: npm run build
+
+            - name: Commit changes
+              uses: EndBug/add-and-commit@v9
+              with: # More info about the arguments on the action page
+                  author_name: Github Build Action
+                  message: 'Commit CI build'
+                  add: 'dist'
+                  tag_push: '--force'
+                  fetch: false
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This gets generated automatically
+    publish:
+        name: Publish to NPM
+        runs-on: ubuntu-latest
+        needs: build # This makes it wait for the build job
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                  ref: 'main'
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: '20.x'
+                  registry-url: 'https://registry.npmjs.org'
+            - run: npm ci
+            - run: npm publish
+        env:
+            NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
