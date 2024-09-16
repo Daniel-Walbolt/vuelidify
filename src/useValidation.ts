@@ -2,7 +2,7 @@ import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConf
 import { Ref, ref, computed, watch, reactive } from "vue";
 import { IndexableObject, PrimitiveOrArrayValidation, PropertyValidationConfig } from "./privateTypes";
 import { invokeValidatorConfigs } from "./services/validatorInvocation";
-import { configureValidationOnProperty, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
+import { configureValidationOnProperty, isPrimitiveOrArrayValidation, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
 
 /** 
  * Vue3 composable that handles lazy and reactive synchronous and asynchronous validation.
@@ -44,9 +44,7 @@ export function useValidation<
 
 	// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
 	// We can distinguish if this is a validatable property (array or primitive)
-	const isPrimitiveOrArray = (validation as PrimitiveOrArrayValidation)?.$reactive != undefined ||
-		(validation as PrimitiveOrArrayValidation)?.$lazy != undefined ||
-		(validation as PrimitiveOrArrayValidation)?.$each != undefined;
+	const isPrimitiveOrArray = isPrimitiveOrArrayValidation(validation);
 
 	// If the object is a primitive type or undefined (at time of initialization) we will treat it as singular property validation
 	if (isPrimitiveOrArray) {
@@ -76,14 +74,12 @@ export function useValidation<
 		validationConfig.objectToValidate,
 		() => {
 			if (delayReactiveValidation) {
-				if (hasValidated.value == true) {
+				if (hasValidated.value === true) {
 					invokeValidatorConfigs(validationConfigs, object, args, true, false)
 				}
 			}
 			else {
-				console.time("Reactive validation");
 				invokeValidatorConfigs(validationConfigs, object, args, true, false)
-				console.timeEnd("Reactive validation");
 			}
 		},
 		{ deep: true }

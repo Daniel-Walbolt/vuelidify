@@ -66,7 +66,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		}),
 		/** State indicating that validators are currently being called. */
 		isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
-		isErrored: computed(() => validationState.resultsArray.some(x => x.isValid == false)),
+		isErrored: computed(() => validationState.resultsArray.some(x => x.isValid === false)),
 		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
 		errorMessages: computed(() => flatMap(reduceUndefined(validationState.resultsArray, val => val.isValid ? undefined : val.errorMessage))),
 		results: computed(() => validationConfig.namedValidationResults.value),
@@ -76,7 +76,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
 				return [];
 			}
-			// Declare some variables for readability
+			// Declare some variables ffor readability
 			const arr = object.value;
 			const elValidation = validationConfig.elementValidation;
 			const validationMap = validationConfig.arrayConfigMap;
@@ -238,7 +238,7 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 	}
 }
 
-function isPrimitiveOrArrayValidation(validation: FinalFormValidation<any, any, any, any>): validation is PrimitiveOrArrayValidation {
+export function isPrimitiveOrArrayValidation(validation: FinalFormValidation<any, any, any, any>): validation is PrimitiveOrArrayValidation {
 	return (validation as PrimitiveOrArrayValidation)?.$reactive !== undefined ||
 		(validation as PrimitiveOrArrayValidation)?.$lazy !== undefined ||
 		(validation as PrimitiveOrArrayValidation)?.$each !== undefined

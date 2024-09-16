@@ -136,7 +136,7 @@ export type AsyncValidator<T, K, V, F, A> = BaseValidator<T,K,V,Promise<BaseVali
 
 export type BaseValidationReturn<F = any> = {
 	/** 
-	 * Assign this validator's result a name. 
+	 * Assign this validator's result a name.
 	 * The result will then be added to a map using the name as the key
 	 * so you can easily access the result.
 	 * 
@@ -164,11 +164,10 @@ export type BaseValidationReturn<F = any> = {
 }
 
 export type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
-	/** The raw list of results from validating every object in the array */
+	/** The raw list of results from validating every object in the array. */
 	arrayResults?: ValidationState<U, FValidationReturn>[];
 }
 
-/** The general validation object type for Final Form. */
 export type FinalFormValidation<
 	T,
 	Args = undefined,
@@ -193,14 +192,18 @@ export type ValidationConfig<
 > = {
 	objectToValidate: Readonly<Ref<T | undefined | null>>,
 	validation: FinalFormValidation<T, Args, FValidationReturn, T>,
-    /**
-     * False - reactive validation will always be active.
-     *
-     * True - reactive validation will start after the first invocation of {@link validate()}.
-     *
-     * Defaults to true.
-     */
+	/**
+	 * False - reactive validation will always be active.
+	 *
+	 * True - reactive validation will start after the first invocation of {@link validate()}.
+	 *
+	 * Defaults to true.
+	 */
 	delayReactiveValidation?: boolean;
+	/**
+	 * Provide an object, ref, or function that will be passed to each validator.
+	 * Particularly useful when defining validation in separate files and you want to use variables outside of the object being validated.
+	 */
 	args?: Args;
 }
 
@@ -208,11 +211,23 @@ export type ValidationConfig<
 export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		/** The current value of the property */
 		value: T,
-		/** The object that was passed into the FinalForm validation composable to be validated. */
+		/** The entire object that was passed into the useValidation() composable to be validated. */
 		parent: KParent
 	} &
-	(Args extends undefined ? {} : { args: Args }) &
-	(ArrParent extends undefined ? {} : { arrayParents: ArrParent })
+	(Args extends undefined ? {} : { 
+		/** The args passed in to the useValidation() composable configuration. */
+		args: Args
+	}) &
+	(ArrParent extends undefined ? {} : {
+		/**
+		 * An ordered list of objects that were traversed through while navigating to this validator.
+		 * 
+		 * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
+		 * 
+		 * Useful for inter-property depdendence when validating arrays of complex objects.
+		 */
+		arrayParents: ArrParent
+	})
 
 
 /** Type that increments a provided integer (0-19). */

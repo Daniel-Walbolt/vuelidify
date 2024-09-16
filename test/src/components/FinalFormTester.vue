@@ -203,6 +203,17 @@ import { randomPerson } from "../dataGen";
 	// 	await v$5.validate();
 	// 	console.timeEnd("Validation");
 	// }, 2000);
+
+	const primitiveArrayTest = ref(["123", "456", "789"]);
+	const v$6 = useValidation({
+		objectToValidate: primitiveArrayTest,
+		validation: {
+			$each: {
+				$reactive: [minimumLength(10)]
+			}
+		},
+		delayReactiveValidation: false
+	})
 </script>
 
 <template>
@@ -297,6 +308,20 @@ import { randomPerson } from "../dataGen";
 		<form class="form">
 			<h2>Complex Object Validation</h2>
 			<NeighborComponent :person="complexObjectValidation" :validation="v$5.propertyState"/>
+		</form>
+		<form class="form">
+			<h2>Primitive Array Validation</h2>
+			<section>
+				<div v-for="opt,i in primitiveArrayTest" class="field">
+					<label>
+						Name
+						<input v-model="primitiveArrayTest[i]"/>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$6.propertyState.arrayState">{{error}}</p>
+					</div>
+				</div>
+			</section>
 		</form>
 	</div>
 </template>

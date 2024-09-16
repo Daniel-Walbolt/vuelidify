@@ -7,7 +7,7 @@ import { AsyncValidator, SyncValidator, ValidatorParams } from "./finalFormTypes
  */
 export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
-		isValid: params.value != undefined && String(params.value).trim().length > 0,
+		isValid: params.value !== undefined && String(params.value).trim().length > 0,
 		errorMessage: "This field is required"
 	});
 }
@@ -23,7 +23,7 @@ export function validateIf<T,P,V,R,A>(
 	validators: (SyncValidator<T, P, V, R, A> | AsyncValidator<T, P, V, R, A>)[]
 ): AsyncValidator<T, P, V, R, A> {
 	return async (params: ValidatorParams<T, P, V, A>) => {
-		if (condition(params) == false) {
+		if ((await condition(params)) === false) {
 			return {
 				isValid: true
 			}
@@ -66,7 +66,7 @@ export function maximumLength<T extends string | undefined | null, P, V, R, A>(m
  */
 export function minValue<T extends number | undefined | null, P, V, R, A>(minValue: number): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
-		isValid: params.value != undefined && params.value >= minValue,
+		isValid: params.value !== undefined && params.value >= minValue,
 		errorMessage: `Must be atleast ${minValue}`
 	})
 }
