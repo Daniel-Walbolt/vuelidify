@@ -84,12 +84,13 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 			/** Stores the ID for the object that is currently being handled in the loop */
 			let tempId;
 			/** Stores the IDs of objects, indicating their order in the array */
-			const objectIds: number[] = [];
+			const objectIds: string[] = [];
 
 			for (let i = 0; i < arr.length; i++) {
+				const isObject = arr[i] !== undefined && typeof arr[i] === 'object';
 				// Give the object an ID if it doesn't already have one.
 				// This step is crucial in order to know what validation state this object is bound to.
-				if (arr[i].$ffId === undefined) {
+				if (isObject && arr[i].$ffId === undefined) {
 					// Use define property to make this property invisible to enumerators
 					// Concatenates the ID of the array validator with a unique number within the array.
 					Object.defineProperty(
@@ -102,10 +103,14 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 							enumerable: false
 						},
 					)
+					// Store the id on the object so we can use it to keep track of the validation config.
+					tempId = arr[i].$ffId;
+					objectIds.push(tempId);
 				}
-				// Store the id on the object so we can use it to keep track of the validation config.
-				tempId = arr[i].$ffId;
-				objectIds.push(tempId);
+				else if (arr[i] !== undefined) {
+					// The item in the array is a primitive.
+					console.log("Primitive element in array", arr[i]);
+				}
 
 				// Skip setting up validation if this object already has a validation configuration
 				if (validationMap[tempId]) {
