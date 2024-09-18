@@ -147,7 +147,7 @@
 	const testAsyncFunction = bufferAsync(async () => {
 		console.log("Async promise activated");
 		await new Promise(resolve => setTimeout(resolve, 500));
-	})
+	});
 
 	const complexObjectValidation = ref<Person>(randomPerson(true, true, 5, 15));
 	const v$5 = useValidation({
@@ -212,7 +212,7 @@
 		},
 		delayReactiveValidation: false
 	})
-	setInterval(() => swapAll(primitiveArrayTest.value), 1000)
+	// setInterval(() => swapAll(primitiveArrayTest.value), 1000)
 </script>
 
 <template>
