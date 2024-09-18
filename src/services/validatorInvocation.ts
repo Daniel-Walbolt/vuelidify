@@ -134,7 +134,7 @@ function recursiveInvokeAndOptimizeValidators<
 				value: property,
 				parent: parent,
 				args: args,
-				arrayParents: propertyConfig.arrayParents.map(x => x.value)
+				arrayParents: propertyConfig.arrayParents
 			}
 			validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
 		}
@@ -231,7 +231,7 @@ function recursiveInvokeAndOptimizeValidators<
 							value: propertyConfig.property.value, // Setup a reactive dependency on the property value
 							parent: parent,
 							args: args,
-							arrayParents: propertyConfig.arrayParents.map(x => x.value)
+							arrayParents: propertyConfig.arrayParents
 						}
 						return typedValidator(params as unknown as ValidatorParams<G, KParent, Args, any>);
 					})

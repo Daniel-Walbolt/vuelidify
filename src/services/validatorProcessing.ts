@@ -51,12 +51,12 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 	object: Ref<G>,
 	validation: ValidatorTypes<G, KParent, Args, FValidationReturn, any, number>,
 	/** Specify the getters for the array parents that came before this property. */
-	arrayParents: ComputedRef<any>[] = []
+	arrayParents: {}[] = []
 ) {
 	// Create a reactive object for the validation state just for convenience.
 	// Users don't have to type .value on any of the these properties in
 	// JavaScript or in the Vue templates while still having reactivity.
-	const validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>> = reactive({
+	const validationState: PrimitiveValidationState<FValidationReturn> & ArrayValidationState<any, FValidationReturn> = reactive({
 		isValid: computed(() => {
 			// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
 			const isLazyValid = validationConfig.isLazyValid.value ?? false;
@@ -76,54 +76,71 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
 				return [];
 			}
-			// Declare some variables ffor readability
+			console.time("Array state");
+			// Declare some variables for readability
 			const arr = object.value;
 			const elValidation = validationConfig.elementValidation;
 			const validationMap = validationConfig.arrayConfigMap;
 
+			// Generate the list of validation states
+			const elemValidationState: RecursiveValidationState<any, FValidationReturn>[] = [];
+			// Generate a new validation map to get rid of old data.
+			const prunedValidationMap: typeof validationMap = {};
+
 			/** Stores the ID for the object that is currently being handled in the loop */
 			let tempId;
-			/** Stores the IDs of objects, indicating their order in the array */
+			/** Stores the IDs of objects, indicating their order in the array. Validation state will then be created in the same order. */
 			const objectIds: string[] = [];
 
 			for (let i = 0; i < arr.length; i++) {
 				const isObject = arr[i] !== undefined && typeof arr[i] === 'object';
 				// Give the object an ID if it doesn't already have one.
 				// This step is crucial in order to know what validation state this object is bound to.
-				if (isObject && arr[i].$ffId === undefined) {
-					// Use define property to make this property invisible to enumerators
-					// Concatenates the ID of the array validator with a unique number within the array.
-					Object.defineProperty(
-						arr[i],
-						`$ffId`,
-						{
-							value: `${validationConfig.id}-${validationConfig.elementId++}`,
-							writable: false,
-							configurable: false,
-							enumerable: false
-						},
-					)
+				if (isObject) {
+					if (arr[i].$ffId === undefined) {
+						// Use define property to make this property invisible to enumerators
+						// Concatenates the ID of the array validator with a unique number within the array.
+						Object.defineProperty(
+							arr[i],
+							`$ffId`,
+							{
+								value: `${validationConfig.id}-${validationConfig.elementId++}`,
+								writable: false,
+								configurable: false,
+								enumerable: false
+							},
+						)
+					}
 					// Store the id on the object so we can use it to keep track of the validation config.
 					tempId = arr[i].$ffId;
-					objectIds.push(tempId);
 				}
 				else if (arr[i] !== undefined) {
 					// The item in the array is a primitive.
-					console.log("Primitive element in array", arr[i]);
+					// Object.defineProperty does not work on primitive types.
+					// This means that we are unable to link the object to the validation config that was made for it.
+					if (validationMap[i] === undefined) {
+						tempId = i; // Create a validation config for this index.
+					}
+					else {
+						console.log(validationMap[i].validationConfigs[0].property.value);
+					}
 				}
+				
+				objectIds.push(tempId);
 
 				// Skip setting up validation if this object already has a validation configuration
 				if (validationMap[tempId]) {
+					elemValidationState.push(validationMap[tempId].validationState);
+					prunedValidationMap[tempId] = validationMap[tempId];
 					continue;
 				}
 
-				const objectGetter = computed(() => arr[i]) as ComputedRef<any>;
 				if (isPrimitiveOrArrayValidation(elValidation)) {
 					const typedValidation = elValidation as PrimitiveValidatorTypes<Primitive | undefined, KParent, Args | undefined, FValidationReturn, any>;
 					const elValidationConfig = configureValidationOnProperty(
-						objectGetter as ComputedRef<Primitive>,
+						computed(() => arr[i]) as ComputedRef<Primitive>,
 						typedValidation,
-						validationConfig.arrayParents.concat(objectGetter)
+						validationConfig.arrayParents
 					);
 					validationMap[tempId] = {
 						validationConfigs: [elValidationConfig],
@@ -136,26 +153,18 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					const elValidationSetup = setupNestedPropertiesForValidation(
 						typedObject,
 						typedValidation,
-						validationConfig.arrayParents.concat(objectGetter)
+						validationConfig.arrayParents.concat(typedObject)
 					);
 					validationMap[tempId] = {
 						validationConfigs: elValidationSetup.validationConfigs,
 						validationState: elValidationSetup.state
 					};
 				}
-			}
-
-			// Generate the list of validation states
-			const elemValidationState: RecursiveValidationState<any, FValidationReturn>[] = [];
-			// Generate a new validation map to get rid of old data.
-			const prunedValidationMap: typeof validationMap = {};
-			// Loop over the array of object IDs and assemble the array of corresponding validation states.
-			// Each index in this array should be the validation state of the object at the same index in the array being validated.
-			for (const objectId of objectIds) {
-				elemValidationState.push(validationMap[objectId].validationState);
-				prunedValidationMap[objectId] = validationMap[objectId];
+				elemValidationState.push(validationMap[tempId].validationState);
+				prunedValidationMap[tempId] = validationMap[tempId];
 			}
 			validationConfig.arrayConfigMap = prunedValidationMap;
+			console.timeEnd("Array state");
 			return elemValidationState;
 		})
 	});
@@ -194,7 +203,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 export function setupNestedPropertiesForValidation<G extends IndexableObject, KParent, Args, FValidationReturn>(
 	object: G,
 	validation: RecursiveValidation<G, KParent, Args, FValidationReturn, any, number> | undefined,
-	arrayParents: ComputedRef<any>[] = []
+	arrayParents: {}[] = []
 ) {
 	const resultConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[] = [];
 	const resultState: ValidationState<IndexableObject, FValidationReturn> = {} as any;

@@ -92,7 +92,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * 
 	 * Add to list using computed getters, because this is wrapped as a reactive object.
 	 */
-	arrayParents: ComputedRef<any>[]
+	arrayParents: {}[]
 }
 
 /** Stores the state and the validation configs of an element within an array */
