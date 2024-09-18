@@ -115,15 +115,13 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 					tempId = arr[i].$ffId;
 				}
 				else if (arr[i] !== undefined) {
-					// The item in the array is a primitive.
-					// Object.defineProperty does not work on primitive types.
-					// This means that we are unable to link the object to the validation config that was made for it.
-					if (validationMap[i] === undefined) {
-						tempId = i; // Create a validation config for this index.
-					}
-					else {
-						console.log(validationMap[i].validationConfigs[0].property.value);
-					}
+					// The item in the array is a primitive, Object.defineProperty() will not work.
+					// We are unable to uniquely identify this primitive to the validation config that was made for it.
+					// This means the order of validation state for the array is not guaranteed to be accurate,
+					// i.e. the validation state at index 0 might not contain (all) the results for the primitive at index 0,
+					// the user must NOT change the order of the primitives in the array.
+					// This is because if lazy validation is done on any of the indices, it won't move with the primitive value.
+					tempId = i;
 				}
 				
 				objectIds.push(tempId);
@@ -136,9 +134,11 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 				}
 
 				if (isPrimitiveOrArrayValidation(elValidation)) {
+					// Because this is a primitive, we can't use an object reference.
+					const primitiveGetter = computed(() => arr[i]) as ComputedRef<Primitive>;
 					const typedValidation = elValidation as PrimitiveValidatorTypes<Primitive | undefined, KParent, Args | undefined, FValidationReturn, any>;
 					const elValidationConfig = configureValidationOnProperty(
-						computed(() => arr[i]) as ComputedRef<Primitive>,
+						primitiveGetter,
 						typedValidation,
 						validationConfig.arrayParents
 					);
