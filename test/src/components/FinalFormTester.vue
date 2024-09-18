@@ -4,7 +4,7 @@
 	import { Child, Person } from "../types";
 	import { PartialPersonValidation } from "../separateValidation";
 	import NeighborComponent from "./NeighborComponent.vue";
-import { randomPerson } from "../dataGen";
+	import { randomPerson } from "../dataGen";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -13,7 +13,6 @@ import { randomPerson } from "../dataGen";
 		},
 		delayReactiveValidation: false
 	});
-	
 
 	const simpleObjectTest = ref({
 		name: "",
@@ -31,7 +30,6 @@ import { randomPerson } from "../dataGen";
 			},
 			isPerson: {
 				$reactive: [input => {
-					console.log("hello");
 					const isNotAPerson = input.value == false;
 					const isYoungerThanZero = input.parent.age < 0;
 						return {
@@ -104,13 +102,13 @@ import { randomPerson } from "../dataGen";
 		objectArrayTest.value[randIndex2] = temp;
 	}
 
-	function swapAll() {
-		for (let i = 0; i < objectArrayTest.value.length/2; i++) {
-			const opp = objectArrayTest.value.length - i - 1;
+	function swapAll(array: any[]) {
+		for (let i = 0; i < array.length/2; i++) {
+			const opp = array.length - i - 1;
 
-			const temp = objectArrayTest.value[i];
-			objectArrayTest.value[i] = objectArrayTest.value[opp];
-			objectArrayTest.value[opp] = temp;
+			const temp = array[i];
+			array[i] = array[opp];
+			array[opp] = temp;
 		}
 	}
 
@@ -214,6 +212,7 @@ import { randomPerson } from "../dataGen";
 		},
 		delayReactiveValidation: false
 	})
+	setInterval(() => swapAll(primitiveArrayTest.value), 1000)
 </script>
 
 <template>
@@ -270,7 +269,7 @@ import { randomPerson } from "../dataGen";
 			<h2>Object Array Validation</h2>
 			<button type="button" @click="addObjectToArray">Add object</button>
 			<button type="button" @click="swapRandom">Swap</button>
-			<button type="button" @click="swapAll">Swap All</button>
+			<button type="button" @click="() => swapAll(objectArrayTest)">Swap All</button>
 			<section>
 				<div v-for="obj,i in objectArrayTest" class="field">
 					<label>
@@ -318,7 +317,7 @@ import { randomPerson } from "../dataGen";
 						<input v-model="primitiveArrayTest[i]"/>
 					</label>
 					<div class="input-errors">
-						<p v-for="error in v$6.propertyState.arrayState">{{error}}</p>
+						<p v-for="error,i in v$6.propertyState.arrayState?.at(i).errorMessages">{{ error }}</p>
 					</div>
 				</div>
 			</section>

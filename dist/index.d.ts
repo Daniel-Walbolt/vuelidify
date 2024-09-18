@@ -20,7 +20,7 @@ type PrimitiveValidationState<FValidationReturn> = {
      */
     isErrored: boolean;
     /** Easy collection of the error messages from the raw validation returns */
-    errorMessages: string | string[];
+    errorMessages: string[];
     results: {
         [key: string]: BaseValidationReturn<FValidationReturn>;
     };
@@ -30,9 +30,9 @@ type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FVali
     /**
      * Contains the validation state for each element in the array.
      *
-     * Useful for passing validation state to components rendered from the array being validated.
+     * Maps 1:1 to the array which was validated.
      */
-    arrayState: U extends IndexableObject ? ValidationState<U, FValidationReturn>[] : undefined;
+    arrayState: ValidationState<U, FValidationReturn>[];
 };
 /** Indexed type that describes the validation of objects with nested properties. */
 type RecursiveValidation<T extends IndexableObject, KParent, ValidationArgs, FValidationReturn, ArrParent, NLevel extends number> = {
@@ -83,27 +83,28 @@ type BaseValidationReturn<F = any> = {
      */
     name?: string;
     /**
-     * ID assigned to the validation result which is unique to each validator.
+     * A unique identifier for this validation result which is unique to each validator.
      *
      * Used internally, but can be used as your element's ID or key attribute.
      */
     id?: string;
-    /** Used to determine whether a property passed this validator or not. */
+    /** Used to determine if validation was successful or not. */
     isValid: boolean;
     /** The message or messages to display if isValid is false. */
     errorMessage?: string | string[];
     /**
-     * User specified object that can be returned from each validator.
+     * Return a custom object from this validator.
      *
-     * Can be used to add to FinalForm's base features (e.g. severity levels)
+     * Should be used for more sophisticated return types than a boolean.
+     *
+     * i.e. password strength, severity levels, functions, etc.
      */
     custom?: F;
 };
 type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
-    /** The raw list of results from validating every object in the array */
+    /** The raw list of results from validating every object in the array. */
     arrayResults?: ValidationState<U, FValidationReturn>[];
 };
-/** The general validation object type for Final Form. */
 type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     objectToValidate: Readonly<Ref<T | undefined | null>>;
@@ -116,17 +117,29 @@ type ValidationConfig<T, Args, FValidationReturn> = {
      * Defaults to true.
      */
     delayReactiveValidation?: boolean;
+    /**
+     * Provide an object, ref, or function that will be passed to each validator.
+     * Particularly useful when defining validation in separate files and you want to use variables outside of the object being validated.
+     */
     args?: Args;
 };
 /** The parameter passed into validator functions */
 type ValidatorParams<T, KParent, Args, ArrParent> = {
     /** The current value of the property */
     value: T;
-    /** The object that was passed into the FinalForm validation composable to be validated. */
+    /** The entire object that was passed into the useValidation() composable to be validated. */
     parent: KParent;
 } & (Args extends undefined ? {} : {
+    /** The args passed in to the useValidation() composable configuration. */
     args: Args;
 }) & (ArrParent extends undefined ? {} : {
+    /**
+     * An ordered list of objects that were traversed through while navigating to this validator.
+     *
+     * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
+     *
+     * Useful for inter-property depdendence when validating arrays of complex objects.
+     */
     arrayParents: ArrParent;
 });
 /** Type that increments a provided integer (0-19). */
