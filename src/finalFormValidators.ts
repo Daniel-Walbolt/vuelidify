@@ -73,6 +73,8 @@ export function minValue<T extends number | undefined | null, P, V, R, A>(minVal
 
 /**
  * Checks if the string value is a valid looking email using RegEx.
+ * 
+ * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
  * @returns Synchronous validator
  */
 export function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A> {
