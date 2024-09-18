@@ -33,7 +33,7 @@ export type PrimitiveValidationState<FValidationReturn> = {
 	 */
 	isErrored: boolean;
 	/** Easy collection of the error messages from the raw validation returns */
-	errorMessages: string | string[];
+	errorMessages: string[];
 	results: {
 		[key: string]: BaseValidationReturn<FValidationReturn>;
 	},
@@ -41,12 +41,12 @@ export type PrimitiveValidationState<FValidationReturn> = {
 }
 
 export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
-	/** 
+	/**
 	 * Contains the validation state for each element in the array.
 	 * 
-	 * Useful for passing validation state to components rendered from the array being validated.
+	 * Maps 1:1 to the array which was validated.
 	 */
-	arrayState: U extends IndexableObject ? ValidationState<U, FValidationReturn>[] : undefined;
+	arrayState: ValidationState<U, FValidationReturn>[];
 }
 
 /** Indexed type that describes the validation of objects with nested properties. */
@@ -104,7 +104,16 @@ export type ArrayValidatorTypes<
 	 * 
 	 * Element validation requires much more logic, which may introduce performance problems for large arrays.
 	 */
-	$each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent extends undefined ? Array<any> & { [key in NLevel]: U } : ArrParent & { [key in NLevel]: U }, Increment<NLevel>>;
+	$each?: FinalFormValidation<
+		U,
+		Args,
+		FValidationReturn,
+		KParent,
+		ArrParent extends undefined
+			? Array<any> & { [key in NLevel]: U }
+			: ArrParent & { [key in NLevel]: U },
+		Increment<NLevel>
+	>;
 	/** The validators for the array that are invoked whenever the form is changed. */
 	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 	/** The validators for the array that are invoked only when {@link validate()} is called. */

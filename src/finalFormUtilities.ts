@@ -99,7 +99,7 @@ export function reduceUndefined<T, K = T>(
 export function flatMap<T>(
 	array: (T | T[])[]
 ) {
-	return array.reduce((results: NonNullable<T>[], item) => {
+	return array.reduce<T[]>((results: NonNullable<T>[], item) => {
 		if (item !== undefined) {
 			if (item instanceof Array) {
 				for (const subitem of item) {
