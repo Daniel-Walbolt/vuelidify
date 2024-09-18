@@ -40,7 +40,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** 
 	 * Identifier for the current iteration validating this property.
 	 * Because of concurrency, a previous iteration can finish while one is still running.
-	 * This results in the finished iteration setting the "isValiding" state to false when validation is still happening.
+	 * This results in the finished iteration setting the "isValidating" state to false when validation is still happening.
 	 * 
 	 * Certain state will only change if the current iteration equals the iteration that just finished.
 	 */

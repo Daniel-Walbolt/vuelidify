@@ -13,7 +13,7 @@ export function bufferAsync<F extends (...args: any) => any, K>(
 		const currentId = ++id;
 		queuedFunc = queuedFunc?.then(() => {
 			// This if check is crucial for ignoring this promise if another one has already been queued.
-			if (id == currentId) {
+			if (id === currentId) {
 				queuedFunc = func(...params).then((response) => {
 					queuedFunc = undefined; // Reset the buffer
 					return response;
@@ -30,11 +30,11 @@ export function bufferAsync<F extends (...args: any) => any, K>(
 }
 
 /**
- * Gurantees delay between invocations of the given function.
+ * Guarantees delay between invocations of the given function.
  * 
  * Invocations of the throttled function after the given interval has passed will execute instantly.
  * 
- * Subsequent invocations during the cooldown return a promise to invoke the function after the remaining delay has passed.
+ * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
  * 
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
  * @param func the function to throttle
@@ -56,7 +56,7 @@ export function throttleQueueAsync<F extends (...args: any) => any, K>(
 			new Promise(resolve => setTimeout(resolve, -1 * remaining))
 				.then(() => {
 					previousExecTime = new Date().getTime();
-					if (currentId == id) {
+					if (currentId === id) {
 						resolve(func(...params));
 					}
 					resolve(undefined);
@@ -99,7 +99,7 @@ export function reduceUndefined<T, K = T>(
 export function flatMap<T>(
 	array: (T | T[])[]
 ) {
-	return array.reduce<T[]>((results: NonNullable<T>[], item) => {
+	return array.reduce((results: NonNullable<T>[], item) => {
 		if (item !== undefined) {
 			if (item instanceof Array) {
 				for (const subitem of item) {

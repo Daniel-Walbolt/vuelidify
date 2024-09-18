@@ -5,11 +5,8 @@ import { invokeValidatorConfigs } from "./services/validatorInvocation";
 import { configureValidationOnProperty, isPrimitiveOrArrayValidation, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
 
 /** 
- * Vue3 composable that handles lazy and reactive synchronous and asynchronous validation.
+ * A lightweight Vue3 composable which provides model-based validation.
  * 
- * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first), call the {@link setup()} method returned by this composable.
- * 
- * Setting up validation on an incomplete object will mean that the properties of the object can not be linked to the validation configured, thus causing problems.
  * @author Daniel Walbolt
  */
 export function useValidation<
@@ -42,8 +39,7 @@ export function useValidation<
 	 */
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
 
-	// Based on the validation we are provided, we can reasonably assume what the object is supposed to be.
-	// We can distinguish if this is a validatable property (array or primitive)
+	// Based on the validation we are provided, we can assume what the object is supposed to be.
 	const isPrimitiveOrArray = isPrimitiveOrArrayValidation(validation);
 
 	// If the object is a primitive type or undefined (at time of initialization) we will treat it as singular property validation

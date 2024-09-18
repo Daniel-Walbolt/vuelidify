@@ -60,14 +60,14 @@ export function maximumLength<T extends string | undefined | null, P, V, R, A>(m
 }
 
 /**
- * Makes sure the number to validate is not undefined and is atleast the provided value.
+ * Makes sure the number to validate is not undefined and is at least the provided value.
  * @param minValue 
  * @returns Synchronous validator
  */
 export function minValue<T extends number | undefined | null, P, V, R, A>(minValue: number): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && params.value >= minValue,
-		errorMessage: `Must be atleast ${minValue}`
+		errorMessage: `Must be at least ${minValue}`
 	})
 }
 

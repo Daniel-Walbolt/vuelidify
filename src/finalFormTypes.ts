@@ -188,7 +188,9 @@ export type FinalFormValidation<
 	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 	: T extends IndexableObject
 		? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>
-		: T extends boolean // boolean is separate from Primitive because TS would otherwise split boolean into true | false here. Resulting in undefined nested types.
+		// boolean is checked separately from Primitive 
+		// because TS splits it into true | false here. Resulting in undefined nested types.
+		: T extends boolean 
 			? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
 			: T extends Primitive
 				? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
@@ -199,6 +201,13 @@ export type ValidationConfig<
 	Args,
 	FValidationReturn
 > = {
+	/**
+	 * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
+	 * call the {@link setup()} method returned by this composable after it has loaded.
+	 * 
+	 * Setting up validation on an incomplete object will mean that the properties of the object
+	 * can not be linked to the validation configured, thus causing problems.
+	 */
 	objectToValidate: Readonly<Ref<T | undefined | null>>,
 	validation: FinalFormValidation<T, Args, FValidationReturn, T>,
 	/**
@@ -216,7 +225,7 @@ export type ValidationConfig<
 	args?: Args;
 }
 
-/** The parameter passed into validator functions */
+/** Describes the parameter passed into validator functions */
 export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		/** The current value of the property */
 		value: T,
@@ -233,7 +242,7 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		 * 
 		 * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
 		 * 
-		 * Useful for inter-property depdendence when validating arrays of complex objects.
+		 * Useful for inter-property dependence when validating arrays of complex objects.
 		 */
 		arrayParents: ArrParent
 	})
