@@ -1,6 +1,6 @@
 import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState } from "./finalFormTypes";
 import { Ref, ref, computed, watch, reactive } from "vue";
-import { IndexableObject, PrimitiveOrArrayValidation, PropertyValidationConfig } from "./privateTypes";
+import { IndexableObject, PropertyValidationConfig } from "./privateTypes";
 import { invokeValidatorConfigs } from "./services/validatorInvocation";
 import { configureValidationOnProperty, isPrimitiveOrArrayValidation, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
 
