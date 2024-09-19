@@ -1,39 +1,41 @@
 {
-  "name": "vue-final-form",
-  "version": "0.0.0",
-  "private": true,
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --minify",
-    "lint": "tsc",
-    "release": "npm run lint && npm run build && npm publish"
-  },
-  "files": [
-    "dist",
-    "assets"
-  ],
-  "homepage": "https://github.com/Daniel-Walbolt/vue-final-form",
-  "issues": "https://github.com/Daniel-Walbolt/vue-final-form/issues",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Daniel-Walbolt/vue-final-form"
-  },
-  "dependencies": {
-    "vue": "^3.4.38"
-  },
-  "devDependencies": {
-    "@tsconfig/node20": "^20.1.4",
-    "@types/node": "^20.16.2",
-    "@vitejs/plugin-vue": "^5.1.3",
-    "@vue/eslint-config-typescript": "^13.0.0",
-    "@vue/tsconfig": "^0.5.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-vue": "^9.27.0",
-    "npm-run-all2": "^6.2.2",
-    "tsup": "^6.7.0",
-    "typescript": "~5.4.5",
-    "vue-tsc": "^2.1.2"
-  }
+	"name": "vue-final-form",
+	"version": "1.0.0",
+	"author": "Daniel Walbolt",
+	"private": false,
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"icon": "./favicon.ico",
+	"scripts": {
+		"build": "tsup src/index.ts --format cjs,esm --dts --minify",
+		"lint": "tsc",
+		"release": "npm run lint && npm run build && npm publish"
+	},
+	"files": [
+		"dist",
+		"favicon.ico"
+	],
+	"homepage": "https://github.com/Daniel-Walbolt/vue-final-form",
+	"issues": "https://github.com/Daniel-Walbolt/vue-final-form/issues",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Daniel-Walbolt/vue-final-form"
+	},
+	"dependencies": {
+		"vue": "^3.4.38"
+	},
+	"devDependencies": {
+		"@tsconfig/node20": "^20.1.4",
+		"@types/node": "^20.16.2",
+		"@vitejs/plugin-vue": "^5.1.3",
+		"@vue/eslint-config-typescript": "^13.0.0",
+		"@vue/tsconfig": "^0.5.1",
+		"eslint": "^8.57.0",
+		"eslint-plugin-vue": "^9.27.0",
+		"npm-run-all2": "^6.2.2",
+		"tsup": "^6.7.0",
+		"typescript": "~5.4.5",
+		"vue-tsc": "^2.1.2"
+	}
 }
