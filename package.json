@@ -9,12 +9,12 @@
 	"icon": "./favicon.ico",
 	"scripts": {
 		"build": "tsup src/index.ts --format cjs,esm --dts --minify",
-		"lint": "tsc",
-		"release": "npm run lint && npm run build && npm publish"
+		"lint": "tsc"
 	},
 	"files": [
 		"dist",
-		"favicon.ico"
+		"favicon.ico",
+		"assets"
 	],
 	"homepage": "https://github.com/Daniel-Walbolt/vue-final-form",
 	"issues": "https://github.com/Daniel-Walbolt/vue-final-form/issues",
