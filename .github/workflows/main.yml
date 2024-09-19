@@ -2,9 +2,8 @@ name: CI-CD
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
-    push:
-        branches:
-            - 'main'
+    release:
+        types: [created]
 
 jobs:
     build:
@@ -21,7 +20,6 @@ jobs:
               uses: pnpm/action-setup@v4
               with:
                   version: latest
-                  cache: 'pnpm' # Enable use of a cache for installing dependencies.
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
@@ -55,7 +53,7 @@ jobs:
               with:
                   registry-url: https://registry.npmjs.org/ # Required in order to publish to npm
                   version: latest
-                  cache: 'pnpm' # Enable use of a cache for installing dependencies.
-            - run: pnpm publish
+            - name: Publish
+              run: pnpm publish
         env:
             NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
