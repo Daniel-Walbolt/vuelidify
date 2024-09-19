@@ -33,11 +33,11 @@ export function validateIf<T,P,V,R,A>(
 }
 
 /**
- * Makes sure the string to validate has a length >= to the provided length. Undefined strings are treated as 0 length.
+ * Makes sure the string or number to validate has a length >= to the provided length.
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minimumLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A> {
+export function minLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		const val = String(params.value ?? "");
 		return {
@@ -48,15 +48,18 @@ export function minimumLength<T extends string | number | undefined | null, P, V
 }
 
 /**
- * Makes sure the string to validate is less than the provided length. Undefined strings are treated as 0 length.
+ * Makes sure the string or number to validate is less than the provided length. Undefined strings are treated as 0 length.
  * @param maxLength 
  * @return Synchronous validator
  */
-export function maximumLength<T extends string | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A> {
-	return (params: ValidatorParams<T, P, V, A>) => ({
-		isValid: (params.value?.length ?? 0) <= maxLength,
-		errorMessage: `Too long (${params.value?.length ?? 0} / ${maxLength})`
-	});
+export function maxLength<T extends string | number | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A> {
+	return (params: ValidatorParams<T, P, V, A>) => {
+		const val = String(params.value ?? "");
+		return {
+			isValid: val.length <= maxLength,
+			errorMessage: `Too long (${val.length} / ${maxLength})`
+		}
+	};
 }
 
 /**
