@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { ref } from "vue";
-	import { minimumLength, useValidation, minValue, bufferAsync } from "vue-final-form"
+	import { minLength, useValidation, minNumber, bufferAsync } from "vue-final-form"
 	import { Child, Person } from "../types";
 	import { PartialPersonValidation } from "../separateValidation";
 	import NeighborComponent from "./NeighborComponent.vue";
@@ -9,7 +9,7 @@
 	const v$ = useValidation({
 		objectToValidate: stringTest,
 		validation: {
-			$reactive: [minimumLength(4)]
+			$reactive: [minLength(4)]
 		},
 		delayReactiveValidation: false
 	});
@@ -23,10 +23,10 @@
 		objectToValidate: simpleObjectTest,
 		validation: {
 			name: {
-				$reactive: [minimumLength(10)]
+				$reactive: [minLength(10)]
 			},
 			age: {
-				$reactive: [minValue(0)]
+				$reactive: [minNumber(0)]
 			},
 			isPerson: {
 				$reactive: [input => {
@@ -60,7 +60,7 @@
 		validation: {
 			$each: {
 				name: {
-					$reactive: [minimumLength(5),
+					$reactive: [minLength(5),
 						input => {
 							return {
 								isValid: randomRef.value > 100,
@@ -136,7 +136,7 @@
 								errorMessage: "Async failed"
 							}
 						},
-						minimumLength(15)
+						minLength(15)
 					]
 				}]
 			}
@@ -157,7 +157,7 @@
 			neighbors: {
 				$each: {
 					name: {
-						$reactive: [minimumLength(10), input => {
+						$reactive: [minLength(10), input => {
 							return {
 								isValid: true
 							}
@@ -174,7 +174,7 @@
 										return;
 									}
 									return [
-										minimumLength(10),
+										minLength(10),
 										input => {
 											return {
 												isValid: Math.random() > 0.5,
@@ -207,7 +207,7 @@
 		objectToValidate: primitiveArrayTest,
 		validation: {
 			$each: {
-				$reactive: [minimumLength(10)]
+				$reactive: [minLength(10)]
 			}
 		},
 		delayReactiveValidation: false

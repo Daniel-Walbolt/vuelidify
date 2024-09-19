@@ -107,6 +107,13 @@ type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidat
 };
 type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
+    /**
+     * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
+     * call the {@link setup()} method returned by this composable after it has loaded.
+     *
+     * Setting up validation on an incomplete object will mean that the properties of the object
+     * can not be linked to the validation configured, thus causing problems.
+     */
     objectToValidate: Readonly<Ref<T | undefined | null>>;
     validation: FinalFormValidation<T, Args, FValidationReturn, T>;
     /**
@@ -123,7 +130,7 @@ type ValidationConfig<T, Args, FValidationReturn> = {
      */
     args?: Args;
 };
-/** The parameter passed into validator functions */
+/** Describes the parameter passed into validator functions */
 type ValidatorParams<T, KParent, Args, ArrParent> = {
     /** The current value of the property */
     value: T;
@@ -138,7 +145,7 @@ type ValidatorParams<T, KParent, Args, ArrParent> = {
      *
      * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
      *
-     * Useful for inter-property depdendence when validating arrays of complex objects.
+     * Useful for inter-property dependence when validating arrays of complex objects.
      */
     arrayParents: ArrParent;
 });
@@ -173,11 +180,11 @@ type Increment<N extends number> = [
  */
 declare function bufferAsync<F extends (...args: any) => any, K>(func: (...params: Parameters<F>) => Promise<K>): (...params: Parameters<typeof func>) => Promise<K | undefined>;
 /**
- * Gurantees delay between invocations of the given function.
+ * Guarantees delay between invocations of the given function.
  *
  * Invocations of the throttled function after the given interval has passed will execute instantly.
  *
- * Subsequent invocations during the cooldown return a promise to invoke the function after the remaining delay has passed.
+ * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
  *
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
  * @param func the function to throttle
@@ -199,35 +206,40 @@ declare function required<T, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
  */
 declare function validateIf<T, P, V, R, A>(condition: ((params: ValidatorParams<T, P, V, A>) => boolean) | ((params: ValidatorParams<T, P, V, A>) => Promise<boolean>), validators: (SyncValidator<T, P, V, R, A> | AsyncValidator<T, P, V, R, A>)[]): AsyncValidator<T, P, V, R, A>;
 /**
- * Makes sure the string to validate has a length >= to the provided length. Undefined strings are treated as 0 length.
+ * Makes sure the string or number to validate has a length >= to the provided length.
  * @param minLength
  * @returns Synchronous validator
  */
-declare function minimumLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A>;
+declare function minLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A>;
 /**
- * Makes sure the string to validate is less than the provided length. Undefined strings are treated as 0 length.
+ * Makes sure the string or number to validate is less than the provided length. Undefined strings are treated as 0 length.
  * @param maxLength
  * @return Synchronous validator
  */
-declare function maximumLength<T extends string | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A>;
+declare function maxLength<T extends string | number | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A>;
 /**
- * Makes sure the number to validate is not undefined and is atleast the provided value.
- * @param minValue
+ * Makes sure the number to validate is not undefined and is at least the provided value.
+ * @param minNumber
  * @returns Synchronous validator
  */
-declare function minValue<T extends number | undefined | null, P, V, R, A>(minValue: number): SyncValidator<T, P, V, R, A>;
+declare function minNumber<T extends number | undefined | null, P, V, R, A>(minNumber: number): SyncValidator<T, P, V, R, A>;
+/**
+ * Makes sure the number to validate is not undefined and is at most the provided value.
+ * @param maxNumber
+ * @returns Synchronous validator
+ */
+declare function maxNumber<T extends number | undefined | null, P, V, R, A>(maxNumber: number): SyncValidator<T, P, V, R, A>;
 /**
  * Checks if the string value is a valid looking email using RegEx.
+ *
+ * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
  * @returns Synchronous validator
  */
 declare function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
 
 /**
- * Vue3 composable that handles lazy and reactive synchronous and asynchronous validation.
+ * A lightweight Vue3 composable which provides model-based validation.
  *
- * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first), call the {@link setup()} method returned by this composable.
- *
- * Setting up validation on an incomplete object will mean that the properties of the object can not be linked to the validation configured, thus causing problems.
  * @author Daniel Walbolt
  */
 declare function useValidation<T, Args = undefined, FValidationReturn = unknown>(validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>): {
@@ -240,4 +252,4 @@ declare function useValidation<T, Args = undefined, FValidationReturn = unknown>
     isDirty: boolean;
 };
 
-export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, FinalFormValidation, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maximumLength, minValue, minimumLength, required, throttleQueueAsync, useValidation, validateIf };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, FinalFormValidation, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, required, throttleQueueAsync, useValidation, validateIf };
