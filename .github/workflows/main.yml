@@ -2,9 +2,8 @@ name: CI-CD
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
-    push:
-        branches:
-            - 'main'
+    release:
+        types: [created]
 
 jobs:
     build:
