@@ -37,7 +37,9 @@ export function validateIf<T,P,V,R,A>(
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A> {
+export function minLength<T extends string | number | undefined | null, P, V, R, A>(
+	minLength: number
+): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		const val = String(params.value ?? "");
 		return {
@@ -52,7 +54,9 @@ export function minLength<T extends string | number | undefined | null, P, V, R,
  * @param maxLength 
  * @return Synchronous validator
  */
-export function maxLength<T extends string | number | undefined | null, P, V, R, A>(maxLength: number): SyncValidator<T, P, V, R, A> {
+export function maxLength<T extends string | number | undefined | null, P, V, R, A>(
+	maxLength: number
+): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		const val = String(params.value ?? "");
 		return {
@@ -67,7 +71,9 @@ export function maxLength<T extends string | number | undefined | null, P, V, R,
  * @param minNumber 
  * @returns Synchronous validator
  */
-export function minNumber<T extends number | undefined | null, P, V, R, A>(minNumber: number): SyncValidator<T, P, V, R, A> {
+export function minNumber<T extends number | undefined | null, P, V, R, A>(
+	minNumber: number
+): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && params.value >= minNumber,
 		errorMessage: `The minimum value is ${minNumber}`
@@ -79,7 +85,9 @@ export function minNumber<T extends number | undefined | null, P, V, R, A>(minNu
  * @param maxNumber 
  * @returns Synchronous validator
  */
-export function maxNumber<T extends number | undefined | null, P, V, R, A>(maxNumber: number): SyncValidator<T, P, V, R, A> {
+export function maxNumber<T extends number | undefined | null, P, V, R, A>(
+	maxNumber: number
+): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && params.value <= maxNumber,
 		errorMessage: `The maximum value is ${maxNumber}`
