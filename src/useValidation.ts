@@ -5,7 +5,7 @@ import { invokeValidatorConfigs } from "./services/validatorInvocation";
 import { configureValidationOnProperty, isPrimitiveOrArrayValidation, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
 
 /** 
- * A lightweight Vue3 composable which provides model-based validation.
+ * A simple Vue3 composable which provides model-based validation with strong type support.
  * 
  * @author Daniel Walbolt
  */
