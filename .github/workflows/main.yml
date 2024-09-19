@@ -17,13 +17,6 @@ jobs:
               with:
                   ref: 'main'
 
-            - name: Install Node
-              uses: actions/setup-node@v4
-              with:
-                node-version: '20.x'
-                registry-url: 'https://registry.npmjs.org'
-                cache: "npm"
-
             - name: Set up PNPM
               uses: pnpm/action-setup@v4
               with:
@@ -31,6 +24,13 @@ jobs:
                   run_install: |
                       - recursive: true
                         args: [--frozen-lockfile, --strict-peer-dependencies]
+
+            - name: Install Node
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20.x'
+                registry-url: 'https://registry.npmjs.org'
+                cache: "pnpm"
 
             - name: Compile build
               run: pnpm build
