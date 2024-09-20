@@ -8,7 +8,7 @@
 	"types": "./dist/index.d.ts",
 	"icon": "./favicon.ico",
 	"scripts": {
-		"build": "tsup src/index.ts --format cjs,esm --dts --minify",
+		"build": "tsup src/index.ts --format esm --dts --minify",
 		"lint": "tsc"
 	},
 	"files": [
