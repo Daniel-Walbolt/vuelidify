@@ -1,6 +1,6 @@
 import { computed, ComputedRef, reactive, Ref, ref } from "vue";
 import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
-import { flatMap, reduceUndefined } from "../throttleFunctions";
+import { reduceUndefined } from "../throttleFunctions";
 import { ArrayValidationState, ArrayValidatorTypes, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from "../publicTypes";
 
 function uniqueId() {
@@ -68,7 +68,7 @@ export function configureValidationOnProperty<G, KParent, Args, FValidationRetur
 		isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
 		isErrored: computed(() => validationState.resultsArray.some(x => x.isValid === false)),
 		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
-		errorMessages: computed(() => flatMap(reduceUndefined(validationState.resultsArray, val => val.isValid ? undefined : val.errorMessage))),
+		errorMessages: computed(() => reduceUndefined(validationState.resultsArray, val => val.isValid ? undefined : val.errorMessage)),
 		results: computed(() => validationConfig.namedValidationResults.value),
 		resultsArray: computed(() => validationConfig.validationResults.value),
 		arrayState: computed(() => {
