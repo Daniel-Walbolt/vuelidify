@@ -1,5 +1,5 @@
 import { ComputedRef, Ref } from "vue";
-import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, FinalFormValidation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes } from "./finalFormTypes";
+import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes } from "./publicTypes";
 import { SyncValidator } from "../dist";
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
@@ -86,7 +86,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
-	elementValidation: Readonly<FinalFormValidation<any, Args, FValidationReturn, KParent, any> | undefined>;
+	elementValidation: Readonly<Validation<any, Args, FValidationReturn, KParent, any> | undefined>;
 	/** 
 	 * An array of all the array elements that were traversed through during validation.
 	 * 

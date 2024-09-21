@@ -1,4 +1,4 @@
-import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState } from "./finalFormTypes";
+import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState } from "./publicTypes";
 import { Ref, ref, computed, watch, reactive } from "vue";
 import { IndexableObject, PropertyValidationConfig } from "./privateTypes";
 import { invokeValidatorConfigs } from "./services/validatorInvocation";

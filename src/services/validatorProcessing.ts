@@ -1,7 +1,7 @@
 import { computed, ComputedRef, reactive, Ref, ref } from "vue";
 import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
-import { flatMap, reduceUndefined } from "../finalFormUtilities";
-import { ArrayValidationState, ArrayValidatorTypes, FinalFormValidation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from "../finalFormTypes";
+import { flatMap, reduceUndefined } from "../throttleFunctions";
+import { ArrayValidationState, ArrayValidatorTypes, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from "../publicTypes";
 
 function uniqueId() {
 	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -252,7 +252,7 @@ export function setupNestedPropertiesForValidation<G extends IndexableObject, KP
 	}
 }
 
-export function isPrimitiveOrArrayValidation(validation: FinalFormValidation<any, any, any, any>): validation is PrimitiveOrArrayValidation {
+export function isPrimitiveOrArrayValidation(validation: Validation<any, any, any, any>): validation is PrimitiveOrArrayValidation {
 	return (validation as PrimitiveOrArrayValidation)?.$reactive !== undefined ||
 		(validation as PrimitiveOrArrayValidation)?.$lazy !== undefined ||
 		(validation as PrimitiveOrArrayValidation)?.$each !== undefined

@@ -59,7 +59,7 @@ export type RecursiveValidation<
 	NLevel extends number
 > = {
 	// If the type of the property on the object is not a primitive, then it requires a nested validation object.
-	[key in keyof Partial<T>]: FinalFormValidation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
+	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 }
 
 export type PrimitiveValidation<
@@ -104,7 +104,7 @@ export type ArrayValidatorTypes<
 	 * 
 	 * Element validation requires much more logic, which may introduce performance problems for large arrays.
 	 */
-	$each?: FinalFormValidation<
+	$each?: Validation<
 		U,
 		Args,
 		FValidationReturn,
@@ -139,9 +139,15 @@ export type ValidatorTypes<
 	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>
 
-export type BaseValidator<T, K, V, F, A> = (input: ValidatorParams<T, K, V, A>) => F
-export type SyncValidator<T, K, V, F, A> = BaseValidator<T,K,V,BaseValidationReturn<F> | Array<Validator<T,K,V,F,A>>, A>
-export type AsyncValidator<T, K, V, F, A> = BaseValidator<T,K,V,Promise<BaseValidationReturn<F> | Array<Validator<T,K,V,F,A>> | undefined>, A>
+export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
+
+export type SyncValidator<T, Parent, Args, Return, ArrParent> = 
+	BaseValidator<T,Parent,Args,BaseValidationReturn<Return> |
+	Array<Validator<T,Parent,Args,Return,ArrParent>>, ArrParent>
+
+export type AsyncValidator<T, Parent, Args, Return, ArrParent> = 
+	BaseValidator<T,Parent,Args,Promise<BaseValidationReturn<Return> |
+	Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined>, ArrParent>
 
 export type BaseValidationReturn<F = any> = {
 	/** 
@@ -177,7 +183,7 @@ export type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<F
 	arrayResults?: ValidationState<U, FValidationReturn>[];
 }
 
-export type FinalFormValidation<
+export type Validation<
 	T,
 	Args = undefined,
 	FValidationReturn = undefined,
@@ -209,7 +215,7 @@ export type ValidationConfig<
 	 * can not be linked to the validation configured, thus causing problems.
 	 */
 	objectToValidate: Readonly<Ref<T | undefined | null>>,
-	validation: FinalFormValidation<T, Args, FValidationReturn, T>,
+	validation: Validation<T, Args, FValidationReturn, T>,
 	/**
 	 * False - reactive validation will always be active.
 	 *

@@ -90,27 +90,3 @@ export function reduceUndefined<T, K = T>(
 		return results;
 	}, []);
 }
-
-/** 
- * Takes an array that contains a mixed data set of type T and T[] (nested arrays), and reduces it to a 1-dimensional array.
- * 
- * Ignores undefined values as well.
- */
-export function flatMap<T>(
-	array: (T | T[])[]
-) {
-	return array.reduce<T[]>((results: NonNullable<T>[], item) => {
-		if (item !== undefined) {
-			if (item instanceof Array) {
-				for (const subitem of item) {
-					if (subitem !== undefined) {
-						results.push(subitem);
-					}
-				}
-			} else {
-				results.push(item);
-			}
-		}
-		return results;
-	}, [])
-}

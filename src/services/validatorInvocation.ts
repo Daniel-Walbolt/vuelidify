@@ -1,8 +1,8 @@
 import { computed, Ref } from "vue";
-import { bufferAsync, throttleQueueAsync } from "../finalFormUtilities";
+import { bufferAsync, throttleQueueAsync } from "../throttleFunctions";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { setupValiators } from "./validatorProcessing";
-import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../finalFormTypes";
+import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../publicTypes";
 import { SyncValidator } from "../../dist";
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
