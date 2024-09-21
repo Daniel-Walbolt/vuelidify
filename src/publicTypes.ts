@@ -167,7 +167,7 @@ export type BaseValidationReturn<F = any> = {
 	/** Used to determine if validation was successful or not. */
 	isValid: boolean;
 	/** The message or messages to display if isValid is false. */
-	errorMessage?: string | string[];
+	errorMessage?: string;
 	/**
 	 * Return a custom object from this validator.
 	 * 
