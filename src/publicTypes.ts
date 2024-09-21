@@ -141,13 +141,21 @@ export type ValidatorTypes<
 
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
 
-export type SyncValidator<T, Parent, Args, Return, ArrParent> = 
-	BaseValidator<T,Parent,Args,BaseValidationReturn<Return> |
-	Array<Validator<T,Parent,Args,Return,ArrParent>>, ArrParent>
+export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
+	T,
+	Parent,
+	Args,
+	BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>>,
+	ArrParent
+>
 
-export type AsyncValidator<T, Parent, Args, Return, ArrParent> = 
-	BaseValidator<T,Parent,Args,Promise<BaseValidationReturn<Return> |
-	Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined>, ArrParent>
+export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
+	T,
+	Parent,
+	Args,
+	Promise<BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined>,
+	ArrParent
+>
 
 export type BaseValidationReturn<F = any> = {
 	/** 

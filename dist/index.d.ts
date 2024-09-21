@@ -36,7 +36,7 @@ type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FVali
 };
 /** Indexed type that describes the validation of objects with nested properties. */
 type RecursiveValidation<T extends IndexableObject, KParent, ValidationArgs, FValidationReturn, ArrParent, NLevel extends number> = {
-    [key in keyof Partial<T>]: FinalFormValidation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
+    [key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 };
 type PrimitiveValidation<T extends Primitive | undefined | null, KParent, Args, FValidationReturn, ArrParent> = PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
 type IndexableObject = {
@@ -57,7 +57,7 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
      *
      * Element validation requires much more logic, which may introduce performance problems for large arrays.
      */
-    $each?: FinalFormValidation<U, Args, FValidationReturn, KParent, ArrParent extends undefined ? Array<any> & {
+    $each?: Validation<U, Args, FValidationReturn, KParent, ArrParent extends undefined ? Array<any> & {
         [key in NLevel]: U;
     } : ArrParent & {
         [key in NLevel]: U;
@@ -70,9 +70,9 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
 /** A synchronous or asynchronous validator. */
 type Validator<T, KParent, Args, FValidationReturn, ArrParent> = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
 type ValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent, NLevel extends number> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
-type BaseValidator<T, K, V, F, A> = (input: ValidatorParams<T, K, V, A>) => F;
-type SyncValidator<T, K, V, F, A> = BaseValidator<T, K, V, BaseValidationReturn<F> | Array<Validator<T, K, V, F, A>>, A>;
-type AsyncValidator<T, K, V, F, A> = BaseValidator<T, K, V, Promise<BaseValidationReturn<F> | Array<Validator<T, K, V, F, A>> | undefined>, A>;
+type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return;
+type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>>, ArrParent>;
+type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, Promise<BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>> | undefined>, ArrParent>;
 type BaseValidationReturn<F = any> = {
     /**
      * Assign this validator's result a name.
@@ -91,7 +91,7 @@ type BaseValidationReturn<F = any> = {
     /** Used to determine if validation was successful or not. */
     isValid: boolean;
     /** The message or messages to display if isValid is false. */
-    errorMessage?: string | string[];
+    errorMessage?: string;
     /**
      * Return a custom object from this validator.
      *
@@ -105,7 +105,7 @@ type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidat
     /** The raw list of results from validating every object in the array. */
     arrayResults?: ValidationState<U, FValidationReturn>[];
 };
-type FinalFormValidation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
+type Validation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     /**
      * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
@@ -115,7 +115,7 @@ type ValidationConfig<T, Args, FValidationReturn> = {
      * can not be linked to the validation configured, thus causing problems.
      */
     objectToValidate: Readonly<Ref<T | undefined | null>>;
-    validation: FinalFormValidation<T, Args, FValidationReturn, T>;
+    validation: Validation<T, Args, FValidationReturn, T>;
     /**
      * False - reactive validation will always be active.
      *
@@ -230,6 +230,10 @@ declare function minNumber<T extends number | undefined | null, P, V, R, A>(minN
  */
 declare function maxNumber<T extends number | undefined | null, P, V, R, A>(maxNumber: number): SyncValidator<T, P, V, R, A>;
 /**
+ * Checks if the value of this property strictly equals the value returned by the provided getter.
+ */
+declare function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P, V, A>) => T, errorMessage: string): SyncValidator<T, P, V, R, A>;
+/**
  * Checks if the string value is a valid looking email using RegEx.
  *
  * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
@@ -238,7 +242,7 @@ declare function maxNumber<T extends number | undefined | null, P, V, R, A>(maxN
 declare function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
 
 /**
- * A lightweight Vue3 composable which provides model-based validation.
+ * A simple Vue3 composable which provides model-based validation with strong type support.
  *
  * @author Daniel Walbolt
  */
@@ -252,4 +256,4 @@ declare function useValidation<T, Args = undefined, FValidationReturn = unknown>
     isDirty: boolean;
 };
 
-export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, FinalFormValidation, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, required, throttleQueueAsync, useValidation, validateIf };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation, validateIf };

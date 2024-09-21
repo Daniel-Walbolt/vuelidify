@@ -2,8 +2,7 @@ import { computed, Ref } from "vue";
 import { bufferAsync, throttleQueueAsync } from "../throttleFunctions";
 import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
 import { setupValiators } from "./validatorProcessing";
-import { AsyncValidator, BaseValidationReturn, Validator, ValidatorParams } from "../publicTypes";
-import { SyncValidator } from "../../dist";
+import { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from "../publicTypes";
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
@@ -139,7 +138,7 @@ function recursiveInvokeAndOptimizeValidators<
 			validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
 		}
 		else {
-			validationReturn = processedValidator.computedValidator.value;
+			validationReturn = processedValidator.computedValidator.value as typeof validationReturn;
 		}
 
 		if (validationReturn instanceof Promise) {
@@ -237,7 +236,7 @@ function recursiveInvokeAndOptimizeValidators<
 					})
 					processedValidator.optimized = true;
 					// Replace a validator with a function that just gets the value of the computed.
-					processedValidator.validator = () => processedValidator.computedValidator.value;
+					processedValidator.validator = (() => processedValidator.computedValidator.value) as Validator<G, KParent, Args, FValidationReturn, any>;
 				}
 				allResults.push(validationReturn);
 				processValidatorResult(propertyConfig, processedValidator, validationReturn);

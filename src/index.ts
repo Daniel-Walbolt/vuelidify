@@ -1,4 +1,4 @@
 export * from "./publicTypes";
 export { bufferAsync, throttleQueueAsync } from "./throttleFunctions";
-export * from "./finalFormValidators";
+export * from "./validators";
 export { useValidation } from "./useValidation";
