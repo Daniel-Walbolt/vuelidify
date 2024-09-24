@@ -259,3 +259,63 @@ Here is the breakdown of the parameters that are passed into validators
 		});
 	</script>
 	```
+
+## Technical Details
+For those interested in the inner workings of the library without looking at the code:
+
+- Reactive validation is performed by a deep watcher on the parent object. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running every *reactive* validator in your object every time the user enters a character. But I have since addressed this slightly.
+- Because async validators can be mixed with sync validators, there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return less than 500ms they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
+- ```throttleQueueAsync``` is a custom function exported by this library which solves some of the problems I had with lodash's throttle function. This function throttles a function, can copy it's signature, and returns a promise for the result of the function. Calling this function will instantly execute the function if there is no active throttle. Calling this function with an active throttle will return a promise to call the function as soon as the throttle has expired. Calling the function multiple times during the throttle period will keep overriding the queued promise. Overridden queued promises will return undefined once the throttle expires. This function is very complicated, but extremely useful for returning control back to the caller and guaranteeing that the function gets called with the latest parameters. This are all problems with current implementation of debounce or throttle which use setTimeout() without being wrapped in a promise.
+- ```bufferAsync``` is another custom function exported by this library which offers a more aggressive throttling behavior than ```throttleQueueAsync```. Instead, this function creates an "invocation buffer" on the provided function, copies the functions signature, and returns a promise to the result of the function. Essentially, the function provided will only be ran once the previous invocation of the function has returned. This function also uses a queue to guarantee invocation of the desired function after the previous invocation has returned.
+
+# Create your own validators
+There aren't many validators provided by this library on purpose. Mostly because I didn't want to think of what could be useful, and would rather rely on feedback for useful validators. Feel free to give me feedback on the github repo.
+
+I highly encourage you to understand the types enough to create your own validators. It isn't too difficult, and you should be able to base it off some of the existing ones.
+
+Here is a breakdown of one of the validators exported by this library (expanded to make comments more readable):
+
+```ts
+// always provide a header comment to explain what the validator does!
+/**
+ * Checks if the string value is a valid looking email using RegEx.
+ * 
+ * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
+ * @returns Synchronous validator
+ */
+export function isEmailSync<
+	// The type of the property you want to support validation for.
+	// adding | undefined | null is good practice for writing more robust code
+	// Furthermore, if you just did string here, it wouldn't work with string?
+	T extends string | undefined | null, 
+	// The type for the parent object.
+	// Generally you don't put constraints on this.
+	P,
+	// The type for the args
+	// You may want to put a constraint on this if you need access to a store, or some other external data.
+	V,
+	// The type for the custom return from the validator
+	R,
+	// The type for the arrayParents parameter.
+	// Generally you don't put constraints on this.
+	// But you have to accept this generic in order to pass the type forward to not mess up outside types.
+	A
+>(
+// Specify any parameters you need here. They could be Refs, primitives, whatever!
+): SyncValidator<T, P, V, R, A> // Strongly type the type of validator you'll be returning
+{
+	// Return a validator function
+	return (
+		// Strongly type the expected params object to have intellisense
+		params: ValidatorParams<T, P, V, A>
+	) => {
+		// you can do whatever you want a normal validator can in here.
+		// Return undefined, an array of validators, or a validation result.
+		// In this case, we're checking the value of the property against an email regex.
+		return {
+			isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
+			errorMessage: "Invalid email format"
+		}
+	};
+}
+```

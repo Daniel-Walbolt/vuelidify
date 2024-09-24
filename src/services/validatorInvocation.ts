@@ -11,7 +11,7 @@ type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 ) => void;
 
 /** The duration of throttling that is put onto validators that take longer than this time to return. */
-const ThrottleDurationMs = 500;
+const ThrottleDurationMs = 250;
 
 /** 
  * Handles invoking and optimization of the provided list of validators.
@@ -157,7 +157,7 @@ function recursiveInvokeAndOptimizeValidators<
 					// Optionally optimize async validator
 					if (shouldOptimize && duration > ThrottleDurationMs && processedValidator.optimized === false) {
 						processedValidator.optimized = true;
-						if (duration < (2 * ThrottleDurationMs)) {
+						if (duration > ThrottleDurationMs && duration < 2 * ThrottleDurationMs) {
 							// Moderately slow validators will receive a throttle.
 							// Calls will overlap, but it shouldn't overwhelm the server
 							processedValidator.validator = throttleQueueAsync<
