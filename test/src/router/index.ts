@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import FinalFormTester from '../components/FinalFormTester.vue'
+import VuelidifyTester from '../components/VuelidifyTester.vue'
 import VuelidateTester from '../components/VuelidateTester.vue'
 
 const router = createRouter({
@@ -8,7 +8,7 @@ const router = createRouter({
     {
       path: "/final-form",
       alias: "/",
-      component: FinalFormTester
+      component: VuelidifyTester
     },
     {
       path: "/vuelidate",
