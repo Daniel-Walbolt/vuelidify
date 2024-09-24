@@ -1,14 +1,28 @@
 <script setup lang="ts">
 	import { ref } from 'vue';
-	import { isEmailSync, minLength, useValidation, Validator } from "vuelidify";
+	import { minLength, useValidation } from "vuelidify";
 
-	const string = ref("");
+	type FooBar = {
+		name: string;
+		isActive: boolean;
+	}
+
+	const string = ref<FooBar[]>([]);
 	const v$ = useValidation({
 		objectToValidate: string,
 		validation: {
-			$reactive: [
-				minLength(10)
-			]
+			$each: {
+				name: {
+					$reactive: [
+						(params) => {
+							if (params.arrayParents[0].isActive !== true) {
+								return;
+							}
+							return [minLength(10)]
+						}
+					]
+				}
+			}
 		}
 	});
 </script>

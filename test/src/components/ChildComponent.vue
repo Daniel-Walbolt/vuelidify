@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="">
 	import { Child } from '../types';
+	import { ValidationState } from "vuelidify";
 
 	interface Props {
 		child: Child;

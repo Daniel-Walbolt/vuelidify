@@ -1,13 +1,13 @@
 import { Ref } from 'vue';
 
-/** Shorthand union for conditional types scattered around Final Form */
-type Primitive = string | number | boolean | bigint | symbol;
-/** Holds the latest results of validation */
+/** Shorthand union of the primitive types */
+type Primitive = string | number | boolean;
+/** Holds the latest results of validation for an object */
 type ValidationState<T, FValidationReturn> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn> : T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn> : T extends Primitive ? PrimitiveValidationState<FValidationReturn> : undefined;
 type RecursiveValidationState<T, FValidationReturn> = {
     [key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 };
-/** Contains the reactive state of the validation of a property. */
+/** Contains the reactive state of validation for a property. */
 type PrimitiveValidationState<FValidationReturn> = {
     /** True if all the validators defined for this property have passed. False otherwise. */
     isValid: boolean;
@@ -34,7 +34,6 @@ type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FVali
      */
     arrayState: ValidationState<U, FValidationReturn>[];
 };
-/** Indexed type that describes the validation of objects with nested properties. */
 type RecursiveValidation<T extends IndexableObject, KParent, ValidationArgs, FValidationReturn, ArrParent, NLevel extends number> = {
     [key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 };
@@ -199,13 +198,6 @@ declare function throttleQueueAsync<F extends (...args: any) => any, K>(func: (.
  */
 declare function required<T, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
 /**
- * Validates the provided validators if the provided condition is true.
- * @param condition the condition to evaluate before executing validators.
- * @param validators the validators that get executed if the condition returns true.
- * @returns Asynchronous validator
- */
-declare function validateIf<T, P, V, R, A>(condition: ((params: ValidatorParams<T, P, V, A>) => boolean) | ((params: ValidatorParams<T, P, V, A>) => Promise<boolean>), validators: (SyncValidator<T, P, V, R, A> | AsyncValidator<T, P, V, R, A>)[]): AsyncValidator<T, P, V, R, A>;
-/**
  * Makes sure the string or number to validate has a length >= to the provided length.
  * @param minLength
  * @returns Synchronous validator
@@ -256,4 +248,4 @@ declare function useValidation<T, Args = undefined, FValidationReturn = unknown>
     isDirty: boolean;
 };
 
-export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation, validateIf };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation };
