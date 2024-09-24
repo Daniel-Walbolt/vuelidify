@@ -71,7 +71,7 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
 type Validator<T, KParent, Args, FValidationReturn, ArrParent> = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
 type ValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent, NLevel extends number> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
 type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return;
-type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>>, ArrParent>;
+type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>> | undefined, ArrParent>;
 type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, Promise<BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>> | undefined>, ArrParent>;
 type BaseValidationReturn<F = any> = {
     /**

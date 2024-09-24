@@ -1,9 +1,9 @@
 import { type Ref } from "vue";
 
-/** Shorthand union for conditional types scattered around Final Form */
-export type Primitive = string | number | boolean | bigint | symbol;
+/** Shorthand union of the primitive types */
+export type Primitive = string | number | boolean;
 
-/** Holds the latest results of validation */
+/** Holds the latest results of validation for an object */
 export type ValidationState<
 	T,
 	FValidationReturn
@@ -20,7 +20,7 @@ export type RecursiveValidationState<T, FValidationReturn> = {
 	[key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 }
 
-/** Contains the reactive state of the validation of a property. */
+/** Contains the reactive state of validation for a property. */
 export type PrimitiveValidationState<FValidationReturn> = {
 	/** True if all the validators defined for this property have passed. False otherwise. */
 	isValid: boolean;
@@ -49,7 +49,6 @@ export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationStat
 	arrayState: ValidationState<U, FValidationReturn>[];
 }
 
-/** Indexed type that describes the validation of objects with nested properties. */
 export type RecursiveValidation<
 	T extends IndexableObject,
 	KParent, 
@@ -145,7 +144,7 @@ export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 	T,
 	Parent,
 	Args,
-	BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>>,
+	BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined,
 	ArrParent
 >
 

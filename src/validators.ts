@@ -18,15 +18,13 @@ export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
  * @param validators the validators that get executed if the condition returns true.
  * @returns Asynchronous validator
  */
-export function validateIf<T,P,V,R,A>(
+export function validateIf<T, P, V, R, A>(
 	condition: ((params: ValidatorParams<T, P, V, A>) => boolean) | ((params: ValidatorParams<T, P, V, A>) => Promise<boolean>),
 	validators: (SyncValidator<T, P, V, R, A> | AsyncValidator<T, P, V, R, A>)[]
 ): AsyncValidator<T, P, V, R, A> {
 	return async (params: ValidatorParams<T, P, V, A>) => {
-		if ((await condition(params)) === false) {
-			return {
-				isValid: true
-			}
+		if ((await condition(params)) !== true) {
+			return undefined;
 		}
 		return validators;
 	};
