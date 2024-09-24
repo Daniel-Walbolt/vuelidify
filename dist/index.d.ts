@@ -83,9 +83,9 @@ type BaseValidationReturn<F = any> = {
      */
     name?: string;
     /**
-     * A unique identifier for this validation result which is unique to each validator.
+     * The unique identifier for this validation result.
      *
-     * Used internally, but can be used as your element's ID or key attribute.
+     * Assigned and used internally, but can be used as your element's ID or key attribute.
      */
     id?: string;
     /** Used to determine if validation was successful or not. */
@@ -210,7 +210,7 @@ declare function validateIf<T, P, V, R, A>(condition: ((params: ValidatorParams<
  * @param minLength
  * @returns Synchronous validator
  */
-declare function minLength<T extends string | number | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A>;
+declare function minLength<T extends string | undefined | null, P, V, R, A>(minLength: number): SyncValidator<T, P, V, R, A>;
 /**
  * Makes sure the string or number to validate is less than the provided length. Undefined strings are treated as 0 length.
  * @param maxLength
@@ -242,7 +242,7 @@ declare function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P,
 declare function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
 
 /**
- * A simple Vue3 composable which provides model-based validation with strong type support.
+ * A simple and lightweight Vue3 model based validation library with strong type support.
  *
  * @author Daniel Walbolt
  */
