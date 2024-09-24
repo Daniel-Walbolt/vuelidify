@@ -126,6 +126,13 @@ Here is the breakdown of the return type from validators.
 // Validators must either return a BaseValidationReturn<F> object, undefined,
 // or an array of validators which will be invoked immediately.
 {
+	// Name the result of this validator. This will put the validation result
+	// into the results map in the validation state of this property.
+	// Make sure your names are unique between your validators.
+	name?: string,
+	// the unique identifier for this validation result. Assigned interally.
+	// you can use this ID to identify your DOM elements that display error messages.
+	id? string,
 	// required for determining whether or not this validator passed
 	isValid: boolean,
 	errorMessage?: string,
@@ -133,17 +140,33 @@ Here is the breakdown of the return type from validators.
 	// Use this to return any object to give additional information about the validation.
 	// In order to access this custom data easily, make sure you give the result a name
 	custom?: F,
-	// Name the result of this validator. This will put the validation result
-	// into the results map in the validation state of this property.
-	// Make sure your names are unique between your validators.
-	name?: string,
+}
+```
+Here is the breakdown of the parameters that are passed into validators
+```ts
+{
+	// The value of the property being validated
+	value: T,
+	// The top-most ancestor being validated. The object that was passed to the composable.
+	parent: P,
+	// The args that were specified in the composable configuration.
+	// This type will only appear for you when args is NOT undefined.
+	args: V,
+	// Will only appear for properties nested in some array.
+	// The type will be an ordered array of strongly typed objects.
+	// Each element is a "parent" in the array, or an ancestor to the property you're validating.
+	// Index 0 will be appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
+	// The limit of nested arrays is currently 20, and I don't think you'll need more than that.
+	// Extremely useful for complex validation of arrays where validation depends on the array object,
+	// rather than the top-most parent object which contains the array.
+	arrayParents: A
 }
 ```
 
 ## Examples
 1. Primitives
 	```ts
-<script setup lang="ts">
+	<script setup lang="ts">
 		import { ref } from 'vue';
 		import { minLength, useValidation } from "vuelidify";
 		
@@ -151,11 +174,88 @@ Here is the breakdown of the return type from validators.
 		const v$ = useValidation({
 			objectToValidate: string,
 			validation: {
-				$reactive: [minLength(10)]
+				$reactive: [minLength(10)] // Put as many validators you want here
 			}
 		});
 	</script>
 	```
+2. Simple Objects
 	```ts
-	
+	<script setup lang="ts">
+		import { ref } from 'vue';
+		import { minLength, useValidation, minNumber } from "vuelidify";
+
+		const obj = ref({
+			foo: "string",
+			bar: true,
+			zaa: 1
+		});
+		const v$ = useValidation({
+			objectToValidate: obj,
+			validation: {
+				foo: {
+					// Validate foo when v$.validate is called.
+					$lazy: [minLength(10)]
+				},
+				bar: {
+					// Validate bar reactively
+					$reactive: [(params) => {
+						return {
+							isValid: params.value
+						}
+					}]
+				},
+				zaa: {
+					// Validate zaa reactively and when v$.validate is called.
+					// Notice how validation can depend on other properties in the parent.
+					$reactive: [minNumber(10)],
+					$lazy: [
+						(params) => {
+							const isBar = params.parent.bar;
+							return {
+								isValid: isBar ? params.value > 100 : true,
+								errorMessage: "Must be greater than 100 when bar is true"
+							}
+						}
+					]
+				}
+			}
+		});
+	</script>
+	```
+3. Arrays
+	```ts
+	<script setup lang="ts">
+		import { ref } from 'vue';
+		import { minLength, useValidation } from "vuelidify";
+
+		type FooBar = {
+			name: string;
+			isActive: boolean;
+		}
+
+		const array = ref<FooBar[]>([]);
+		const v$ = useValidation({
+			objectToValidate: array,
+			validation: {
+				// Validate each object in the array.
+				$each: {
+					name: {
+						// Reactively validate every name
+						$reactive: [
+							// Validate the length of the name only if the object's isActive property is true.
+							(params) => {
+								if (params.arrayParents[0].isActive !== true) {
+									// Return undefined to ignore this validator when the condition is not true.
+									// This check can even be asynchronous!
+									return;
+								}
+								return [minLength(10)]
+							}
+						]
+					}
+				}
+			}
+		});
+	</script>
 	```
