@@ -167,9 +167,9 @@ export type BaseValidationReturn<F = any> = {
 	 */
 	name?: string;
 	/** 
-	 * A unique identifier for this validation result which is unique to each validator.
+	 * The unique identifier for this validation result.
 	 *
-	 * Used internally, but can be used as your element's ID or key attribute.
+	 * Assigned and used internally, but can be used as your element's ID or key attribute.
 	 */
 	id?: string;
 	/** Used to determine if validation was successful or not. */

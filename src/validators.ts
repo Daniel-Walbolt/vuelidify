@@ -1,4 +1,4 @@
-import { AsyncValidator, SyncValidator, ValidatorParams } from "./publicTypes";
+import { AsyncValidator, SyncValidator, Validator, ValidatorParams } from "./publicTypes";
 
 /** 
  * Makes sure the object is not undefined and the trim length is greater than 0.
@@ -37,7 +37,7 @@ export function validateIf<T,P,V,R,A>(
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minLength<T extends string | number | undefined | null, P, V, R, A>(
+export function minLength<T extends string | undefined | null, P, V, R, A>(
 	minLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
