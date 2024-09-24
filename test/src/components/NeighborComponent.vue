@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="">
-	import { ValidationState,  } from 'vue-final-form';
 	import { Person } from '../types';
 	import ChildComponent from './ChildComponent.vue';
+	import { ValidationState } from "vuelidify";
 
 	interface Props {
 		person: Person;

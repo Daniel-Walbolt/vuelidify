@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="">
-	import { ValidationState } from 'vue-final-form';
 	import { Child } from '../types';
 
 	interface Props {

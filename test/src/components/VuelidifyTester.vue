@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import { ref } from "vue";
-	import { minLength, useValidation, minNumber, bufferAsync } from "vue-final-form"
 	import { Child, Person } from "../types";
 	import { PartialPersonValidation } from "../separateValidation";
 	import NeighborComponent from "./NeighborComponent.vue";
 	import { randomPerson } from "../dataGen";
+	import { bufferAsync, minLength, minNumber, useValidation } from "vuelidify";
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
