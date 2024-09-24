@@ -317,7 +317,7 @@
 						<input v-model="primitiveArrayTest[i]"/>
 					</label>
 					<div class="input-errors">
-						<p v-for="error,i in v$6.propertyState.arrayState?.at(i).errorMessages">{{ error }}</p>
+						<p v-for="error in v$6.propertyState.arrayState"></p>
 					</div>
 				</div>
 			</section>
