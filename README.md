@@ -164,101 +164,106 @@ Here is the breakdown of the parameters that are passed into validators
 ```
 
 ## Examples
-1. Primitives
-	```ts
-	<script setup lang="ts">
-		import { ref } from 'vue';
-		import { minLength, useValidation } from "vuelidify";
-		
-		const string = ref("");
-		const v$ = useValidation({
-			objectToValidate: string,
-			validation: {
-				$reactive: [minLength(10)] // Put as many validators as you want here
-			}
-		});
-	</script>
-	```
-2. Simple Objects
-	```ts
-	<script setup lang="ts">
-		import { ref } from 'vue';
-		import { minLength, useValidation, minNumber } from "vuelidify";
+#### Primitives
+```ts
+<script setup lang="ts">
+	import { ref } from 'vue';
+	import { minLength, useValidation } from "vuelidify";
+	
+	const string = ref("");
+	const v$ = useValidation({
+		objectToValidate: string,
+		validation: {
+			$reactive: [minLength(10)] // Put as many validators as you want here
+		}
+	});
+</script>
+```
+#### Simple Objects
+```ts
+<script setup lang="ts">
+	import { ref } from 'vue';
+	import { minLength, useValidation, minNumber } from "vuelidify";
 
-		const obj = ref({
-			foo: "string",
-			bar: true,
-			zaa: 1
-		});
-		const v$ = useValidation({
-			objectToValidate: obj,
-			validation: {
-				foo: {
-					// Validate foo when v$.validate is called.
-					$lazy: [minLength(10)]
-				},
-				bar: {
-					// Validate bar reactively
-					$reactive: [(params) => {
+	const obj = ref({
+		foo: "string",
+		bar: true,
+		zaa: 1
+	});
+	const v$ = useValidation({
+		objectToValidate: obj,
+		validation: {
+			foo: {
+				// Validate foo when v$.validate is called.
+				$lazy: [minLength(10)]
+			},
+			bar: {
+				// Validate bar reactively
+				$reactive: [(params) => {
+					return {
+						isValid: params.value
+					}
+				}]
+			},
+			zaa: {
+				// Validate zaa reactively and when v$.validate is called.
+				// Notice how validation can depend on other properties in the parent.
+				$reactive: [minNumber(10)],
+				$lazy: [
+					(params) => {
+						const isBar = params.parent.bar;
 						return {
-							isValid: params.value
+							isValid: isBar ? params.value > 100 : true,
+							errorMessage: "Must be greater than 100 when bar is true"
 						}
-					}]
-				},
-				zaa: {
-					// Validate zaa reactively and when v$.validate is called.
-					// Notice how validation can depend on other properties in the parent.
-					$reactive: [minNumber(10)],
-					$lazy: [
+					}
+				]
+			}
+		}
+	});
+</script>
+```
+#### Arrays
+```ts
+<script setup lang="ts">
+	import { ref } from 'vue';
+	import { minLength, useValidation } from "vuelidify";
+
+	type FooBar = {
+		name: string;
+		isActive: boolean;
+	}
+
+	const array = ref<FooBar[]>([]);
+	const v$ = useValidation({
+		objectToValidate: array,
+		validation: {
+			// Validate each object in the array.
+			$each: {
+				name: {
+					// Reactively validate every name
+					$reactive: [
+						// Validate the length of the name only if the object's isActive property is true.
 						(params) => {
-							const isBar = params.parent.bar;
-							return {
-								isValid: isBar ? params.value > 100 : true,
-								errorMessage: "Must be greater than 100 when bar is true"
+							if (params.arrayParents[0].isActive !== true) {
+								// Return undefined to ignore this validator when the condition is not true.
+								// This check can even be asynchronous!
+								return;
 							}
+							return [minLength(10)]
 						}
 					]
 				}
 			}
-		});
-	</script>
-	```
-3. Arrays
-	```ts
-	<script setup lang="ts">
-		import { ref } from 'vue';
-		import { minLength, useValidation } from "vuelidify";
-
-		type FooBar = {
-			name: string;
-			isActive: boolean;
 		}
+	});
+</script>
+```
+#### Complex Objects
+Sometimes your objects will contain other objects and arrays.
+```ts
 
-		const array = ref<FooBar[]>([]);
-		const v$ = useValidation({
-			objectToValidate: array,
-			validation: {
-				// Validate each object in the array.
-				$each: {
-					name: {
-						// Reactively validate every name
-						$reactive: [
-							// Validate the length of the name only if the object's isActive property is true.
-							(params) => {
-								if (params.arrayParents[0].isActive !== true) {
-									// Return undefined to ignore this validator when the condition is not true.
-									// This check can even be asynchronous!
-									return;
-								}
-								return [minLength(10)]
-							}
-						]
-					}
-				}
-			}
-		});
-	</script>
-	```
+```
 
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
