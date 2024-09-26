@@ -1,28 +1,19 @@
 <script setup lang="ts">
 	import { ref } from 'vue';
-	import { minLength, useValidation } from "vuelidify";
+	import { useValidation } from "vuelidify";
 
 	type FooBar = {
+		a: Zaa,
+		b: Zaa[]
+	}
+	
+	type Zaa = {
 		name: string;
-		isActive: boolean;
+		age: number;
 	}
 
-	const string = ref<FooBar[]>([]);
+	const string = ref("");
 	const v$ = useValidation({
-		objectToValidate: string,
-		validation: {
-			$each: {
-				name: {
-					$reactive: [
-						(params) => {
-							if (params.arrayParents[0].isActive !== true) {
-								return;
-							}
-							return [minLength(10)]
-						}
-					]
-				}
-			}
-		}
+		objectToValidate: string
 	});
 </script>

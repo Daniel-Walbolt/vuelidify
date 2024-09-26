@@ -221,7 +221,7 @@ export type ValidationConfig<
 	 * Setting up validation on an incomplete object will mean that the properties of the object
 	 * can not be linked to the validation configured, thus causing problems.
 	 */
-	objectToValidate: Readonly<Ref<T | undefined | null>>,
+	objectToValidate: Ref<T | undefined | null>,
 	validation: Validation<T, Args, FValidationReturn, T>,
 	/**
 	 * False - reactive validation will always be active.
