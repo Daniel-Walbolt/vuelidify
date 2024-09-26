@@ -262,7 +262,54 @@ Here is the breakdown of the parameters that are passed into validators
 #### Complex Objects
 Sometimes your objects will contain other objects and arrays.
 ```ts
+<script setup lang="ts">
+	import { ref } from 'vue';
+	import { minLength, minNumber, useValidation } from "vuelidify";
 
+	type Person = {
+		a: Person,
+		b: Person[]
+	}
+	
+	type Person = {
+		name: string;
+		age: number;
+	}
+
+	const complexObj = ref<Person>();
+	const v$ = useValidation({
+		objectToValidate: complexObj,
+		validation: {
+			a: {
+				// Validate person a's age reactively
+				age: {
+					$reactive: [minNumber(16)]
+				}
+			},
+			b: {
+				// Validate each person in b
+				$each: {
+					// Validate age reactively and lazily
+					age: {
+						$reactive: [
+							// Make sure each person in the array is younger than person a
+							(params) => {
+								return {
+									isValid: params.value < params.parent.a.age,
+									errorMessage: "Must be younger than person a."
+								}
+							}
+						],
+						$lazy: [minNumber(15)]
+					},
+					name: {
+						$reactive: [minLength(10)]
+					}
+				}
+			}
+		}
+	});
+</script>
 ```
 
 ## Technical Details
