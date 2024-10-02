@@ -1,8 +1,8 @@
 # Vuelidify
 
 [Installation](#installation)
-[Configuration](#configuration)
-[Usage](#usage)
+[Types](#types)
+[Examples](#examples)
 ---
 *A simple and lightweight Vue 3 model based validation library with strong type support.*
 
@@ -10,31 +10,31 @@ This library was inspired by Vuelidate but seeks to solve some of its biggest pr
 
 **✨ Simple** because it does exactly what it needs to and nothing more.
 
-**🪶 Lightweight** because the .mjs is <9KB (uncompressed).
+**🪶 Lightweight** because the .mjs is <9KB (uncompressed), and ~3KB gzipped.
 
 **📝 Model based** refers to validation being done in the script tag on an object. This is an alternative to template based validation, which uses template components and attributes to validate an object.
 
 **💪 Strong types** makes setting up validation intuitive for developers. No more: "wait, how do I do that again?"
 
-Too many validation libraries for Vue lack good type support; which negatively impacts maintainability. Changes to models will not indicate that validation needs to be updated. We sought to fix that problem
+Too many validation libraries for Vue lack good type support; which negatively impacts maintainability. Changes to models would not indicate that validation needs to be updated as well. This library was created to fix that problem
 
 ---
 
 ## Installation
 
 ```sh
-npm i veenesse-forms
+npm i vuelidify
 ```
 
 ```sh
-yarn add veenesse-forms
+yarn add vuelidify
 ```
 
 ```sh
-pnpm add veenesse-forms
+pnpm add vuelidify
 ```
 
-## Type Breakdown
+## Types
 
 This was created for use in ```<script setup lang="ts">```, meaning you need TypeScript in order to get the full benefits of this library.
 
@@ -315,9 +315,9 @@ Sometimes your objects will contain other objects and arrays.
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
 
-- Reactive validation is performed by a deep watcher on the parent object. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running every *reactive* validator in your object every time the user enters a character. But I have since addressed this slightly.
+- Reactive validation is performed by a deep watcher on the parent object. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running every *reactive* validator in your object every time the user enters a character. But I this is mediated by validator optimizations discussed later.
 - Lazy validation is only performed only when the validate() function is called. However, validate() will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the object itself may be valid before ever calling validate() if there were no lazy validators specified, and all reactive validators were true (or again none specified).
-- Because async validators can be mixed with sync validators, there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return less than 500ms they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
+- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return less than 500ms they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
 - ```throttleQueueAsync``` is a custom function exported by this library which solves some of the problems I had with lodash's throttle function. This function throttles a function, can copy it's signature, and returns a promise for the result of the function. Calling this function will instantly execute the function if there is no active throttle. Calling this function with an active throttle will return a promise to call the function as soon as the throttle has expired. Calling the function multiple times during the throttle period will keep overriding the queued promise. Overridden queued promises will return undefined once the throttle expires. This function is very complicated, but extremely useful for returning control back to the caller and guaranteeing that the function gets called with the latest parameters. This are all problems with current implementation of debounce or throttle which use setTimeout() without being wrapped in a promise.
 - ```bufferAsync``` is another custom function exported by this library which offers a more aggressive throttling behavior than ```throttleQueueAsync```. Instead, this function creates an "invocation buffer" on the provided function, copies the functions signature, and returns a promise to the result of the function. Essentially, the function provided will only be ran once the previous invocation of the function has returned. This function also uses a queue to guarantee invocation of the desired function after the previous invocation has returned.
 
