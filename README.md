@@ -1,3 +1,5 @@
+<img src="./favicon.ico" width=250 height=250/>
+
 # Vuelidify
 
 [Installation](#installation)
