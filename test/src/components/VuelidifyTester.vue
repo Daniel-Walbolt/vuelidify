@@ -1,10 +1,11 @@
 <script setup lang="ts">
 	import { ref } from "vue";
-	import { Child, Person } from "../types";
+	import { Person } from "../types";
 	import { PartialPersonValidation } from "../separateValidation";
-	import NeighborComponent from "./NeighborComponent.vue";
 	import { randomPerson } from "../dataGen";
 	import { bufferAsync, minLength, minNumber, useValidation } from "vuelidify";
+import NeighborComponent from "./NeighborComponent.vue";
+
 	const stringTest = ref<string>();
 	const v$ = useValidation({
 		objectToValidate: stringTest,
@@ -212,7 +213,33 @@
 		},
 		delayReactiveValidation: false
 	})
-	// setInterval(() => swapAll(primitiveArrayTest.value), 1000)
+	type AsyncObj = {
+		foo: string,
+		bar: number,
+		za: boolean
+	}
+
+	const asyncObjValidation = ref<AsyncObj>();
+	const promise = new Promise(resolve => setTimeout(() => {
+		asyncObjValidation.value = {
+			foo: "Test",
+			bar: Math.random() * 10,
+			za: true
+		}
+		v$7.setReference(asyncObjValidation.value);
+		resolve(undefined);
+	}, 4000));
+	const v$7 = useValidation({
+		objectToValidate: asyncObjValidation,
+		validation: {
+			foo: {
+				$reactive: []
+			},
+			bar: {},
+			za: {}
+		},
+		delayReactiveValidation: false
+	});
 </script>
 
 <template>
@@ -318,6 +345,43 @@
 					</label>
 					<div class="input-errors">
 						<p v-for="error in v$6.propertyState.arrayState"></p>
+					</div>
+				</div>
+			</section>
+		</form>
+		<form class="form">
+			<h2>Async Object Validation</h2>
+			<section v-if="asyncObjValidation">
+				<div>
+					{{ v$7.isDirty ? "Dirty" : "Not Dirty" }}
+				</div>
+				<div class="field">
+					<label>
+						Name
+						<input v-model="asyncObjValidation.foo"/>
+						<span v-if="v$7.propertyState.foo.isValidating"></span>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$7.propertyState.foo.errorMessages">{{error}}</p>
+					</div>
+				</div>
+				<div class="field">
+					<label>
+						Age
+						<input v-model="asyncObjValidation.bar" type="number"/>
+						<span v-if="v$7.propertyState.bar.isValidating"></span>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$7.propertyState.bar.errorMessages">{{error}}</p>
+					</div>
+				</div>
+				<div class="field">
+					<label>
+						Should Validate
+						<input v-model="asyncObjValidation.za" type="checkbox"/>
+					</label>
+					<div class="input-errors">
+						<p v-for="error in v$7.propertyState.za?.errorMessages">{{error}}</p>
 					</div>
 				</div>
 			</section>

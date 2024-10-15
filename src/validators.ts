@@ -1,4 +1,4 @@
-import { AsyncValidator, SyncValidator, Validator, ValidatorParams } from "./publicTypes";
+import { SyncValidator, ValidatorParams } from './publicTypes';
 
 /** 
  * Makes sure the object is not undefined and the trim length is greater than 0.
@@ -8,7 +8,7 @@ import { AsyncValidator, SyncValidator, Validator, ValidatorParams } from "./pub
 export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && String(params.value).trim().length > 0,
-		errorMessage: "This field is required"
+		errorMessage: 'This field is required'
 	});
 }
 
@@ -21,11 +21,11 @@ export function minLength<T extends string | undefined | null, P, V, R, A>(
 	minLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
-		const val = String(params.value ?? "");
+		const val = String(params.value ?? '');
 		return {
 			isValid: val.length >= minLength,
 			errorMessage: `Too short (${val.length} / ${minLength})`
-		}
+		};
 	};
 }
 
@@ -38,11 +38,11 @@ export function maxLength<T extends string | number | undefined | null, P, V, R,
 	maxLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
-		const val = String(params.value ?? "");
+		const val = String(params.value ?? '');
 		return {
 			isValid: val.length <= maxLength,
 			errorMessage: `Too long (${val.length} / ${maxLength})`
-		}
+		};
 	};
 }
 
@@ -93,7 +93,7 @@ export function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P, 
 export function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
-		errorMessage: "Invalid email format"
+		errorMessage: 'Invalid email format'
 	});
 }
 

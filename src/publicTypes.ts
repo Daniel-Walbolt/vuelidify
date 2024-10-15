@@ -1,4 +1,4 @@
-import { type Ref } from "vue";
+import { type Ref } from 'vue';
 
 /** Shorthand union of the primitive types */
 export type Primitive = string | number | boolean;
@@ -245,11 +245,11 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		/** The entire object that was passed into the useValidation() composable to be validated. */
 		parent: KParent
 	} &
-	(Args extends undefined ? {} : { 
+	(Args extends undefined ? unknown : { 
 		/** The args passed in to the useValidation() composable configuration. */
 		args: Args
 	}) &
-	(ArrParent extends undefined ? {} : {
+	(ArrParent extends undefined ? unknown : {
 		/**
 		 * An ordered list of objects that were traversed through while navigating to this validator.
 		 * 

@@ -1,8 +1,8 @@
-import { computed, Ref } from "vue";
-import { bufferAsync, throttleQueueAsync } from "../throttleFunctions";
-import { ProcessedValidator, PropertyValidationConfig } from "../privateTypes";
-import { setupValiators } from "./validatorProcessing";
-import { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from "../publicTypes";
+import { computed, Ref } from 'vue';
+import { bufferAsync, throttleQueueAsync } from '../throttleFunctions';
+import { ProcessedValidator, PropertyValidationConfig } from '../privateTypes';
+import { setupValidators } from './validatorProcessing';
+import { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from '../publicTypes';
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
@@ -56,14 +56,13 @@ export async function invokeAndOptimizeValidators<
 			if (ret.name !== undefined && propertyConfig.namedValidationResults[ret.name] !== undefined) {
 				Object.assign(propertyConfig.namedValidationResults.value[ret.name], ret);
 			}
-		}
-		else {
+		} else {
 			propertyConfig.validationResults.value.push(ret);
 			if (ret.name !== undefined) {
 				propertyConfig.namedValidationResults.value[ret.name] = ret;
 			}
 		}
-	}
+	};
 	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators} = recursiveInvokeAndOptimizeValidators(
 		propertyConfig,
 		parent,
@@ -134,10 +133,9 @@ function recursiveInvokeAndOptimizeValidators<
 				parent: parent,
 				args: args,
 				arrayParents: propertyConfig.arrayParents
-			}
+			};
 			validationReturn = processedValidator.validator(params as unknown as ValidatorParams<G, KParent, Args, any>);
-		}
-		else {
+		} else {
 			validationReturn = processedValidator.computedValidator.value as typeof validationReturn;
 		}
 
@@ -164,8 +162,7 @@ function recursiveInvokeAndOptimizeValidators<
 									typeof processedValidator.validator,
 									Awaited<ReturnType<typeof processedValidator.validator>>
 								>(processedValidator.validator, ThrottleDurationMs);
-						}
-						else {
+						} else {
 							// Slow validators will receive a buffer.
 							// Calls will never overlap
 							processedValidator.validator = bufferAsync<
@@ -190,15 +187,13 @@ function recursiveInvokeAndOptimizeValidators<
 						allResults.push(...syncResults);
 						await Promise.all(asyncPromises); // Wait for all spawned validators to finish
 						return;
-					}
-					else if (checkForValidatorReturn) {
+					} else if (checkForValidatorReturn) {
 						validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
 					}
 					processValidatorResult(propertyConfig, processedValidator, ret);
 				})
 			);
-		}
-		else if (Array.isArray(validationReturn)) {
+		} else if (Array.isArray(validationReturn)) {
 			// Assume the array is full of validators. TypeScript should warn them from returning any other type of array.
 			// We can't optimize these validators because they might not come back in subsequent runs.
 			// So if async calls are returned in this array they will NOT be throttled.
@@ -216,8 +211,7 @@ function recursiveInvokeAndOptimizeValidators<
 			);
 			allPromises.push(...asyncPromises);
 			allResults.push(...syncResults);
-		}
-		else {
+		} else {
 			if (checkForValidatorReturn) {
 				validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
 			}
@@ -231,9 +225,9 @@ function recursiveInvokeAndOptimizeValidators<
 							parent: parent,
 							args: args,
 							arrayParents: propertyConfig.arrayParents
-						}
+						};
 						return typedValidator(params as unknown as ValidatorParams<G, KParent, Args, any>);
-					})
+					});
 					processedValidator.optimized = true;
 					// Replace a validator with a function that just gets the value of the computed.
 					processedValidator.validator = (() => processedValidator.computedValidator.value) as Validator<G, KParent, Args, FValidationReturn, any>;
@@ -247,7 +241,7 @@ function recursiveInvokeAndOptimizeValidators<
 		asyncPromises: allPromises,
 		syncResults: allResults,
 		validatorsWhichPreviouslyReturnedValidators
-	}
+	};
 }
 
 /** Takes the array of validators returned from a validator and adds them to the normal validation process. */
@@ -267,7 +261,7 @@ function handleReturnedValidators<
 	returnedValidators: Validator<G, KParent, Args, FValidationReturn, any>[],
 	recursionCount: number
 ) {
-	const processedRetValidators = setupValiators(
+	const processedRetValidators = setupValidators(
 		returnedValidators,
 		parentProcessedValidator.isReactive,
 		parentProcessedValidator.validatorId
@@ -283,7 +277,7 @@ function handleReturnedValidators<
 		++recursionCount
 	);
 
-	const spawnedValidatorsMap: ProcessedValidator<G, KParent, Args, FValidationReturn>["spawnedValidators"] = {}
+	const spawnedValidatorsMap: ProcessedValidator<G, KParent, Args, FValidationReturn>['spawnedValidators'] = {};
 	for (const processedValidator of processedRetValidators) {
 		spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
 	}

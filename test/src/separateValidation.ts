@@ -1,7 +1,7 @@
-import { FinalFormValidation, minLength, validateIf } from "../../dist";
+import { minLength, Validation } from "../../dist";
 import { Person } from "./types";
 
-export const PartialPersonValidation: FinalFormValidation<Person> = {
+export const PartialPersonValidation: Validation<Person> = {
 	name: {
 		$reactive: [minLength(10)]
 	},
@@ -11,12 +11,7 @@ export const PartialPersonValidation: FinalFormValidation<Person> = {
 	children: {
 		$each: {
 			name: {
-				$reactive: [validateIf(p => p.parent.validateChildren, [minLength(10), async input => {
-					return {
-						isValid: Math.random() > 0.5,
-						errorMessage: "Async failed"
-					}
-				}])]
+				$reactive: []
 			}
 		}
 	},

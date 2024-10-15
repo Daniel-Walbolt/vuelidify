@@ -1,8 +1,8 @@
-import { Primitive, PrimitiveValidatorTypes, RecursiveValidation, ValidationConfig, ValidationState } from "./publicTypes";
-import { Ref, ref, computed, watch, reactive } from "vue";
-import { IndexableObject, PropertyValidationConfig } from "./privateTypes";
-import { invokeValidatorConfigs } from "./services/validatorInvocation";
-import { configureValidationOnProperty, isPrimitiveOrArrayValidation, setupNestedPropertiesForValidation } from "./services/validatorProcessing";
+import { ValidationConfig, ValidationState } from './publicTypes';
+import { ref, computed, watch, reactive } from 'vue';
+import { PropertyValidationConfig } from './privateTypes';
+import { invokeValidatorConfigs } from './services/validatorInvocation';
+import { setupValidation } from './services/validatorProcessing';
 
 /** 
  * A simple and lightweight Vue3 model based validation library with strong type support.
@@ -32,33 +32,16 @@ export function useValidation<
 
 	/** The reference for determining if the object has been changed or not.  */
 	const dirtyReference = ref(JSON.stringify(validationConfig.objectToValidate.value));
-	/** 
+	/**
 	 * Reactively determines if the object being validated has changed from the reference state.
-	 * 
+	 *
 	 * The reference state can be changed using {@link setReference()}.
 	 */
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
 
-	// Based on the validation we are provided, we can assume what the object is supposed to be.
-	const isPrimitiveOrArray = isPrimitiveOrArrayValidation(validation);
-
-	// If the object is a primitive type or undefined (at time of initialization) we will treat it as singular property validation
-	if (isPrimitiveOrArray) {
-		// The user is attempting to add validation onto a singular property instead of an object.
-		// Assert the type of the provided ref to a more accurate type that describes the state of this branch.
-		const typedValidation = validation as PrimitiveValidatorTypes<Primitive | undefined, T, Args | undefined, FValidationReturn, any>;
-		const typedObject = object as Ref<Primitive>;
-		const validatedPropertyConfig = configureValidationOnProperty(typedObject, typedValidation);
-		propertyState = reactive(validatedPropertyConfig.validationState) as any; // typescript can't comprehend this type
-		validationConfigs = [validatedPropertyConfig];
-	}
-	else {
-		const typedObject = object as Ref<IndexableObject>;
-		const typedValidation = validation as RecursiveValidation<typeof typedObject, T, Args, FValidationReturn, any, number>;
-		const validationSetup = setupNestedPropertiesForValidation<IndexableObject, T, Args, FValidationReturn>(typedObject.value, typedValidation);
-		propertyState = reactive(validationSetup.state) as ValidationState<T, FValidationReturn>;
-		validationConfigs = validationSetup.validationConfigs;
-	}
+	const setup = setupValidation<T,T,Args,FValidationReturn>(object, validation);
+	propertyState = setup.propertyState;
+	validationConfigs = setup.validationConfigs;
 
 	/** 
 	 * Watch the object for any changes.
@@ -71,11 +54,10 @@ export function useValidation<
 		() => {
 			if (delayReactiveValidation) {
 				if (hasValidated.value === true) {
-					invokeValidatorConfigs(validationConfigs, object, args, true, false)
+					invokeValidatorConfigs(validationConfigs, object, args, true, false);
 				}
-			}
-			else {
-				invokeValidatorConfigs(validationConfigs, object, args, true, false)
+			} else {
+				invokeValidatorConfigs(validationConfigs, object, args, true, false);
 			}
 		},
 		{ deep: true }

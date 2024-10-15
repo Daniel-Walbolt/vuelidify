@@ -1,5 +1,5 @@
-import { ComputedRef, Ref } from "vue";
-import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from "./publicTypes";
+import { ComputedRef, Ref } from 'vue';
+import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
@@ -91,7 +91,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	 * 
 	 * Add to list using computed getters, because this is wrapped as a reactive object.
 	 */
-	arrayParents: {}[]
+	arrayParents: object[]
 }
 
 /** Stores the state and the validation configs of an element within an array */

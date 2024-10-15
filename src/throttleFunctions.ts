@@ -4,8 +4,7 @@
  */
 export function bufferAsync<F extends (...args: any) => any, K>(
 	func: (...params: Parameters<F>) => Promise<K>,
-): (...params: Parameters<typeof func>) => Promise<K | undefined>
-{
+): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
 	let queuedFunc: Promise<K | undefined> | undefined = undefined;
 
@@ -43,8 +42,7 @@ export function bufferAsync<F extends (...args: any) => any, K>(
 export function throttleQueueAsync<F extends (...args: any) => any, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
 	delay: number
-): (...params: Parameters<typeof func>) => Promise<K | undefined>
-{
+): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
 	let previousExecTime: number | undefined = undefined;
 	return (...params: Parameters<typeof func>) => new Promise<K | undefined>(resolve => {

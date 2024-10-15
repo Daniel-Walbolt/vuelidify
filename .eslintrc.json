@@ -15,11 +15,12 @@
   },
   "plugins": ["@typescript-eslint", "vue"],
   "rules": {
-    "brace-style": ["error", "allman", { "allowSingleLine": true }],
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
     "indent": ["error", "tab"],
     "no-var": "error",
     "linebreak-style": ["error", "windows"],
     "quotes": ["error", "single"],
-    "semi": ["error", "always"]
+    "semi": ["error", "always"],
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }
