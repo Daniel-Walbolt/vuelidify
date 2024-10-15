@@ -15,9 +15,6 @@
   },
   "plugins": ["@typescript-eslint", "vue"],
   "rules": {
-    "max-len": {
-      "code": 145
-    },
     "brace-style": ["error", "allman", { "allowSingleLine": true }],
     "indent": ["error", "tab"],
     "no-var": "error",
