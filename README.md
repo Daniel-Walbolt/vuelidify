@@ -6,9 +6,9 @@
 ---
 *A simple and lightweight Vue 3 model based validation library with strong type support.*
 
-This library was inspired by Vuelidate but seeks to solve some of its biggest problems.This library does NOT support Vue2, and does not support commonJS. Technology must move forward.
+This library was inspired by Vuelidate but seeks to solve some of its biggest problems. This library does NOT support Vue2, and does NOT support commonJS. Technology must move forward.
 
-**✨ Simple** because it does exactly what it needs to and nothing more.
+**✨ Simple** because it does exactly what it needs to with no dependencies other than Vue.
 
 **🪶 Lightweight** because the .mjs is <9KB (uncompressed), and ~3KB gzipped.
 
@@ -16,7 +16,7 @@ This library was inspired by Vuelidate but seeks to solve some of its biggest pr
 
 **💪 Strong types** makes setting up validation intuitive for developers. No more: "wait, how do I do that again?"
 
-Too many validation libraries for Vue lack good type support; which negatively impacts maintainability. Changes to models would not indicate that validation needs to be updated as well. This library was created to fix that problem
+Too many validation libraries for Vue lack good type support; which negatively impacts maintainability. Changes to models would not indicate that validation needs to be updated as well. This library was created to fix that problem.
 
 ---
 
@@ -372,3 +372,6 @@ export function isEmailSync<
 	};
 }
 ```
+
+The type system that makes all this possible is fairly fragile. These problems may well be a limitation of TypeScript rather than of this package.
+I have encountered such problems when trying to build certain generic custom validators. Feel free to post issues you may have with the package on the git repo!
