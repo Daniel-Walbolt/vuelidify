@@ -135,10 +135,10 @@ type ValidatorParams<T, KParent, Args, ArrParent> = {
     value: T;
     /** The entire object that was passed into the useValidation() composable to be validated. */
     parent: KParent;
-} & (Args extends undefined ? {} : {
+} & (Args extends undefined ? unknown : {
     /** The args passed in to the useValidation() composable configuration. */
     args: Args;
-}) & (ArrParent extends undefined ? {} : {
+}) & (ArrParent extends undefined ? unknown : {
     /**
      * An ordered list of objects that were traversed through while navigating to this validator.
      *
