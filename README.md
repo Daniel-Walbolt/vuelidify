@@ -1,6 +1,4 @@
-# Vuelidify
-
-![Project Icon](./favicon.ico)
+# <img src="./favicon.ico" alt="Vuelidify Logo" style="border-radius: 50%; width: 50px; height: 50px;"/> Vuelidify
 
 
 [Installation](#installation)
