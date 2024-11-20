@@ -15,6 +15,7 @@ export type ValidationState<
 			? PrimitiveValidationState<FValidationReturn>
 			: undefined;
 
+/** Intermediate type for handling nested objects for validation state. Used internally. */
 export type RecursiveValidationState<T, FValidationReturn> = {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
 	[key in keyof T]?: ValidationState<T[key], FValidationReturn>;
@@ -40,6 +41,7 @@ export type PrimitiveValidationState<FValidationReturn> = {
 	resultsArray: BaseValidationReturn<FValidationReturn>[];
 }
 
+/** Defines the validation state for properties that are typed as arrays. */
 export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
 	/**
 	 * Contains the validation state for each element in the array.
@@ -49,6 +51,7 @@ export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationStat
 	arrayState: ValidationState<U, FValidationReturn>[];
 }
 
+/** Intermediate type for handling nested objects. Used internally. */
 export type RecursiveValidation<
 	T extends IndexableObject,
 	KParent, 
@@ -61,6 +64,7 @@ export type RecursiveValidation<
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 }
 
+/** Defines the validation rules for propeties that are typed as primitive values. */
 export type PrimitiveValidation<
 	T extends Primitive | undefined | null, 
 	KParent,
@@ -87,6 +91,7 @@ export type PrimitiveValidatorTypes<
 	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 }
 
+/** Defines the validation rules for properties that are typed as arrays. */
 export type ArrayValidatorTypes<
 	U,
 	T extends Array<U>,
@@ -127,6 +132,9 @@ export type Validator<
 	ArrParent
 > = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
 
+/** 
+ * An easy to use conditional type which determines which validation rule to use based on the first type passed in.
+ */
 export type ValidatorTypes<
 	T,
 	KParent,
@@ -138,8 +146,10 @@ export type ValidatorTypes<
 	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>
 
+/** Represents the basic structure of a validator function */
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
 
+/** Indicates a validator which run synchronously */
 export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 	T,
 	Parent,
@@ -148,6 +158,7 @@ export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 	ArrParent
 >
 
+/** Indicates a validator which returns a promise */
 export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 	T,
 	Parent,
@@ -156,6 +167,7 @@ export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 	ArrParent
 >
 
+/** The base type for the return value of validators */
 export type BaseValidationReturn<F = any> = {
 	/** 
 	 * Assign this validator's result a name.
@@ -185,11 +197,15 @@ export type BaseValidationReturn<F = any> = {
 	custom?: F
 }
 
+/** Used in the validation state on properties which are typed as arrays. */
 export type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
 	/** The raw list of results from validating every object in the array. */
 	arrayResults?: ValidationState<U, FValidationReturn>[];
 }
 
+/**
+ * The main recursive type which dictates the layout of the validation rules.
+ */
 export type Validation<
 	T,
 	Args = undefined,
