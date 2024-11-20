@@ -1,5 +1,5 @@
 import { ComputedRef, Ref } from 'vue';
-import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes';
+import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes.ts';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {

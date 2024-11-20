@@ -1,8 +1,8 @@
 import { computed, Ref } from 'vue';
-import { bufferAsync, throttleQueueAsync } from '../throttleFunctions';
-import { ProcessedValidator, PropertyValidationConfig } from '../privateTypes';
-import { setupValidators } from './validatorProcessing';
-import { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from '../publicTypes';
+import { bufferAsync, throttleQueueAsync } from '../throttleFunctions.ts';
+import { ProcessedValidator, PropertyValidationConfig } from '../privateTypes.ts';
+import { setupValidators } from './validatorProcessing.ts';
+import { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from '../publicTypes.ts';
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
 	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
@@ -53,7 +53,7 @@ export async function invokeAndOptimizeValidators<
 		const existingResult = propertyConfig.validationResults.value.find(x => x.id === ret.id);
 		if (existingResult !== undefined) {
 			Object.assign(existingResult, ret);
-			if (ret.name !== undefined && propertyConfig.namedValidationResults[ret.name] !== undefined) {
+			if (ret.name !== undefined && propertyConfig.namedValidationResults.value[ret.name] !== undefined) {
 				Object.assign(propertyConfig.namedValidationResults.value[ret.name], ret);
 			}
 		} else {
@@ -111,7 +111,7 @@ function recursiveInvokeAndOptimizeValidators<
 ) {
 	const property = propertyConfig.property.value;
 	// Collect all the promised results and synchronous results in lists to return later.
-	const allPromises: Promise<BaseValidationReturn>[] = [];
+	const allPromises: Promise<BaseValidationReturn | undefined>[] = [];
 	const allResults: BaseValidationReturn<any>[] = [];
 	// Add validators to this list that returned validators from a previous run, but did not this time.
 	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
@@ -128,7 +128,7 @@ function recursiveInvokeAndOptimizeValidators<
 		if (processedValidator.computedValidator === undefined) {
 			// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
 			// This will require a cast to the type the validator expects in order to avoid type errors.
-			const params: ValidatorParams<G, KParent, unknown, any[]> = {
+			const params: ValidatorParams<G, KParent | undefined | null, unknown, any[]> = {
 				value: property,
 				parent: parent,
 				args: args,
@@ -220,7 +220,7 @@ function recursiveInvokeAndOptimizeValidators<
 					const typedValidator = processedValidator.validator as SyncValidator<G, KParent, Args, FValidationReturn, any>;
 					// Optimize sync validators into computed functions
 					processedValidator.computedValidator = computed<ReturnType<typeof typedValidator>>(() => {
-						const params: ValidatorParams<G, KParent, unknown, any[]> = {
+						const params: ValidatorParams<G, KParent | undefined | null, unknown, any[]> = {
 							value: propertyConfig.property.value, // Setup a reactive dependency on the property value
 							parent: parent,
 							args: args,
@@ -230,7 +230,7 @@ function recursiveInvokeAndOptimizeValidators<
 					});
 					processedValidator.optimized = true;
 					// Replace a validator with a function that just gets the value of the computed.
-					processedValidator.validator = (() => processedValidator.computedValidator.value) as Validator<G, KParent, Args, FValidationReturn, any>;
+					processedValidator.validator = (() => processedValidator.computedValidator?.value) as Validator<G, KParent, Args, FValidationReturn, any>;
 				}
 				allResults.push(validationReturn);
 				processValidatorResult(propertyConfig, processedValidator, validationReturn);
@@ -299,7 +299,7 @@ export async function invokeReactivePropertyValidators<
 	args: Args,
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number
-) {
+): Promise<boolean> {
 	propertyConfig.isValidatingReactive.value = true;
 
 	// Get the specified reactive validators and run them.
@@ -317,7 +317,7 @@ export async function invokeReactivePropertyValidators<
 		propertyConfig.isValidatingReactive.value = false;
 	}
 
-	return propertyConfig.isReactiveValid.value;
+	return propertyConfig.isReactiveValid.value ?? false;
 }
 
 /** Invokes all lazy validators for a property and returns whether or not they all passed. */
@@ -332,7 +332,7 @@ export async function invokeLazyPropertyValidators<
 	args: Args,
 	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
 	iterationId: number
-) {
+): Promise<boolean> {
 	propertyConfig.isValidatingLazy.value = true;
 
 	// Get the specified reactive validators and run them.
@@ -351,7 +351,7 @@ export async function invokeLazyPropertyValidators<
 		propertyConfig.isValidatingLazy.value = false;
 	}
 
-	return propertyConfig.isLazyValid.value;
+	return propertyConfig.isLazyValid.value ?? false;
 }
 
 /** 
@@ -371,16 +371,16 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	reactive: boolean,
 	lazy: boolean
 ): Promise<boolean> {
-	const validatorPromises: boolean[] = [];
+	const validatorPromises: Promise<boolean>[] = [];
 	
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
 		if (reactive && validationConfig.validation.$reactive !== undefined) {
-			validatorPromises.push(await invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
+			validatorPromises.push(invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		// Check if we should validate lazy validators
 		if (lazy && validationConfig.validation.$lazy !== undefined) {
-			validatorPromises.push(await invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
+			validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		
 		// Check if there are array elements to validate. Each element can have its own lazy or reactive properties.
@@ -389,7 +389,7 @@ export async function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 			for (const key in validationConfig.arrayConfigMap) {
 				elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
 			}
-			validatorPromises.push(await invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
+			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
 		}
 	}
 	// Return true if all promises returned true, otherwise false.

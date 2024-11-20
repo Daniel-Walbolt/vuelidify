@@ -76,9 +76,9 @@ export function throttleQueueAsync<F extends (...args: any) => any, K>(
  */
 export function reduceUndefined<T, K = T>(
 	array: T[], 
-	getter: (value: T) => K = (val) => val as unknown as K
+	getter: (value: T) => K | undefined = (val) => val as unknown as K | undefined
 ) {
-	return array.reduce((results: NonNullable<K>[], item) => {
+	return array.reduce((results: K[], item) => {
 		if (item !== undefined) {
 			const target = getter(item);
 			if (target !== undefined) {

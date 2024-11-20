@@ -1,7 +1,7 @@
 import { computed, ComputedRef, MaybeRefOrGetter, reactive, Ref, ref, toValue } from 'vue';
-import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from '../privateTypes';
-import { reduceUndefined } from '../throttleFunctions';
-import { ArrayValidationState, ArrayValidatorTypes, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from '../publicTypes';
+import { IndexableObject, PrimitiveOrArrayValidation, ProcessedValidator, PropertyValidationConfig } from '../privateTypes.ts';
+import { reduceUndefined } from '../throttleFunctions.ts';
+import { ArrayValidationState, ArrayValidatorTypes, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, ValidationState, Validator, ValidatorTypes } from '../publicTypes.ts';
 
 function uniqueId() {
 	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -63,7 +63,7 @@ export function setupValidators<
 	const processedValidators: ProcessedValidator<G, KParent, Args, FValidationReturn>[] = [];
 	let getId: (index?: number) => string = () => `${markReactive ? 'reactive' : 'lazy'}-${uniqueId()}`;
 	if (useExistingIdWithIndex != undefined) {
-		getId = (index: number) => `${useExistingIdWithIndex}-${index}`;
+		getId = (index?: number) => `${useExistingIdWithIndex}-${index}`;
 	}
 	for (const [index,validator] of validators.entries()) {
 		processedValidators.push({

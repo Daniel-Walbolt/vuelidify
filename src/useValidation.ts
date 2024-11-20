@@ -1,8 +1,18 @@
-import { ValidationConfig, ValidationState } from './publicTypes';
-import { ref, computed, watch, reactive } from 'vue';
-import { PropertyValidationConfig } from './privateTypes';
-import { invokeValidatorConfigs } from './services/validatorInvocation';
-import { setupValidation } from './services/validatorProcessing';
+import { ValidationConfig, ValidationState } from './publicTypes.ts';
+import { ref, computed, watch, reactive, Ref, ComputedRef, Reactive } from 'vue';
+import { PropertyValidationConfig } from './privateTypes.ts';
+import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
+import { setupValidation } from './services/validatorProcessing.ts';
+
+type UseValidationReturn<T, FValidationReturn> = {
+	hasValidated: Ref<boolean>,
+	validate: () => Promise<boolean>,
+	isValidating: ComputedRef<boolean>,
+	propertyState: ComputedRef<ValidationState<T, FValidationReturn>>,
+	isValid: ComputedRef<boolean>,
+	setReference: (reference: T) => void,
+	isDirty: ComputedRef<boolean>
+}
 
 /** 
  * A simple and lightweight Vue3 model based validation library with strong type support.
@@ -15,7 +25,7 @@ export function useValidation<
 	FValidationReturn = unknown
 >(
 	validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>
-) {
+): Reactive<UseValidationReturn<T, FValidationReturn>> {
 	validationConfig.delayReactiveValidation ??= true; // Default value for delayReactiveValidation
 	const { objectToValidate: object, validation, delayReactiveValidation, args } = validationConfig;
 
@@ -39,7 +49,7 @@ export function useValidation<
 	 */
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
 
-	const setup = setupValidation<T,T,Args,FValidationReturn>(object, validation);
+	const setup = setupValidation<T, T, Args, FValidationReturn>(object as Ref<T>, validation);
 	propertyState = setup.propertyState;
 	validationConfigs = setup.validationConfigs;
 
