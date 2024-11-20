@@ -44,8 +44,17 @@ export function bufferAsync<F extends (...args: any) => any, K>(
  * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
  * 
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
+ * ```ts
+ * async function test(): Promise<boolean> {}
+ * // Call this constant instead of the function to get the thottle benefits
+ * const throttledTest = throttleQueueAsync<
+ * 		typeof test, // this type makes the return the same signature as test()
+ * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
+ * >(test);
+ * ```
  * @param func the function to throttle
  * @param delay milliseconds required between invocations of the function.
+ *
  */
 export function throttleQueueAsync<F extends (...args: any) => any, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
