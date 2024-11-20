@@ -1,6 +1,14 @@
 /** 
  * Returns a function that will only execute the provided promise returning function
- * with the most recently specified params only if a previously created promise does not exist. 
+ * with the most recently specified params only if a previously created promise does not exist.
+ * ```ts
+ * async function test(): Promise<boolean> {}
+ * // Call this constant instead of the function to get the buffer benefits
+ * const bufferedTest = bufferAsync<
+ * 		typeof test, // this type makes the return the same signature as test()
+ * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
+ * >(test);
+ * ```
  */
 export function bufferAsync<F extends (...args: any) => any, K>(
 	func: (...params: Parameters<F>) => Promise<K>,
