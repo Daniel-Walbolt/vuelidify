@@ -1,5 +1,5 @@
-import { minLength, Validation } from "../../dist";
-import { Person } from "./types";
+import { minLength, type Validation } from "../../dist";
+import type { Person } from "./types";
 
 export const PartialPersonValidation: Validation<Person> = {
 	name: {

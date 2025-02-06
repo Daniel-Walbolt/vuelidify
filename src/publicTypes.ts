@@ -1,4 +1,4 @@
-import { type Ref } from 'vue';
+import type { Ref } from 'vue';
 
 /** Shorthand union of the primitive types */
 export type Primitive = string | number | boolean;

@@ -1,6 +1,6 @@
-import { ValidationConfig, ValidationState } from './publicTypes.ts';
-import { ref, computed, watch, reactive, Ref, ComputedRef, Reactive } from 'vue';
-import { PropertyValidationConfig } from './privateTypes.ts';
+import type { ValidationConfig, ValidationState } from './publicTypes.ts';
+import { ref, computed, watch, reactive, type Ref, type ComputedRef, type Reactive } from 'vue';
+import type { PropertyValidationConfig } from './privateTypes.ts';
 import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
 import { setupValidation } from './services/validatorProcessing.ts';
 
@@ -8,7 +8,7 @@ type UseValidationReturn<T, FValidationReturn> = {
 	hasValidated: Ref<boolean>,
 	validate: () => Promise<boolean>,
 	isValidating: ComputedRef<boolean>,
-	propertyState: ComputedRef<ValidationState<T, FValidationReturn>>,
+	propertyState: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>,
 	isValid: ComputedRef<boolean>,
 	setReference: (reference: T) => void,
 	isDirty: ComputedRef<boolean>
@@ -37,8 +37,7 @@ export function useValidation<
 		return allValidatorsValid;
 	});
 	/** List of objects that relates validation to the object's properties. */
-	let validationConfigs: PropertyValidationConfig<any, T, any, FValidationReturn>[] = [];
-	let propertyState: ValidationState<T, FValidationReturn> = reactive({} as any);
+	let validationConfigs: PropertyValidationConfig<unknown, T, unknown, FValidationReturn>[] = [];
 
 	/** The reference for determining if the object has been changed or not.  */
 	const dirtyReference = ref(JSON.stringify(validationConfig.objectToValidate.value));
@@ -50,7 +49,7 @@ export function useValidation<
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
 
 	const setup = setupValidation<T, T, Args, FValidationReturn>(object as Ref<T>, validation);
-	propertyState = setup.propertyState;
+	const propertyState = setup.propertyState;
 	validationConfigs = setup.validationConfigs;
 
 	/** 

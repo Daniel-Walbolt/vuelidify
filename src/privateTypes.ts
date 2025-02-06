@@ -1,19 +1,20 @@
-import { ComputedRef, Ref } from 'vue';
-import { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes.ts';
+import type { ComputedRef, Ref } from 'vue';
+import type { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes.ts';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 /** Type specifically used for casting validation objects in order to appease TypeScript. */
-export type PrimitiveOrArrayValidation = PrimitiveValidatorTypes<Primitive, any, any, any, any> & ArrayValidatorTypes<any, any[], any, any, any, any, number>;
+export type PrimitiveOrArrayValidation = PrimitiveValidatorTypes<Primitive, unknown, unknown, unknown, unknown> 
+	& ArrayValidatorTypes<unknown, unknown[], unknown, unknown, unknown, unknown, number>;
 
 export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
-	validator: Validator<T, KParent, Args, FValidationReturn, any>;
-	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, any>>>
+	validator: Validator<T, KParent, Args, FValidationReturn, unknown>;
+	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, unknown>>>
 	/** Used for determining whether or not to optimize this validator. */
 	optimized: boolean;
 	/** Does this validator belong to reactive or lazy validation. Used when assigning IDs to spawned validators. */
@@ -72,9 +73,9 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	property: Readonly<Ref<T>>;
 
 	/** The user specified validation object for this property */
-	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn, any, number>>;
+	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn, unknown, number>>;
 	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
-	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<any, FValidationReturn>>;
+	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<unknown, FValidationReturn>>;
 	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	namedValidationResults: Ref<{
 		[key: string]: BaseValidationReturn<FValidationReturn>;
@@ -85,7 +86,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
-	elementValidation: Readonly<Validation<any, Args, FValidationReturn, KParent, any> | undefined>;
+	elementValidation: Readonly<Validation<unknown, Args, FValidationReturn, KParent, unknown> | undefined>;
 	/** 
 	 * An array of all the array elements that were traversed through during validation.
 	 * 
@@ -94,13 +95,13 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	arrayParents: object[]
 }
 
-/** Stores the state and the validation configs of an element within an array */
+/** Stores the state and the validation configs of an element within an array. Used internally. */
 export type ElementValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** 
 	 * The list of validation configs that can be used to validate this element.
 	 * Each one should modify a portion of the {@link validationState} 
 	 */
-	validationConfigs: PropertyValidationConfig<any, KParent, Args, FValidationReturn>[]
+	validationConfigs: PropertyValidationConfig<unknown, KParent, Args, FValidationReturn>[]
 	/** The validation state for this element */
 	validationState: RecursiveValidationState<T, FValidationReturn>;
 }

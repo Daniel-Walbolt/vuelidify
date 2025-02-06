@@ -1,4 +1,4 @@
-import { SyncValidator, ValidatorParams } from './publicTypes.ts';
+import type { SyncValidator, ValidatorParams } from './publicTypes.ts';
 
 /** 
  * Makes sure the object is not undefined and the trim length is greater than 0.

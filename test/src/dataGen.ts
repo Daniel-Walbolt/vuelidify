@@ -1,4 +1,4 @@
-import { Child, Person } from "./types";
+import type { Child, Person } from "./types";
 
 const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony"];
 export const randomPerson = (genNeighbors: boolean = true, genBestFriend: boolean = true, maxChildren: number = 1, maxNeighbors: number = 2): Person => {
