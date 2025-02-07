@@ -1,10 +1,10 @@
 <script setup lang="ts">
-	import { ref } from "vue";
-	import { Person } from "../types";
-	import { PartialPersonValidation } from "../separateValidation";
-	import { randomPerson } from "../dataGen";
-	import { bufferAsync, minLength, minNumber, useValidation } from "vuelidify";
-import NeighborComponent from "./NeighborComponent.vue";
+	import { ref } from 'vue';
+	import { Person } from '../types';
+	import { PartialPersonValidation } from '../separateValidation';
+	import { randomPerson } from '../dataGen';
+	import { bufferAsync, minLength, minNumber, useValidation } from 'vuelidify';
+	import NeighborComponent from './NeighborComponent.vue';
 
 	const stringTest = ref<string>();
 	const v$ = useValidation({
@@ -16,7 +16,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 	});
 
 	const simpleObjectTest = ref({
-		name: "",
+		name: '',
 		age: 0,
 		isPerson: false
 	});
@@ -34,9 +34,9 @@ import NeighborComponent from "./NeighborComponent.vue";
 					const isNotAPerson = input.value == false;
 					const isYoungerThanZero = input.parent.age < 0;
 						return {
-							name: "test",
+							name: 'test',
 							isValid: (isYoungerThanZero && isNotAPerson) || (!isNotAPerson && !isYoungerThanZero),
-							errorMessage: "People are at least 0 years old!",
+							errorMessage: 'People are at least 0 years old!',
 							custom: {
 								severity: 10,
 								passwordStrength: 3
@@ -49,7 +49,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 	});
 
 	const objectArrayTest = ref([
-		{ name: "12345" }
+		{ name: '12345' }
 	]);
 	const randomRef = ref(4);
 	// setInterval(() => {
@@ -65,8 +65,8 @@ import NeighborComponent from "./NeighborComponent.vue";
 						input => {
 							return {
 								isValid: randomRef.value > 100,
-								errorMessage: "Failed"
-							}
+								errorMessage: 'Failed'
+							};
 						}
 						// async input => {
 						// 	await new Promise(resolve => setTimeout(resolve, Math.random() * 500));
@@ -90,7 +90,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 
 	function addObjectToArray() {
 		objectArrayTest.value.push({
-			name: "1234567"
+			name: '1234567'
 		});
 	}
 
@@ -119,7 +119,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 
 	const simpleValidateIfTest = ref({
 		isValidated: false,
-		name: ""
+		name: ''
 	});
 	const v$4 = useValidation({
 		objectToValidate: simpleValidateIfTest,
@@ -134,11 +134,11 @@ import NeighborComponent from "./NeighborComponent.vue";
 							await new Promise(resolve => setTimeout(resolve, 1000));
 							return {
 								isValid: Math.random() > 0.5,
-								errorMessage: "Async failed"
-							}
+								errorMessage: 'Async failed'
+							};
 						},
 						minLength(15)
-					]
+					];
 				}]
 			}
 		},
@@ -146,7 +146,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 	});
 
 	const testAsyncFunction = bufferAsync(async () => {
-		console.log("Async promise activated");
+		console.log('Async promise activated');
 		await new Promise(resolve => setTimeout(resolve, 500));
 	});
 
@@ -161,7 +161,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 						$reactive: [minLength(10), input => {
 							return {
 								isValid: true
-							}
+							};
 						}]
 					},
 					age: {
@@ -179,8 +179,8 @@ import NeighborComponent from "./NeighborComponent.vue";
 										input => {
 											return {
 												isValid: Math.random() > 0.5,
-												errorMessage: "Async failed"
-											}
+												errorMessage: 'Async failed'
+											};
 										}
 									];
 								}]
@@ -203,7 +203,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 	// 	console.timeEnd("Validation");
 	// }, 2000);
 
-	const primitiveArrayTest = ref(["123", "456", "789"]);
+	const primitiveArrayTest = ref(['123', '456', '789']);
 	const v$6 = useValidation({
 		objectToValidate: primitiveArrayTest,
 		validation: {
@@ -212,7 +212,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 			}
 		},
 		delayReactiveValidation: false
-	})
+	});
 	type AsyncObj = {
 		foo: string,
 		bar: number,
@@ -222,10 +222,10 @@ import NeighborComponent from "./NeighborComponent.vue";
 	const asyncObjValidation = ref<AsyncObj>();
 	const promise = new Promise(resolve => setTimeout(() => {
 		asyncObjValidation.value = {
-			foo: "Test",
+			foo: 'Test',
 			bar: Math.random() * 10,
 			za: true
-		}
+		};
 		v$7.setReference(asyncObjValidation.value);
 		resolve(undefined);
 	}, 4000));
@@ -302,10 +302,10 @@ import NeighborComponent from "./NeighborComponent.vue";
 					<label>
 						Name {{ i }}
 						<input v-model="obj.name"/>
-						<span v-if="v$3.propertyState.arrayState[i].name.isValidating"></span>
+						<!-- <span v-if="v$3.propertyState.arrayState[i].name.isValidating"></span> -->
 					</label>
 					<div class="input-errors">
-						<p v-for="error in v$3.propertyState.arrayState[i].name.errorMessages">{{error}}</p>
+						<!-- <p v-for="error in v$3.propertyState.arrayState[i].name.errorMessages">{{error}}</p> -->
 					</div>
 				</div>
 			</section>

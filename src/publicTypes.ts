@@ -51,7 +51,7 @@ export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationStat
 	arrayState: ValidationState<U, FValidationReturn>[];
 }
 
-/** Intermediate type for handling nested objects. Used internally. */
+/** Intermediate type for handling validation of nested objects. */
 export type RecursiveValidation<
 	T extends IndexableObject,
 	KParent, 
@@ -60,7 +60,12 @@ export type RecursiveValidation<
 	ArrParent,
 	NLevel extends number
 > = {
-	// If the type of the property on the object is not a primitive, then it requires a nested validation object.
+	/** The validators that are invoked whenever the form is changed. */
+	_reactive?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
+	/** The validators that are invoked only after {@link validate()} is invoked. */
+	_lazy?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
+} & {
+	// Recursively define the validation on the contents of this object
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 }
 
@@ -71,28 +76,42 @@ export type PrimitiveValidation<
 	Args,
 	FValidationReturn,
 	ArrParent
-> = PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+
+/** Defines the validation rules for objects */
+export type ObjectValidationTypes<
+	T extends IndexableObject,
+	KParent,
+	Args,
+	FValidationReturn,
+	ArrParent
+> = {
+	/** The validators that are invoked whenever the form is changed. */
+	_reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+	/** The validators that are invoked only after {@link validate()} is invoked. */
+	_lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+}
 
 type IndexableObject = {
 	[key: string]: any;
 };
 
-/** Separates the reactive and lazy validators of a primitive property. */
-export type PrimitiveValidatorTypes<
+/** Specifies the reactive and lazy validators */
+export type BaseValidationTypes<
 	T,
 	KParent,
 	Args,
 	FValidationReturn,
 	ArrParent
 > = {
-	/** The validators for this property that are invoked whenever the form is changed. */
+	/** The validators that are invoked whenever the form is changed. */
 	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-	/** The validators for this property that are invoked only after {@link validate()} is invoked. */
+	/** The validators that are invoked only after {@link validate()} is invoked. */
 	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 }
 
 /** Defines the validation rules for properties that are typed as arrays. */
-export type ArrayValidatorTypes<
+export type ArrayValidationTypes<
 	U,
 	T extends Array<U>,
 	KParent,
@@ -100,7 +119,7 @@ export type ArrayValidatorTypes<
 	FValidationReturn,
 	ArrParent,
 	NLevel extends number
-> = {
+> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent> & {
 	/**
 	 * Can only be used with object arrays. Not string, number, or boolean (primitive) arrays.
 	 * 
@@ -118,10 +137,6 @@ export type ArrayValidatorTypes<
 			: ArrParent & { [key in NLevel]: U },
 		Increment<NLevel>
 	>;
-	/** The validators for the array that are invoked whenever the form is changed. */
-	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-	/** The validators for the array that are invoked only when {@link validate()} is called. */
-	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 }
 /** A synchronous or asynchronous validator. */
 export type Validator<
@@ -131,20 +146,6 @@ export type Validator<
 	FValidationReturn,
 	ArrParent
 > = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
-
-/** 
- * An easy to use conditional type which determines which validation rule to use based on the first type passed in.
- */
-export type ValidatorTypes<
-	T,
-	KParent,
-	Args,
-	FValidationReturn,
-	ArrParent,
-	NLevel extends number
-> = T extends Array<infer U>
-	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
-	: PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>
 
 /** Represents the basic structure of a validator function */
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
@@ -214,7 +215,7 @@ export type Validation<
 	ArrParent = undefined,
 	NLevel extends number = 0
 > = T extends Array<infer U>
-	? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
+	? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 	: T extends IndexableObject
 		? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>
 		// boolean is checked separately from Primitive 

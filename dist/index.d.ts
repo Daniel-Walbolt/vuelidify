@@ -1,9 +1,10 @@
-import { Ref } from 'vue';
+import { Ref, Reactive, ComputedRef } from 'vue';
 
 /** Shorthand union of the primitive types */
 type Primitive = string | number | boolean;
 /** Holds the latest results of validation for an object */
 type ValidationState<T, FValidationReturn> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn> : T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn> : T extends Primitive ? PrimitiveValidationState<FValidationReturn> : undefined;
+/** Intermediate type for handling nested objects for validation state. Used internally. */
 type RecursiveValidationState<T, FValidationReturn> = {
     [key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 };
@@ -26,6 +27,7 @@ type PrimitiveValidationState<FValidationReturn> = {
     };
     resultsArray: BaseValidationReturn<FValidationReturn>[];
 };
+/** Defines the validation state for properties that are typed as arrays. */
 type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
     /**
      * Contains the validation state for each element in the array.
@@ -34,21 +36,36 @@ type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FVali
      */
     arrayState: ValidationState<U, FValidationReturn>[];
 };
+/** Intermediate type for handling validation of nested objects. */
 type RecursiveValidation<T extends IndexableObject, KParent, ValidationArgs, FValidationReturn, ArrParent, NLevel extends number> = {
+    /** The validators that are invoked whenever the form is changed. */
+    _reactive?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
+    /** The validators that are invoked only after {@link validate()} is invoked. */
+    _lazy?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
+} & {
     [key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 };
-type PrimitiveValidation<T extends Primitive | undefined | null, KParent, Args, FValidationReturn, ArrParent> = PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+/** Defines the validation rules for propeties that are typed as primitive values. */
+type PrimitiveValidation<T extends Primitive | undefined | null, KParent, Args, FValidationReturn, ArrParent> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+/** Defines the validation rules for objects */
+type ObjectValidationTypes<T extends IndexableObject, KParent, Args, FValidationReturn, ArrParent> = {
+    /** The validators that are invoked whenever the form is changed. */
+    _reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+    /** The validators that are invoked only after {@link validate()} is invoked. */
+    _lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+};
 type IndexableObject = {
     [key: string]: any;
 };
-/** Separates the reactive and lazy validators of a primitive property. */
-type PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent> = {
-    /** The validators for this property that are invoked whenever the form is changed. */
+/** Specifies the reactive and lazy validators */
+type BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent> = {
+    /** The validators that are invoked whenever the form is changed. */
     $reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-    /** The validators for this property that are invoked only after {@link validate()} is invoked. */
+    /** The validators that are invoked only after {@link validate()} is invoked. */
     $lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 };
-type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn, ArrParent, NLevel extends number> = {
+/** Defines the validation rules for properties that are typed as arrays. */
+type ArrayValidationTypes<U, T extends Array<U>, KParent, Args, FValidationReturn, ArrParent, NLevel extends number> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent> & {
     /**
      * Can only be used with object arrays. Not string, number, or boolean (primitive) arrays.
      *
@@ -61,17 +78,16 @@ type ArrayValidatorTypes<U, T extends Array<U>, KParent, Args, FValidationReturn
     } : ArrParent & {
         [key in NLevel]: U;
     }, Increment<NLevel>>;
-    /** The validators for the array that are invoked whenever the form is changed. */
-    $reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-    /** The validators for the array that are invoked only when {@link validate()} is called. */
-    $lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 };
 /** A synchronous or asynchronous validator. */
 type Validator<T, KParent, Args, FValidationReturn, ArrParent> = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
-type ValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent, NLevel extends number> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : PrimitiveValidatorTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+/** Represents the basic structure of a validator function */
 type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return;
+/** Indicates a validator which run synchronously */
 type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>> | undefined, ArrParent>;
+/** Indicates a validator which returns a promise */
 type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Parent, Args, Promise<BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, ArrParent>> | undefined>, ArrParent>;
+/** The base type for the return value of validators */
 type BaseValidationReturn<F = any> = {
     /**
      * Assign this validator's result a name.
@@ -100,11 +116,15 @@ type BaseValidationReturn<F = any> = {
      */
     custom?: F;
 };
+/** Used in the validation state on properties which are typed as arrays. */
 type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
     /** The raw list of results from validating every object in the array. */
     arrayResults?: ValidationState<U, FValidationReturn>[];
 };
-type Validation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidatorTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
+/**
+ * The main recursive type which dictates the layout of the validation rules.
+ */
+type Validation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
     /**
      * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
@@ -176,6 +196,14 @@ type Increment<N extends number> = [
 /**
  * Returns a function that will only execute the provided promise returning function
  * with the most recently specified params only if a previously created promise does not exist.
+ * ```ts
+ * async function test(): Promise<boolean> {}
+ * // Call this constant instead of the function to get the buffer benefits
+ * const bufferedTest = bufferAsync<
+ * 		typeof test, // this type makes the return the same signature as test()
+ * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
+ * >(test);
+ * ```
  */
 declare function bufferAsync<F extends (...args: any) => any, K>(func: (...params: Parameters<F>) => Promise<K>): (...params: Parameters<typeof func>) => Promise<K | undefined>;
 /**
@@ -186,8 +214,17 @@ declare function bufferAsync<F extends (...args: any) => any, K>(func: (...param
  * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
  *
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
+ * ```ts
+ * async function test(): Promise<boolean> {}
+ * // Call this constant instead of the function to get the thottle benefits
+ * const throttledTest = throttleQueueAsync<
+ * 		typeof test, // this type makes the return the same signature as test()
+ * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
+ * >(test);
+ * ```
  * @param func the function to throttle
  * @param delay milliseconds required between invocations of the function.
+ *
  */
 declare function throttleQueueAsync<F extends (...args: any) => any, K>(func: (...params: Parameters<F>) => K | Promise<K>, delay: number): (...params: Parameters<typeof func>) => Promise<K | undefined>;
 
@@ -233,19 +270,20 @@ declare function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P,
  */
 declare function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A>;
 
+type UseValidationReturn<T, FValidationReturn> = {
+    hasValidated: Ref<boolean>;
+    validate: () => Promise<boolean>;
+    isValidating: ComputedRef<boolean>;
+    propertyState: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>;
+    isValid: ComputedRef<boolean>;
+    setReference: (reference: T) => void;
+    isDirty: ComputedRef<boolean>;
+};
 /**
  * A simple and lightweight Vue3 model based validation library with strong type support.
  *
  * @author Daniel Walbolt
  */
-declare function useValidation<T, Args = undefined, FValidationReturn = unknown>(validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>): {
-    hasValidated: boolean;
-    validate: () => Promise<boolean>;
-    isValidating: boolean;
-    propertyState: ValidationState<T, FValidationReturn>;
-    isValid: boolean;
-    setReference: (reference: T) => void;
-    isDirty: boolean;
-};
+declare function useValidation<T, Args = undefined, FValidationReturn = unknown>(validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>): Reactive<UseValidationReturn<T, FValidationReturn>>;
 
-export { ArrayValidationReturn, ArrayValidationState, ArrayValidatorTypes, AsyncValidator, BaseValidationReturn, BaseValidator, Primitive, PrimitiveValidation, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, ValidatorTypes, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidationTypes, AsyncValidator, BaseValidationReturn, BaseValidationTypes, BaseValidator, ObjectValidationTypes, Primitive, PrimitiveValidation, PrimitiveValidationState, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation };

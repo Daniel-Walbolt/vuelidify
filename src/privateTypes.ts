@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ArrayValidationState, ArrayValidatorTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, PrimitiveValidatorTypes, RecursiveValidationState, Validator, ValidatorTypes, SyncValidator } from './publicTypes.ts';
+import type { ArrayValidationState, ArrayValidationTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, BaseValidationTypes, RecursiveValidationState, Validator, SyncValidator, ObjectValidationTypes } from './publicTypes.ts';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
@@ -7,8 +7,23 @@ export type IndexableObject = {
 }
 
 /** Type specifically used for casting validation objects in order to appease TypeScript. */
-export type PrimitiveOrArrayValidation = PrimitiveValidatorTypes<Primitive, unknown, unknown, unknown, unknown> 
-	& ArrayValidatorTypes<unknown, unknown[], unknown, unknown, unknown, unknown, number>;
+export type PrimitiveOrArrayValidation = BaseValidationTypes<Primitive, unknown, unknown, unknown, unknown> 
+	& ArrayValidationTypes<unknown, unknown[], unknown, unknown, unknown, unknown, number>;
+
+export type ObjectValidation = ObjectValidationTypes<unknown, unknown, unknown, unknown, unknown>;
+
+/** 
+ * A shorthand type for accepting any kind of validation type.
+ */
+export type AnyValidatorType<
+	KParent,
+	Args,
+	FValidationReturn,
+	ArrParent,
+	NLevel extends number
+> = ObjectValidationTypes<any, KParent, Args, FValidationReturn, ArrParent>
+	& BaseValidationTypes<any, KParent, Args, FValidationReturn, ArrParent>
+	& ArrayValidationTypes<unknown, any, KParent, Args, FValidationReturn, ArrParent, NLevel>
 
 export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
 	/** The ID of the validator which is also used for the error messages */
@@ -73,7 +88,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	property: Readonly<Ref<T>>;
 
 	/** The user specified validation object for this property */
-	validation: Readonly<ValidatorTypes<T, KParent, Args, FValidationReturn, unknown, number>>;
+	validation: Readonly<AnyValidatorType<KParent, Args, FValidationReturn, unknown, number>>;
 	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
 	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<unknown, FValidationReturn>>;
 	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
