@@ -7,7 +7,10 @@
 		<nav class="navbar">
 			<router-link :to="{ path: '/vuelidify/primitive-test' }" class="navlink">Primitive Validation</router-link>
 		</nav>
-		<RouterView />
+		<hr />
+		<div class="content">
+			<RouterView />
+		</div>
 	</div>
 </template>
 
@@ -15,25 +18,30 @@
 	.container {
 		display: flex;
 		flex-direction: column;
-		gap: 4
+		gap: 4;
+		width: 100%;
 	}
 	.navbar {
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
 		gap: 1rem;
+		padding: 1rem 4rem;
 	}
 	.navlink {
 		padding: 1rem 2rem;
 		border: 2px solid #333333;
 		border-radius: 1rem;
-		color: blue;
-		transition: color 0.3s ease;
+		color: white;
+		transition: color 0.2s ease;
 		&:hover {
 			color: lightblue;
 		}
 		&:active {
-			color: darkblue;
+			color: blue;
 		}
+	}
+	.content {
+		padding: 2rem 1rem;
 	}
 </style>

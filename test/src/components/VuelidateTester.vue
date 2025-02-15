@@ -2,9 +2,9 @@
 	import { useVuelidate, ValidationArgs } from "@vuelidate/core";
 	import { helpers, required } from "@vuelidate/validators";
 	import { ref } from "vue";
-import { Person } from "../types";
-import { randomPerson } from "../dataGen";
-import NeighborComponent from "./NeighborComponent.vue";
+	import { Person } from "../types";
+	import { randomPerson } from "../dataGen";
+	import NeighborComponent from "./NeighborComponent.vue";
 
 	const simpleObjectTest = ref({
 		name: undefined,
@@ -25,7 +25,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 		isPerson: {
 			required
 		}
-	}
+	};
 	const v$ = useVuelidate<typeof simpleObjectTest.value>(rules, simpleObjectTest, {
 		$autoDirty: true
 	});
@@ -41,7 +41,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 		return {
 			$valid: (value + refTest.value) < 1000,
 			$message: "Must be less than 1000"
-		}
+		};
 	}
 
 	async function asyncTestFunction(value) {
@@ -66,7 +66,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 				syncTest
 			}
 		})
-	}
+	};
 	const arrayv$ = useVuelidate(arrayRules, arrayValidationTest);
 	setInterval(async () => {
 		console.time("array validation");
@@ -83,7 +83,7 @@ import NeighborComponent from "./NeighborComponent.vue";
 				}
 			})
 		}
-	}
+	};
 	const v$2 = useVuelidate(complexRules, complexObjectValidation, {
 		$autoDirty: true
 	});
