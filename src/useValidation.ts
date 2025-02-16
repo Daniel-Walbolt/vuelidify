@@ -8,8 +8,10 @@ type UseValidationReturn<T, FValidationReturn> = {
 	hasValidated: Ref<boolean>,
 	validate: () => Promise<boolean>,
 	isValidating: ComputedRef<boolean>,
-	propertyState: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>,
+	/** Stores the results of validation */
+	state: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>,
 	isValid: ComputedRef<boolean>,
+	/** Sets the internal reference object for determining if the object being validated has changed (is dirty) */
 	setReference: (reference: T) => void,
 	isDirty: ComputedRef<boolean>
 }
@@ -27,11 +29,11 @@ export function useValidation<
 	validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>
 ): Reactive<UseValidationReturn<T, FValidationReturn>> {
 	validationConfig.delayReactiveValidation ??= true; // Default value for delayReactiveValidation
-	const { objectToValidate: object, validation, delayReactiveValidation, args } = validationConfig;
+	const { form: object, validation, delayReactiveValidation, args } = validationConfig;
 
 	/** Only true after {@link validate()} finished successfully. */
 	const hasValidated = ref(false);
-	const isValidating = computed(() => validationConfigs.some(x => x.validationState.isValidating));
+	const isValidating = computed(() => validationConfigs.some(x => x.isValidatingLazy || x.isValidatingReactive));
 	const isValid = computed(() => {
 		const allValidatorsValid = validationConfigs.every(x => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
@@ -40,16 +42,16 @@ export function useValidation<
 	let validationConfigs: PropertyValidationConfig<unknown, T, unknown, FValidationReturn>[] = [];
 
 	/** The reference for determining if the object has been changed or not.  */
-	const dirtyReference = ref(JSON.stringify(validationConfig.objectToValidate.value));
+	const dirtyReference = ref(JSON.stringify(validationConfig.form.value));
 	/**
 	 * Reactively determines if the object being validated has changed from the reference state.
 	 *
 	 * The reference state can be changed using {@link setReference()}.
 	 */
-	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.objectToValidate.value));
+	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.form.value));
 
 	const setup = setupValidation<T, T, Args, FValidationReturn>(object as Ref<T>, validation);
-	const propertyState = setup.propertyState;
+	const validationState = setup.propertyState;
 	validationConfigs = setup.validationConfigs;
 
 	/** 
@@ -59,7 +61,7 @@ export function useValidation<
 	 * Editing one property will invoke the reactive validators of every other and itself.
 	 */
 	watch(
-		validationConfig.objectToValidate,
+		validationConfig.form,
 		() => {
 			if (delayReactiveValidation) {
 				if (hasValidated.value === true) {
@@ -88,7 +90,7 @@ export function useValidation<
 		hasValidated,
 		validate,
 		isValidating,
-		propertyState: computed(() => propertyState),
+		state: computed(() => validationState),
 		isValid,
 		setReference,
 		isDirty

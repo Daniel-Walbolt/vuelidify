@@ -8,7 +8,7 @@ import type { SyncValidator, ValidatorParams } from './publicTypes.ts';
 export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && String(params.value).trim().length > 0,
-		errorMessage: 'This field is required'
+		message: 'This field is required'
 	});
 }
 
@@ -24,7 +24,7 @@ export function minLength<T extends string | undefined | null, P, V, R, A>(
 		const val = String(params.value ?? '');
 		return {
 			isValid: val.length >= minLength,
-			errorMessage: `Too short (${val.length} / ${minLength})`
+			message: `Too short (${val.length} / ${minLength})`
 		};
 	};
 }
@@ -41,7 +41,7 @@ export function maxLength<T extends string | number | undefined | null, P, V, R,
 		const val = String(params.value ?? '');
 		return {
 			isValid: val.length <= maxLength,
-			errorMessage: `Too long (${val.length} / ${maxLength})`
+			message: `Too long (${val.length} / ${maxLength})`
 		};
 	};
 }
@@ -56,7 +56,7 @@ export function minNumber<T extends number | undefined | null, P, V, R, A>(
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && params.value >= minNumber,
-		errorMessage: `The minimum value is ${minNumber}`
+		message: `The minimum value is ${minNumber}`
 	});
 }
 
@@ -70,7 +70,7 @@ export function maxNumber<T extends number | undefined | null, P, V, R, A>(
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value !== undefined && params.value <= maxNumber,
-		errorMessage: `The maximum value is ${maxNumber}`
+		message: `The maximum value is ${maxNumber}`
 	});
 }
 
@@ -80,7 +80,7 @@ export function maxNumber<T extends number | undefined | null, P, V, R, A>(
 export function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P, V, A>) => T, errorMessage: string): SyncValidator<T, P, V, R, A> {
 	return (params) => ({
 		isValid: params.value === getter(params),
-		errorMessage: errorMessage
+		message: errorMessage
 	});
 }
 
@@ -93,8 +93,6 @@ export function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P, 
 export function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
-		errorMessage: 'Invalid email format'
+		message: 'Invalid email format'
 	});
 }
-
-// Feel free to add additional validators here!!

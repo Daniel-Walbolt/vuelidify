@@ -4,14 +4,14 @@
 
 	const stringTest = ref<string>();
 	const v$ = useValidation({
-		objectToValidate: stringTest,
+		form: stringTest,
 		validation: {
 			$reactive: [minLength(4)]
 		},
 		delayReactiveValidation: false
 	});
 
-	watch(v$, (state) => console.log(state.propertyState), {
+	watch(v$, (state) => console.log(state.state), {
 		deep: true
 	});
 </script>
@@ -26,7 +26,7 @@
 					<input v-model="stringTest"/>
 				</label>
 				<div class="input-errors">
-					<p v-for="error in v$.propertyState.errorMessages">{{error}}</p>
+					<p v-for="error in v$.state.$state.errorMessages">{{error}}</p>
 				</div>
 			</div>
 		</section>

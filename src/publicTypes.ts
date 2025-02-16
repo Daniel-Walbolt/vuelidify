@@ -3,52 +3,59 @@ import type { Ref } from 'vue';
 /** Shorthand union of the primitive types */
 export type Primitive = string | number | boolean;
 
-/** Holds the latest results of validation for an object */
+/** Defines the layout of validation results. Copies the format of the object being validated. */
 export type ValidationState<
 	T,
 	FValidationReturn
 > = T extends Array<infer U>
-	? ArrayValidationState<U, FValidationReturn>
-	: T extends IndexableObject
-		? RecursiveValidationState<T, FValidationReturn>
-		: T extends Primitive 
-			? PrimitiveValidationState<FValidationReturn>
-			: undefined;
+		? ArrayValidationState<U, FValidationReturn>
+		: T extends IndexableObject
+			? RecursiveValidationState<T, FValidationReturn>
+			: T extends Primitive 
+				? PrimitiveValidationState<FValidationReturn>
+				: undefined;
 
 /** Intermediate type for handling nested objects for validation state. Used internally. */
-export type RecursiveValidationState<T, FValidationReturn> = {
+export type RecursiveValidationState<T, FValidationReturn> = BaseValidationState<FValidationReturn> & {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
 	[key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 }
 
+/** Describes the Vuelidify validation state. */
+export type BaseValidationState<FValidationReturn> = {
+	/** Stores the validation state for this object. Is named this way to avoid naming conflicts with existing object properties. */
+	$state?: {
+		/** True if all the validators defined for this property have passed. False otherwise. */
+		isValid: boolean;
+		isValidating: boolean;
+		/** 
+		 * True if there are any results that failed validation.
+		 * 
+		 * Not quite the complement of {@link isValid} because !{@link isValid} can be true when no validators have been called yet.
+		 * This will only ever be true when validation results have returned.
+		 */
+		isErrored: boolean;
+		/** Easy collection of the error messages from the raw validation returns */
+		errorMessages: string[];
+		/** A dictionary of the validators that returned with names. */
+		results: {
+			[key: string]: BaseValidationReturn<FValidationReturn> | undefined;
+		},
+		resultsArray: BaseValidationReturn<FValidationReturn>[];
+	}
+};
+
 /** Contains the reactive state of validation for a property. */
-export type PrimitiveValidationState<FValidationReturn> = {
-	/** True if all the validators defined for this property have passed. False otherwise. */
-	isValid: boolean;
-	isValidating: boolean;
-	/** 
-	 * True if there are any results that failed validation.
-	 * 
-	 * Not quite the complement of {@link isValid} because !{@link isValid} can be true when no validators have been called yet.
-	 * This will only ever be true when validation results have returned.
-	 */
-	isErrored: boolean;
-	/** Easy collection of the error messages from the raw validation returns */
-	errorMessages: string[];
-	results: {
-		[key: string]: BaseValidationReturn<FValidationReturn>;
-	},
-	resultsArray: BaseValidationReturn<FValidationReturn>[];
-}
+export type PrimitiveValidationState<FValidationReturn> = BaseValidationState<FValidationReturn>;
 
 /** Defines the validation state for properties that are typed as arrays. */
-export type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
+export type ArrayValidationState<U, FValidationReturn> = BaseValidationState<FValidationReturn> & {
 	/**
 	 * Contains the validation state for each element in the array.
 	 * 
 	 * Maps 1:1 to the array which was validated.
 	 */
-	arrayState: ValidationState<U, FValidationReturn>[];
+	$arrayState?: ValidationState<U, FValidationReturn>[];
 }
 
 /** Intermediate type for handling validation of nested objects. */
@@ -172,22 +179,21 @@ export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 export type BaseValidationReturn<F = any> = {
 	/** 
 	 * Assign this validator's result a name.
-	 * The result will then be added to a map using the name as the key
-	 * so you can easily access the result.
+	 * The result will then be added to a indexable object using the name as the key
 	 * 
-	 * Note, the map entry will not exist until this validator has been run at least once, so account for undefined.
+	 * Note, the entry will not exist until this validator has been ran once, so account for undefined.
 	 */
 	name?: string;
 	/** 
 	 * The unique identifier for this validation result.
 	 *
-	 * Assigned and used internally, but can be used as your element's ID or key attribute.
+	 * Assigned and used internally, but can be used as an element's ID or key.
 	 */
 	id?: string;
-	/** Used to determine if validation was successful or not. */
+	/** Used to determine if validation passed. */
 	isValid: boolean;
-	/** The message or messages to display if isValid is false. */
-	errorMessage?: string;
+	/** The error message for this validator. */
+	message?: string;
 	/**
 	 * Return a custom object from this validator.
 	 * 
@@ -231,14 +237,8 @@ export type ValidationConfig<
 	Args,
 	FValidationReturn
 > = {
-	/**
-	 * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
-	 * call the {@link setup()} method returned by this composable after it has loaded.
-	 * 
-	 * Setting up validation on an incomplete object will mean that the properties of the object
-	 * can not be linked to the validation configured, thus causing problems.
-	 */
-	objectToValidate: Ref<T | undefined | null>,
+	/** The form object that needs validated */
+	form: Ref<T | undefined | null>,
 	validation: Validation<T, Args, FValidationReturn, T>,
 	/**
 	 * False - reactive validation will always be active.

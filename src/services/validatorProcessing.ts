@@ -75,26 +75,27 @@ export function setupPropertyValidation<G, KParent, Args, FValidationReturn>(
 	// Users don't have to type .value on any of the these properties in
 	// JavaScript or in the Vue templates while still having reactivity.
 	const validationState: PrimitiveValidationState<FValidationReturn> & ArrayValidationState<unknown, FValidationReturn> = reactive({
-		isValid: computed(() => {
-			// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
-			const isLazyValid = validationConfig.isLazyValid.value ?? false;
-			// If the reactive validators are undefined then they haven't been called yet. The property can not be guaranteed to be valid.
-			const isReactiveValid = validationConfig.isReactiveValid.value ?? false;
-			return isLazyValid && isReactiveValid;
-		}),
-		/** State indicating that validators are currently being called. */
-		isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
-		isErrored: computed(() => validationState.resultsArray.some(x => x.isValid === false)),
-		/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
-		errorMessages: computed(() => reduceUndefined(validationState.resultsArray, val => val.isValid ? undefined : val.errorMessage)),
-		results: computed(() => validationConfig.namedValidationResults.value),
-		resultsArray: computed(() => validationConfig.validationResults.value),
-		arrayState: computed(() => {
-			// Array state should be undefined until the object is actually an array.
+		$state: {
+			isValid: computed(() => {
+				// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
+				const isLazyValid = validationConfig.isLazyValid.value ?? false;
+				// If the reactive validators are undefined then they haven't been called yet. The property can not be guaranteed to be valid.
+				const isReactiveValid = validationConfig.isReactiveValid.value ?? false;
+				return isLazyValid && isReactiveValid;
+			}),
+			/** State indicating that validators are currently being called. */
+			isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
+			isErrored: computed(() => validationState.$state.resultsArray.some(x => x.isValid === false)),
+			/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
+			errorMessages: computed(() => reduceUndefined(validationState.$state.resultsArray, val => val.isValid ? undefined : val.message)),
+			results: computed(() => validationConfig.namedValidationResults.value),
+			resultsArray: computed(() => validationConfig.validationResults.value),
+		},
+		$arrayState: computed(() => {
+			// Array state should be empty until the object is actually an array.
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
 				return [];
 			}
-			console.time('Array state');
 			// Declare some variables for readability
 			const arr = object.value;
 			const elValidation = validationConfig.elementValidation;
@@ -180,18 +181,34 @@ export function setupPropertyValidation<G, KParent, Args, FValidationReturn>(
 				prunedValidationMap[tempId] = validationMap[tempId];
 			}
 			validationConfig.arrayConfigMap = prunedValidationMap;
-			console.timeEnd('Array state');
 			return elemValidationState;
 		})
 	});
 
 	// If there are no lazy validators, lazy validation is automatically valid (true).
-	const initIsLazyValid = !((validation.$lazy?.length ?? -1) > 0);
+	let initIsLazyValid = true;
 	// If there are no reactive validators, reactive validation is automatically valid (true).
-	const initIsReactiveValid = !((validation.$reactive?.length ?? -1) > 0);
+	let initIsReactiveValid = true;
+	let reactiveValidators = [];
+	let lazyValidators = [];
 
-	const reactiveValidators = validation.$reactive ? setupValidators(validation.$reactive, true) : [];
-	const lazyValidators = validation.$lazy ? setupValidators(validation.$lazy, false) : [];
+	if (validation.$reactive?.length > 0) {
+		initIsReactiveValid = false;
+		reactiveValidators = setupValidators(validation.$reactive, true);
+	} else if (validation._reactive?.length > 0) {
+		// Validation configs can't have both $reactive and _reactive.
+		initIsReactiveValid = false;
+		reactiveValidators = setupValidators(validation._reactive, true);
+	}
+
+	if (validation.$lazy?.length > 0) {
+		initIsLazyValid = false;
+		lazyValidators = setupValidators(validation.$lazy, true);
+	} else if (validation._lazy?.length > 0) {
+		// Validation configs can't have both $lazy and _lazy.
+		initIsLazyValid = false;
+		lazyValidators = setupValidators(validation._lazy, true);
+	}
 	
 	const validationConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn> = {
 		id: uniqueId(),
@@ -215,16 +232,34 @@ export function setupPropertyValidation<G, KParent, Args, FValidationReturn>(
 	return validationConfig;
 }
 
-/** Recursively analyzes the config object provided and creates validation state for each validatable object.w */
+/** Analyzes the validation config provided and creates validation state for each validatable object. */
 export function setupNestedPropertiesForValidation<KParent, Args, FValidationReturn>(
 	object: MaybeRefOrGetter<unknown>,
 	validation: RecursiveValidation<unknown, KParent, Args, FValidationReturn, unknown, number> | undefined,
 	arrayParents: object[] = []
 ) {
+	/** The list of validation configs that were created from the provided object. */
 	const resultConfigs: PropertyValidationConfig<unknown, KParent, Args, FValidationReturn>[] = [];
-	const resultState: ValidationState<unknown, FValidationReturn> = {};
+	/** The validation state object for the provided object. */
+	let resultState: ValidationState<unknown, FValidationReturn> = {};
 	if (validation !== undefined) {
-		recursiveSetup(object, validation);
+		// Check if the validation provided is immediately validatable.
+		if (isPrimitiveOrArray(validation)) {
+			const property = computed(() => toValue(object));
+			const propertyValidation = validation as AnyValidatorType<KParent, Args, FValidationReturn, any, number>;
+			const validatedPropertyConfig = setupPropertyValidation(property, propertyValidation, arrayParents);
+			resultConfigs.push(validatedPropertyConfig);
+			resultState = validatedPropertyConfig.validationState;
+		} else {
+			if (isObjectValidation(validation)) {
+				const object = computed(() => toValue(object));
+				const objectValidation = validation as AnyValidatorType<KParent, Args, FValidationReturn, any, number>;
+				const validatedPropertyConfig = setupPropertyValidation(object, objectValidation, arrayParents);
+				resultConfigs.push(validatedPropertyConfig);
+				resultState = validatedPropertyConfig.validationState;
+			}
+			recursiveSetup(object, validation);
+		}
 	}
 
 	/** Recursive function to iterate through the validation object and create validation configs. */
@@ -233,6 +268,9 @@ export function setupNestedPropertiesForValidation<KParent, Args, FValidationRet
 		rValidation: RecursiveValidation<unknown, KParent, Args, FValidationReturn, unknown, number>
 	) {
 		for (const key in rValidation) {
+			if (key === "$reactive" || key === "$lazy" || key === "_reactive" || key === "_lazy") {
+				continue;
+			}
 			/** 
 			 * Can return null, undefined, a primitive, array, or custom object.
 			 * Note, this has to be a getter Ref in order to maintain reactivity.

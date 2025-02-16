@@ -105,7 +105,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/** 
 	 * An array of all the array elements that were traversed through during validation.
 	 * 
-	 * Add to list using computed getters, because this is wrapped as a reactive object.
+	 * Add computed getters to this list
 	 */
 	arrayParents: object[]
 }

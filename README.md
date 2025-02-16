@@ -52,7 +52,7 @@ This was created for use in ```<script setup lang="ts">```, meaning you need Typ
 Here is a breakdown of the configuration object the composable expects.
 ```ts
 {
-  objectToValidate: T, // The ref, computed, or reactive object you want to validate.
+  form: T, // The ref, computed, or reactive object you want to validate.
   validation: Validation<T>, // Describes how to validate your object.
   args: A = undefined, // Can be anything! Will be passed into every validator.
   delayReactiveValidation: boolean, // Should reactive validation be active immediately or only after calling validate()?
@@ -136,7 +136,7 @@ Here is the breakdown of the return type from validators.
 	id? string,
 	// required for determining whether or not this validator passed
 	isValid: boolean,
-	errorMessage?: string,
+	message?: string,
 	// Sometimes a true or false is not enough information for end users.
 	// Use this to return any object to give additional information about the validation.
 	// In order to access this custom data easily, make sure you give the result a name
@@ -173,7 +173,7 @@ Here is the breakdown of the parameters that are passed into validators
 	
 	const string = ref("");
 	const v$ = useValidation({
-		objectToValidate: string,
+		form: string,
 		validation: {
 			$reactive: [minLength(10)] // Put as many validators as you want here
 		}
@@ -192,7 +192,7 @@ Here is the breakdown of the parameters that are passed into validators
 		zaa: 1
 	});
 	const v$ = useValidation({
-		objectToValidate: obj,
+		form: obj,
 		validation: {
 			foo: {
 				// Validate foo when v$.validate is called.
@@ -215,7 +215,7 @@ Here is the breakdown of the parameters that are passed into validators
 						const isBar = params.parent.bar;
 						return {
 							isValid: isBar ? params.value > 100 : true,
-							errorMessage: "Must be greater than 100 when bar is true"
+							message: "Must be greater than 100 when bar is true"
 						}
 					}
 				]
@@ -237,7 +237,7 @@ Here is the breakdown of the parameters that are passed into validators
 
 	const array = ref<FooBar[]>([]);
 	const v$ = useValidation({
-		objectToValidate: array,
+		form: array,
 		validation: {
 			// Validate each object in the array.
 			$each: {
@@ -279,7 +279,7 @@ Sometimes your objects will contain other objects and arrays.
 
 	const complexObj = ref<Person>();
 	const v$ = useValidation({
-		objectToValidate: complexObj,
+		form: complexObj,
 		validation: {
 			a: {
 				// Validate person a's age reactively
@@ -297,7 +297,7 @@ Sometimes your objects will contain other objects and arrays.
 							(params) => {
 								return {
 									isValid: params.value < params.parent.a.age,
-									errorMessage: "Must be younger than person a."
+									message: "Must be younger than person a."
 								}
 							}
 						],
@@ -368,7 +368,7 @@ export function isEmailSync<
 		// In this case, we're checking the value of the property against an email regex.
 		return {
 			isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
-			errorMessage: "Invalid email format"
+			message: "Invalid email format"
 		}
 	};
 }

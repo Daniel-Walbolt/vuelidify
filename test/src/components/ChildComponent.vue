@@ -19,10 +19,10 @@
 			<label>
 				Name
 				<input v-model="child.name"/>
-				<span v-if="props.validation?.name.isValidating"></span>
+				<span v-if="props.validation?.name.$state.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation?.name.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.name.$state.errorMessages">{{error}}</p>
 			</div>
 		</div>
 	</div>

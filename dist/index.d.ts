@@ -2,39 +2,45 @@ import { Ref, Reactive, ComputedRef } from 'vue';
 
 /** Shorthand union of the primitive types */
 type Primitive = string | number | boolean;
-/** Holds the latest results of validation for an object */
+/** Defines the layout of validation results. Copies the format of the object being validated. */
 type ValidationState<T, FValidationReturn> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn> : T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn> : T extends Primitive ? PrimitiveValidationState<FValidationReturn> : undefined;
 /** Intermediate type for handling nested objects for validation state. Used internally. */
-type RecursiveValidationState<T, FValidationReturn> = {
+type RecursiveValidationState<T, FValidationReturn> = BaseValidationState<FValidationReturn> & {
     [key in keyof T]?: ValidationState<T[key], FValidationReturn>;
 };
-/** Contains the reactive state of validation for a property. */
-type PrimitiveValidationState<FValidationReturn> = {
-    /** True if all the validators defined for this property have passed. False otherwise. */
-    isValid: boolean;
-    isValidating: boolean;
-    /**
-     * True if there are any results that failed validation.
-     *
-     * Not quite the complement of {@link isValid} because !{@link isValid} can be true when no validators have been called yet.
-     * This will only ever be true when validation results have returned.
-     */
-    isErrored: boolean;
-    /** Easy collection of the error messages from the raw validation returns */
-    errorMessages: string[];
-    results: {
-        [key: string]: BaseValidationReturn<FValidationReturn>;
+/** Describes the Vuelidify validation state. */
+type BaseValidationState<FValidationReturn> = {
+    /** Stores the validation state for this object. Is named this way to avoid naming conflicts with existing object properties. */
+    $state?: {
+        /** True if all the validators defined for this property have passed. False otherwise. */
+        isValid: boolean;
+        isValidating: boolean;
+        /**
+         * True if there are any results that failed validation.
+         *
+         * Not quite the complement of {@link isValid} because !{@link isValid} can be true when no validators have been called yet.
+         * This will only ever be true when validation results have returned.
+         */
+        isErrored: boolean;
+        /** Easy collection of the error messages from the raw validation returns */
+        errorMessages: string[];
+        /** A dictionary of the validators that returned with names. */
+        results: {
+            [key: string]: BaseValidationReturn<FValidationReturn> | undefined;
+        };
+        resultsArray: BaseValidationReturn<FValidationReturn>[];
     };
-    resultsArray: BaseValidationReturn<FValidationReturn>[];
 };
+/** Contains the reactive state of validation for a property. */
+type PrimitiveValidationState<FValidationReturn> = BaseValidationState<FValidationReturn>;
 /** Defines the validation state for properties that are typed as arrays. */
-type ArrayValidationState<U, FValidationReturn> = PrimitiveValidationState<FValidationReturn> & {
+type ArrayValidationState<U, FValidationReturn> = BaseValidationState<FValidationReturn> & {
     /**
      * Contains the validation state for each element in the array.
      *
      * Maps 1:1 to the array which was validated.
      */
-    arrayState: ValidationState<U, FValidationReturn>[];
+    $arrayState?: ValidationState<U, FValidationReturn>[];
 };
 /** Intermediate type for handling validation of nested objects. */
 type RecursiveValidation<T extends IndexableObject, KParent, ValidationArgs, FValidationReturn, ArrParent, NLevel extends number> = {
@@ -91,22 +97,21 @@ type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<T, Paren
 type BaseValidationReturn<F = any> = {
     /**
      * Assign this validator's result a name.
-     * The result will then be added to a map using the name as the key
-     * so you can easily access the result.
+     * The result will then be added to a indexable object using the name as the key
      *
-     * Note, the map entry will not exist until this validator has been run at least once, so account for undefined.
+     * Note, the entry will not exist until this validator has been ran once, so account for undefined.
      */
     name?: string;
     /**
      * The unique identifier for this validation result.
      *
-     * Assigned and used internally, but can be used as your element's ID or key attribute.
+     * Assigned and used internally, but can be used as an element's ID or key.
      */
     id?: string;
-    /** Used to determine if validation was successful or not. */
+    /** Used to determine if validation passed. */
     isValid: boolean;
-    /** The message or messages to display if isValid is false. */
-    errorMessage?: string;
+    /** The error message for this validator. */
+    message?: string;
     /**
      * Return a custom object from this validator.
      *
@@ -126,14 +131,8 @@ type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidat
  */
 type Validation<T, Args = undefined, FValidationReturn = undefined, KParent = T, ArrParent = undefined, NLevel extends number = 0> = T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel> : T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent> : undefined;
 type ValidationConfig<T, Args, FValidationReturn> = {
-    /**
-     * If the object you provided is not in a good state (i.e. it must be loaded in asynchronously first),
-     * call the {@link setup()} method returned by this composable after it has loaded.
-     *
-     * Setting up validation on an incomplete object will mean that the properties of the object
-     * can not be linked to the validation configured, thus causing problems.
-     */
-    objectToValidate: Ref<T | undefined | null>;
+    /** The form object that needs validated */
+    form: Ref<T | undefined | null>;
     validation: Validation<T, Args, FValidationReturn, T>;
     /**
      * False - reactive validation will always be active.
@@ -274,8 +273,10 @@ type UseValidationReturn<T, FValidationReturn> = {
     hasValidated: Ref<boolean>;
     validate: () => Promise<boolean>;
     isValidating: ComputedRef<boolean>;
-    propertyState: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>;
+    /** Stores the results of validation */
+    state: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>;
     isValid: ComputedRef<boolean>;
+    /** Sets the internal reference object for determining if the object being validated has changed (is dirty) */
     setReference: (reference: T) => void;
     isDirty: ComputedRef<boolean>;
 };
@@ -286,4 +287,4 @@ type UseValidationReturn<T, FValidationReturn> = {
  */
 declare function useValidation<T, Args = undefined, FValidationReturn = unknown>(validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>): Reactive<UseValidationReturn<T, FValidationReturn>>;
 
-export { ArrayValidationReturn, ArrayValidationState, ArrayValidationTypes, AsyncValidator, BaseValidationReturn, BaseValidationTypes, BaseValidator, ObjectValidationTypes, Primitive, PrimitiveValidation, PrimitiveValidationState, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation };
+export { ArrayValidationReturn, ArrayValidationState, ArrayValidationTypes, AsyncValidator, BaseValidationReturn, BaseValidationState, BaseValidationTypes, BaseValidator, ObjectValidationTypes, Primitive, PrimitiveValidation, PrimitiveValidationState, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, mustEqual, required, throttleQueueAsync, useValidation };

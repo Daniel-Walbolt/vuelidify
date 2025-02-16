@@ -6,6 +6,10 @@
 	<div class="container">
 		<nav class="navbar">
 			<router-link :to="{ path: '/vuelidify/primitive-test' }" class="navlink">Primitive Validation</router-link>
+			<router-link :to="{ name: 'VuelidifySimpleObject' }" class="navlink">Simple Object Validation</router-link>
+			<router-link :to="{ name: 'VuelidifyOptionalObject' }" class="navlink">Optional Object Validation</router-link>
+			<router-link :to="{ name: 'VuelidifyObjectArray' }" class="navlink">Object Array Validation</router-link>
+			<router-link :to="{ name: 'VuelidifyComplexObject' }" class="navlink">Complex Object Validation</router-link>
 		</nav>
 		<hr />
 		<div class="content">

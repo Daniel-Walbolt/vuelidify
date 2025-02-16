@@ -19,20 +19,20 @@
 			<label>
 				Name
 				<input v-model="person.name"/>
-				<span v-if="props.validation?.name.isValidating"></span>
+				<span v-if="props.validation?.name.$state.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation?.name.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.name.$state.errorMessages">{{error}}</p>
 			</div>
 		</div>
 		<div class="field">
 			<label>
 				Age
 				<input v-model="person.age"/>
-				<span v-if="props.validation?.age.isValidating"></span>
+				<span v-if="props.validation?.age.$state?.isValidating"></span>
 			</label>
 			<div class="input-errors">
-				<p v-for="error in props.validation?.age.errorMessages">{{error}}</p>
+				<p v-for="error in props.validation?.age.$state?.errorMessages">{{error}}</p>
 			</div>
 		</div>
 		<div class="field">
@@ -47,17 +47,18 @@
 		<ChildComponent
 			v-for="child,i in person.children"
 			:child="child"
-			:validation="props.validation?.children.arrayState[i]"
+			:validation="props.validation?.children.$arrayState[i]"
+			:key="i"
 		/>
 	</section>
 	<template v-if="person.neighbors && person.neighbors.length > 0">
 		<h3>Neighbors</h3>
 		<div class="form">
-			<template v-for="neighbor,i in person.neighbors">
+			<template v-for="neighbor,i in person.neighbors" :key="i">
 				<p>Neighbor {{ i }}</p>
 				<NeighborComponent
 					:person="neighbor"
-					:validation="props.validation?.neighbors.arrayState[i]"
+					:validation="props.validation?.neighbors.$arrayState[i]"
 				/>
 			</template>
 		</div>

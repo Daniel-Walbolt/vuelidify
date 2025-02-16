@@ -14,7 +14,7 @@
 
 	const complexObj = ref<FooBar>();
 	const v$ = useValidation({
-		objectToValidate: complexObj,
+		form: complexObj,
 		validation: {
 			a: {
 				age: {
@@ -27,8 +27,8 @@
 						$reactive: [(params) => {
 							return {
 								isValid: params.value < params.parent.a.age,
-								errorMessage: "Must be younger than person a."
-							}
+								message: "Must be younger than person a."
+							};
 						}],
 						$lazy: [minNumber(15)]
 					},
