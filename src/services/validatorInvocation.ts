@@ -5,6 +5,7 @@ import { setupValidators } from './validatorProcessing.ts';
 import type { AsyncValidator, BaseValidationReturn, SyncValidator, Validator, ValidatorParams } from '../publicTypes.ts';
 
 type ResultProcessor<G, KParent, Args, FValidationReturn> = (
+	/** The validation config whose result is being processed */
 	propertyConfig: PropertyValidationConfig<G, KParent, Args, FValidationReturn>,
 	processedValidator: ProcessedValidator<G, KParent, Args, FValidationReturn>,
 	ret: BaseValidationReturn<unknown>
@@ -92,7 +93,8 @@ export async function invokeAndOptimizeValidators<
 }
 
 /**
- * Private function that has extra parameterss for recursive calls and returns the promises for the validator results.
+ * Private function that has extra parameters for recursive calls
+ * @returns the promises for the validator results.
  */
 function recursiveInvokeAndOptimizeValidators<
 	G, 
@@ -335,14 +337,13 @@ export async function invokeLazyPropertyValidators<
 ): Promise<boolean> {
 	propertyConfig.isValidatingLazy.value = true;
 
-	// Get the specified reactive validators and run them.
-	const lazyValidators = propertyConfig.lazyProcessedValidators;
+	// Get the specified lazy validators and run them.
 	const isAllValid = await invokeAndOptimizeValidators(
 		propertyConfig,
 		parent,
 		args,
 		iterationId,
-		lazyValidators
+		propertyConfig.lazyProcessedValidators
 	);
 
 	// Only update the validation config if this is the latest validation iteration
@@ -375,11 +376,11 @@ export function invokeValidatorConfigs<KParent, Args, FValidationReturn>(
 	
 	for (const validationConfig of validationConfigs) {
 		const iterationId = ++validationConfig.validationIterationId;
-		if (reactive && validationConfig.validation.$reactive !== undefined) {
+		if (reactive && validationConfig.reactiveProcessedValidators.length > 0) {
 			validatorPromises.push(invokeReactivePropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		// Check if we should validate lazy validators
-		if (lazy && validationConfig.validation.$lazy !== undefined) {
+		if (lazy && validationConfig.lazyProcessedValidators.length > 0) {
 			validatorPromises.push(invokeLazyPropertyValidators(validationConfig, parent.value, args, iterationId));
 		}
 		
