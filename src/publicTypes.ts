@@ -238,7 +238,7 @@ export type ValidationConfig<
 	FValidationReturn
 > = {
 	/** The form object that needs validated */
-	form: Ref<T | undefined | null>,
+	model: Ref<T | undefined | null>,
 	validation: Validation<T, Args, FValidationReturn, T>,
 	/**
 	 * False - reactive validation will always be active.

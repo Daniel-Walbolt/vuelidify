@@ -29,7 +29,7 @@ export function useValidation<
 	validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>
 ): Reactive<UseValidationReturn<T, FValidationReturn>> {
 	validationConfig.delayReactiveValidation ??= true; // Default value for delayReactiveValidation
-	const { form: object, validation, delayReactiveValidation, args } = validationConfig;
+	const { model: object, validation, delayReactiveValidation, args } = validationConfig;
 
 	/** Only true after {@link validate()} finished successfully. */
 	const hasValidated = ref(false);
@@ -42,13 +42,13 @@ export function useValidation<
 	let validationConfigs: PropertyValidationConfig<unknown, T, unknown, FValidationReturn>[] = [];
 
 	/** The reference for determining if the object has been changed or not.  */
-	const dirtyReference = ref(JSON.stringify(validationConfig.form.value));
+	const dirtyReference = ref(JSON.stringify(validationConfig.model.value));
 	/**
 	 * Reactively determines if the object being validated has changed from the reference state.
 	 *
 	 * The reference state can be changed using {@link setReference()}.
 	 */
-	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.form.value));
+	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
 	const setup = setupValidation<T, T, Args, FValidationReturn>(object as Ref<T>, validation);
 	const validationState = setup.propertyState;
@@ -61,7 +61,7 @@ export function useValidation<
 	 * Editing one property will invoke the reactive validators of every other and itself.
 	 */
 	watch(
-		validationConfig.form,
+		validationConfig.model,
 		() => {
 			if (delayReactiveValidation) {
 				if (hasValidated.value === true) {
