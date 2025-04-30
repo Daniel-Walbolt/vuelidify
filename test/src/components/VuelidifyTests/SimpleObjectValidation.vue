@@ -1,6 +1,7 @@
 <script setup lang="ts">
 	import { ref } from 'vue';
 	import { minLength, minNumber, useValidation } from "vuelidify";
+	import AssertIs from '../verification/AssertIs.vue';
 
 	const simpleObjectTest = ref({
 		name: '',
@@ -10,6 +11,15 @@
 	const v$ = useValidation<{ name: string, age: number, isPerson: boolean }>({
 		form: simpleObjectTest,
 		validation: {
+			_reactive: [
+				(params) => {
+					console.log(params);
+					return {
+						isValid: Math.random() * 5 > 0.5,
+						message: "This is the object validation"
+					};
+				}
+			],
 			name: {
 				$reactive: [minLength(10)]
 			},
@@ -66,9 +76,10 @@
 				</label>
 				<div class="input-errors">
 					<p v-for="error in v$.state.isPerson.$state.errorMessages">{{error}}</p>
-					{{ v$.state.isPerson.$state.results }}
 				</div>
 			</div>
 		</section>
+		<h3>State:</h3>
+		<pre>{{ JSON.stringify(v$.state, null, "\t") }}</pre>
 	</form>
 </template>

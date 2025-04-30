@@ -7,7 +7,7 @@
 	import NeighborComponent from '../NeighborComponent.vue';
 
 	const complexObjectValidation = ref<Person>(randomPerson(true, true, 5, 15));
-	const v$ = useValidation({
+	const v$ = useValidation<Person>({
 		objectToValidate: complexObjectValidation,
 		validation: {
 			...PartialPersonValidation,
