@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import VuelidateTester from '../components/VuelidateTester.vue';
 import VuelidifyTests from '../components/VuelidifyTests.vue';
 import PrimitiveValidation from '../components/VuelidifyTests/PrimitiveValidation.vue';
-import SimpleObjectValidation from '../components/VuelidifyTests/SimpleObjectValidation.vue';
-import OptionalObjectValidation from '../components/VuelidifyTests/OptionalObjectValidation.vue';
+import SimpeObjectValidation from '../components/VuelidifyTests/SimpleObjectValidation.vue';
+import NullableObjectPropertyValidation from '../components/VuelidifyTests/NullableObjectPropertyValidation.vue';
 import ObjectArrayValidation from '../components/VuelidifyTests/ObjectArrayValidation.vue';
 import ComplexObjectValidation from '../components/VuelidifyTests/ComplexObjectValidation.vue';
 
@@ -23,12 +23,12 @@ const router = createRouter({
 				{
 					path: "/vuelidify/simple-object-test",
 					name: "VuelidifySimpleObject",
-					component: SimpleObjectValidation
+					component: SimpeObjectValidation
 				},
 				{
 					path: "/vuelidify/optional-object-test",
 					name: "VuelidifyOptionalObject",
-					component: OptionalObjectValidation
+					component: NullableObjectPropertyValidation
 				},
 				{
 					path: "/vuelidify/object-array-test",
