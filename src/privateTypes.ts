@@ -62,24 +62,24 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	validationIterationId: number,
 
 	/** 
-	 * Shows if all reactive validators on this property have passed or failed.
-	 * Is undefined if it has not been validated yet. Is always true if there are no reactive validators.
+	 * True if all reactive validators on this property have passed or if none exist.
+	 * Is undefined if reactive validation has not been done yet.
 	 */
 	isReactiveValid: Ref<boolean | undefined>;
 	isValidatingReactive: Ref<boolean>;
 	/**
-	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
+	 * Contains all the reactive validators. Optimizations may have been made on them.
 	 */
 	reactiveProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
 
 	/** 
-	 * Determines if all lazy validators on this property have passed or failed.
-	 * Is undefined if it has not been validated yet. Is always true if there are no lazy validators.
+	 * True if all lazy validators on this property have passed or if none exist.
+	 * Is undefined if lazy validation has not been done yet.
 	 */
 	isLazyValid: Ref<boolean | undefined>;
 	isValidatingLazy: Ref<boolean>;
 	/**
-	 * Contains all the validators that were ran previously. Optimizations may have been made on the async validators.
+	 * Contains all the lazy validators. Optimizations may have been made on them.
 	 */
 	lazyProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
 
@@ -89,8 +89,10 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 
 	/** The user specified validation object for this property */
 	validation: Readonly<AnyValidatorType<KParent, Args, FValidationReturn, unknown, number>>;
-	/** The validation state for this property. A fraction of the entire object's validation state, which is given to the end user. */
+
+	/** The validation state for this config. A fraction of the entire object's validation state, which is exposed to the end user (developer). */
 	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<unknown, FValidationReturn>>;
+
 	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
 	namedValidationResults: Ref<{
 		[key: string]: BaseValidationReturn<FValidationReturn>;
