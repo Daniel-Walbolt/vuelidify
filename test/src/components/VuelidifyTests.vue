@@ -10,6 +10,7 @@
 			<router-link :to="{ name: 'VuelidifyOptionalObject' }" class="navlink">Optional Object Validation</router-link>
 			<router-link :to="{ name: 'VuelidifyObjectArray' }" class="navlink">Object Array Validation</router-link>
 			<router-link :to="{ name: 'VuelidifyComplexObject' }" class="navlink">Complex Object Validation</router-link>
+			<router-link :to="{ name: 'VuelidifyTests' }" class="navlink">Automated Tests</router-link>
 		</nav>
 		<hr />
 		<div class="content">

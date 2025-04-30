@@ -6,6 +6,7 @@ import SimpeObjectValidation from '../components/VuelidifyTests/SimpleObjectVali
 import NullableObjectPropertyValidation from '../components/VuelidifyTests/NullableObjectPropertyValidation.vue';
 import ObjectArrayValidation from '../components/VuelidifyTests/ObjectArrayValidation.vue';
 import ComplexObjectValidation from '../components/VuelidifyTests/ComplexObjectValidation.vue';
+import AutomatedTests from '../components/VuelidifyTests/AutomatedTests.vue';
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -39,6 +40,11 @@ const router = createRouter({
 					path: "/vuelidify/complex-object-test",
 					name: "VuelidifyComplexObject",
 					component: ComplexObjectValidation
+				},
+				{
+					path: "/vuelidfiy/automated-tests",
+					name: "VuelidifyTests",
+					component: AutomatedTests
 				}
 			]
 		},
