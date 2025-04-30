@@ -245,16 +245,16 @@ export function setupNestedPropertiesForValidation<KParent, Args, FValidationRet
 	if (validation !== undefined) {
 		// Check if the validation provided is immediately validatable.
 		if (isPrimitiveOrArray(validation)) {
-			const property = computed(() => toValue(object));
+			const target = computed(() => toValue(object));
 			const propertyValidation = validation as AnyValidatorType<KParent, Args, FValidationReturn, any, number>;
-			const validatedPropertyConfig = setupPropertyValidation(property, propertyValidation, arrayParents);
+			const validatedPropertyConfig = setupPropertyValidation(target, propertyValidation, arrayParents);
 			resultConfigs.push(validatedPropertyConfig);
 			resultState = validatedPropertyConfig.validationState;
 		} else {
 			if (isObjectValidation(validation)) {
-				const object = computed(() => toValue(object));
+				const target = computed(() => toValue(object));
 				const objectValidation = validation as AnyValidatorType<KParent, Args, FValidationReturn, any, number>;
-				const validatedPropertyConfig = setupPropertyValidation(object, objectValidation, arrayParents);
+				const validatedPropertyConfig = setupPropertyValidation(target, objectValidation, arrayParents);
 				resultConfigs.push(validatedPropertyConfig);
 				resultState = validatedPropertyConfig.validationState;
 			}
@@ -275,27 +275,27 @@ export function setupNestedPropertiesForValidation<KParent, Args, FValidationRet
 			 * Can return null, undefined, a primitive, array, or custom object.
 			 * Note, this has to be a getter Ref in order to maintain reactivity.
 			 */
-			const property = computed(() => toValue(rObject)[key]);
+			const target = computed(() => toValue(rObject)[key]);
 			// Based on the validation we are provided, we can reasonably assume if it is validatable.
 			if (isPrimitiveOrArray(rValidation[key])) {
 				const propertyValidation = rValidation[key] as AnyValidatorType<KParent, Args, FValidationReturn, any, number>;
-				const validatedPropertyConfig = setupPropertyValidation(property, propertyValidation, arrayParents);
+				const validatedPropertyConfig = setupPropertyValidation(target, propertyValidation, arrayParents);
 				resultConfigs.push(validatedPropertyConfig);
 				resultState[key] = validatedPropertyConfig.validationState;
 			} else {
 				const nestedValidation = rValidation[key] as RecursiveValidation<unknown, KParent, Args, FValidationReturn, any, number>;
 				if (isObjectValidation(nestedValidation)) {
 					// This validation config contains properties used to provide validators.
-					const validatedPropertyConfig = setupPropertyValidation(property, nestedValidation, arrayParents);
+					const validatedPropertyConfig = setupPropertyValidation(target, nestedValidation, arrayParents);
 					resultConfigs.push(validatedPropertyConfig);
 					resultState[key] = validatedPropertyConfig.validationState;
 				}
-				// Lastly, the property is an object with nested properties. The types for validation require a nested object in this case.
+				// Lastly, the property is an object that may have nested properties
 				// The property can be null, undefined, or a nested object.
 				const nestedState = {} as RecursiveValidationState<unknown, FValidationReturn>;
 				resultState[key] = nestedState;
 				recursiveSetup(
-					property,
+					target,
 					nestedValidation
 				);
 			}
@@ -312,13 +312,13 @@ export function setupNestedPropertiesForValidation<KParent, Args, FValidationRet
 
 /** Checks if the validation object provided  contains properties specified to primitive & array validation. */
 export function isPrimitiveOrArray(validation: Validation<unknown, unknown, unknown, unknown>): validation is PrimitiveOrArrayValidation {
-	return (validation as PrimitiveOrArrayValidation)?.$reactive !== undefined ||
-		(validation as PrimitiveOrArrayValidation)?.$lazy !== undefined ||
+	return Array.isArray((validation as PrimitiveOrArrayValidation)?.$reactive) ||
+		Array.isArray((validation as PrimitiveOrArrayValidation)?.$lazy) ||
 		(validation as PrimitiveOrArrayValidation)?.$each !== undefined;
 }
 
 /** Checks if the validation object provided contains properties specific to object validation */
 export function isObjectValidation(validation: Validation<unknown, unknown, unknown, unknown>): validation is ObjectValidation {
-	return (validation as ObjectValidation)?._reactive !== undefined ||
-		(validation as ObjectValidation)?._lazy !== undefined;
+	return Array.isArray((validation as ObjectValidation)?._reactive) ||
+		Array.isArray((validation as ObjectValidation)?._lazy);
 }
