@@ -9,7 +9,7 @@ type UseValidationReturn<T, FValidationReturn> = {
 	validate: () => Promise<boolean>,
 	isValidating: ComputedRef<boolean>,
 	/** Stores the results of validation */
-	state: ComputedRef<Reactive<ValidationState<T, FValidationReturn>>>,
+	state: ComputedRef<ValidationState<T, FValidationReturn>>,
 	isValid: ComputedRef<boolean>,
 	/** Sets the internal reference object for determining if the object being validated has changed (is dirty) */
 	setReference: (reference: T) => void,
