@@ -24,7 +24,7 @@ type UseValidationReturn<T, FValidationReturn> = {
 export function useValidation<
 	T,
 	Args = undefined,
-	FValidationReturn = unknown
+	FValidationReturn = undefined
 >(
 	validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>
 ): Reactive<UseValidationReturn<T, FValidationReturn>> {
