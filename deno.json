@@ -4,14 +4,14 @@
 	"license": "MIT",
 	"exports": "./src/index.ts",
 	"lint": {
-		"include": ["deno-tests/"]
+		"exclude": ["test-ui/"]
 	},
 	"fmt": {
 		"include": [
-			"deno-tests/"
+			"test-ui/"
 		]
 	},
 	"test": {
-		"include": ["deno-tests/"]
+		"include": ["./tests/"]
 	}
 }
