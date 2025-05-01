@@ -121,9 +121,9 @@ export type GenericSyncValidator = SyncValidator<unknown, unknown, unknown, unkn
 export type GenericAsyncValidator = AsyncValidator<unknown, unknown, unknown, unknown, unknown>;
 
 /** A context-independent version of the public ValidationState type */
-export type GenericValidationState = GenericArrayValidationState & GenericPrimitiveValidationState & GenericBaseValidationState & {
+export type GenericValidationState = GenericArrayValidationState & GenericPrimitiveValidationState | (GenericBaseValidationState & {
 	[key: string]: GenericValidationState
-};
+});
 /* A context-independent version of the public BaseValidationState type */
 export type GenericBaseValidationState = BaseValidationState<unknown>;
 /** A context-independent version of the public ArrayValidationState type */
