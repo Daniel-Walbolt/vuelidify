@@ -1,6 +1,5 @@
 # Vuelidify
 
-
 [Installation](#installation)
 [Types](#types)
 [Examples](#examples)

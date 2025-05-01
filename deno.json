@@ -2,5 +2,16 @@
 	"name": "@vuelidify/core",
 	"version": "1.0.1",
 	"license": "MIT",
-	"exports": "./src/index.ts"
+	"exports": "./src/index.ts",
+	"lint": {
+		"include": ["deno-tests/"]
+	},
+	"fmt": {
+		"include": [
+			"deno-tests/"
+		]
+	},
+	"test": {
+		"include": ["deno-tests/"]
+	}
 }
