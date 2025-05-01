@@ -41,6 +41,7 @@ export async function invokeAndOptimizeValidators(
 		if (ret.isValid === false) {
 			isAllValid = false;
 		}
+
 		// Identify reactive and lazy validators separately because they are run concurrently.
 		ret.id = processedValidator.validatorId;
 
@@ -307,7 +308,7 @@ export async function invokeLazyPropertyValidators(
 	propertyConfig: PropertyValidationConfig,
 	parent: unknown,
 	args: unknown,
-	/** Gives this concurrent iteration an ID which must match current iteration ID before updating the state. */
+	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number
 ): Promise<boolean> {
 	propertyConfig.isValidatingLazy.value = true;

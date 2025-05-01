@@ -61,6 +61,10 @@ export function setupPropertyValidation(
 	const validationState: GenericValidationState = reactive({
 		$state: {
 			isValid: computed(() => {
+				if (validationConfig.lazyProcessedValidators.length > 0) {
+					console.log("Valid: ", validationConfig.isLazyValid.value, validationConfig.isReactiveValid.value);
+				}
+
 				// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
 				const isLazyValid = validationConfig.isLazyValid.value ?? false;
 				// If the reactive validators are undefined then they haven't been called yet. The property can not be guaranteed to be valid.
@@ -225,7 +229,7 @@ export function setupNestedPropertiesForValidation(
 		rValidation: GenericValidation
 	) {
 		// Early return
-		if (isGenericEnumerable<IndexableGenericValidation>(rValidation) === false) {
+		if (isGenericEnumerableObject<IndexableGenericValidation>(rValidation) === false) {
 			return;
 		}
 
@@ -240,35 +244,29 @@ export function setupNestedPropertiesForValidation(
 			 */
 			const target = computed(() => {
 				const obj = toValue(rObject);
-				if (isGenericEnumerable<IndexableObject>(obj)) {
+				if (isGenericEnumerableObject<IndexableObject>(obj)) {
 					return obj[key];
 				} else {
 					console.error(`Vuelidify Error: validation could not be setup correctly on ${obj} because ${rObject} is not enumerable.`);
 					return null;
 				}
 			});
+			const maybeNestedValidation = rValidation[key];
 
-			// Based on the validation we are provided, we can reasonably assume if it is validatable.
-			if (isValidation(rValidation[key])) {
-				const propertyValidation = rValidation[key];
-				const validatedPropertyConfig = setupPropertyValidation(target, propertyValidation, arrayParents);
+			if (isValidation(maybeNestedValidation)) {
+				const validatedPropertyConfig = setupPropertyValidation(target, maybeNestedValidation, arrayParents);
 				resultConfigs.push(validatedPropertyConfig);
 				ret[key] = validatedPropertyConfig.validationState;
-			} else {
-				const nestedValidation = rValidation[key];
-				if (isObjectValidation(nestedValidation)) {
-					// This validation config contains properties used to provide validators.
-					const validatedPropertyConfig = setupPropertyValidation(target, nestedValidation, arrayParents);
-					resultConfigs.push(validatedPropertyConfig);
-					ret[key] = validatedPropertyConfig.validationState;
-				}
+			}
+
+			if (isGenericEnumerableObject(maybeNestedValidation)) {
 				// Lastly, the property is an object that may have nested properties
 				// The property can be null, undefined, or a nested object.
 				const nestedState: GenericValidationState = {};
 				ret[key] = nestedState;
 				recursiveSetup(
 					target,
-					nestedValidation
+					maybeNestedValidation
 				);
 			}
 		}
@@ -289,8 +287,8 @@ export function isValidation(maybeValidation: AnyGenericValidationType | undefin
 		(maybeValidation as GenericArrayValidation)?.$each !== undefined;
 }
 
-export function isGenericEnumerable<T>(validation: unknown): validation is T {
-	return typeof validation === 'object' && validation !== null && !Array.isArray(validation);
+export function isGenericEnumerableObject<T>(object: unknown): object is T {
+	return typeof object === 'object' && object !== null && !Array.isArray(object);
 }
 
 /** Checks if the validation object provided contains properties specific to object validation */
