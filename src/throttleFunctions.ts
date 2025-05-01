@@ -1,6 +1,6 @@
 /** 
- * Returns a function that will only execute the provided promise returning function
- * with the most recently specified params only if a previously created promise does not exist.
+ * Returns a function that will execute the provided function
+ * with the latest params only if a previously created promise does not exist.
  * ```ts
  * async function test(): Promise<boolean> {}
  * // Call this constant instead of the function to get the buffer benefits
@@ -11,7 +11,7 @@
  * ```
  */
 export function bufferAsync<F extends (...args: any) => any, K>(
-	func: (...params: Parameters<F>) => Promise<K>,
+	func: (...params: Parameters<F>) => K | Promise<K>,
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
 	let queuedFunc: Promise<K | undefined> | undefined = undefined;
@@ -19,16 +19,16 @@ export function bufferAsync<F extends (...args: any) => any, K>(
 	return (...params: Parameters<typeof func>) => {
 		const currentId = ++id;
 		queuedFunc = queuedFunc?.then(() => {
-			// This if check is crucial for ignoring this promise if another one has already been queued.
+			// Ignore this promise if another one is queued.
 			if (id === currentId) {
-				queuedFunc = func(...params).then((response) => {
+				queuedFunc = new Promise<K>(resolve => resolve(func(...params))).then((response) => {
 					queuedFunc = undefined; // Reset the buffer
 					return response;
 				});
 				return queuedFunc; // Always return the last promise in the buffer
 			}
 			return undefined; // Return undefined for all intermediate promises.
-		}) ?? func(...params).then((response) => { // Init the buffer
+		}) ?? new Promise<K>(resolve => resolve(func(...params))).then((response) => { // Init the buffer
 			queuedFunc = undefined; // Reset the buffer
 			return response; // Always return the first promise in the buffer
 		});

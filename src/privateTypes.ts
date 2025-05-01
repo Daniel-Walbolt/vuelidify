@@ -1,44 +1,25 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ArrayValidationState, ArrayValidationTypes, BaseValidationReturn, Validation, Primitive, PrimitiveValidationState, BaseValidationTypes, RecursiveValidationState, Validator, SyncValidator, ObjectValidationTypes } from './publicTypes.ts';
+import type { ArrayValidationState, BaseValidationReturn, BaseValidationState, AsyncValidator, PrimitiveValidationState, SyncValidator, ValidatorParams } from './publicTypes.ts';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
 	[key: string]: unknown;
 }
 
-/** Type specifically used for casting validation objects in order to appease TypeScript. */
-export type PrimitiveOrArrayValidation = BaseValidationTypes<Primitive, unknown, unknown, unknown, unknown> 
-	& ArrayValidationTypes<unknown, unknown[], unknown, unknown, unknown, unknown, number>;
-
-export type ObjectValidation = ObjectValidationTypes<unknown, unknown, unknown, unknown, unknown>;
-
-/** 
- * A shorthand type for accepting any kind of validation type.
- */
-export type AnyValidatorType<
-	KParent,
-	Args,
-	FValidationReturn,
-	ArrParent,
-	NLevel extends number
-> = ObjectValidationTypes<any, KParent, Args, FValidationReturn, ArrParent>
-	& BaseValidationTypes<any, KParent, Args, FValidationReturn, ArrParent>
-	& ArrayValidationTypes<unknown, any, KParent, Args, FValidationReturn, ArrParent, NLevel>
-
-export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
+export type ProcessedValidator = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
-	validator: Validator<T, KParent, Args, FValidationReturn, unknown>;
-	computedValidator?: ComputedRef<ReturnType<SyncValidator<T, KParent, Args, FValidationReturn, unknown>>>
+	validator: GenericValidator;
+	computedValidator?: ComputedRef<ReturnType<GenericSyncValidator>>
 	/** Used for determining whether or not to optimize this validator. */
 	optimized: boolean;
 	/** Does this validator belong to reactive or lazy validation. Used when assigning IDs to spawned validators. */
 	isReactive: boolean;
 	previouslySpawnedValidators: {
-		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
+		[key: string]: ProcessedValidator
 	};
 	spawnedValidators: {
-		[key: string]: ProcessedValidator<T, KParent, Args, FValidationReturn>
+		[key: string]: ProcessedValidator
 	};
 	previouslyReturnedValidators: boolean;
 	// Any additional information can be added here.
@@ -49,7 +30,7 @@ export type ProcessedValidator<T,KParent, Args, FValidationReturn> = {
  * 
  * Be careful to not put Refs inside of Refs, as they will be unwrapped and .value won't work.
  */
-export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
+export type PropertyValidationConfig = {
 	/** Identifies this config uniquely. */
 	id: string,
 	/** 
@@ -70,7 +51,7 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/**
 	 * Contains all the reactive validators. Optimizations may have been made on them.
 	 */
-	reactiveProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
+	reactiveProcessedValidators: ProcessedValidator[];
 
 	/** 
 	 * True if all lazy validators on this property have passed or if none exist.
@@ -81,44 +62,84 @@ export type PropertyValidationConfig<T, KParent, Args, FValidationReturn> = {
 	/**
 	 * Contains all the lazy validators. Optimizations may have been made on them.
 	 */
-	lazyProcessedValidators: ProcessedValidator<T, KParent, Args, FValidationReturn>[];
+	lazyProcessedValidators: ProcessedValidator[];
 
 
 	/** Getter for the current value of the property this validation config is for. */
-	property: Readonly<Ref<T>>;
+	property: Readonly<Ref<unknown>>;
 
 	/** The user specified validation object for this property */
-	validation: Readonly<AnyValidatorType<KParent, Args, FValidationReturn, unknown, number>>;
+	validation: Readonly<AnyGenericValidationType>;
 
-	/** The validation state for this config. A fraction of the entire object's validation state, which is exposed to the end user (developer). */
-	validationState: PrimitiveValidationState<FValidationReturn> & Partial<ArrayValidationState<unknown, FValidationReturn>>;
+	/** The validation state for this config. */
+	validationState: GenericValidationState;
 
-	validationResults: Ref<BaseValidationReturn<FValidationReturn>[]>;
+	validationResults: Ref<BaseValidationReturn<unknown>[]>;
 	namedValidationResults: Ref<{
-		[key: string]: BaseValidationReturn<FValidationReturn>;
+		[key: string]: BaseValidationReturn<unknown>;
 	}>
 	
 	/** Contains the validation configs for every element in the array. */
-	arrayConfigMap: { [key: number]: ElementValidationConfig<unknown, KParent, Args, FValidationReturn> },
+	arrayConfigMap: { [key: number]: ElementValidationConfig },
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
 	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
-	elementValidation: Readonly<Validation<unknown, Args, FValidationReturn, KParent, unknown> | undefined>;
+	elementValidation: Readonly<GenericValidation | undefined>;
 	/** 
 	 * An array of all the array elements that were traversed through during validation.
 	 * 
 	 * Add computed getters to this list
+	 * TODO: Are we sure we want to push computed getters to this list? I think this would lead to problems when the index the getter refers to becomes a different object.
 	 */
 	arrayParents: object[]
 }
 
+/** A context-independent version of the public Validation type */
+export type GenericValidation = AnyGenericValidationType | IndexableGenericValidation;
+export type IndexableGenericValidation = { [key: string]: GenericValidation }
+/** A context-independent version of the ArrayValidation type */
+export type GenericArrayValidation = GenericBaseValidation & {
+	$each?: GenericValidation
+}
+/** A context-independent version of the PrimitiveValidation type */
+export type GenericPrimitiveValidation = GenericBaseValidation;
+
+export type GenericObjectValidation = GenericBaseValidation;
+/** A short-hand type for the union of all possible validation types */
+export type AnyGenericValidationType = GenericPrimitiveValidation | GenericArrayValidation | GenericObjectValidation;
+
+export type GenericBaseValidation = {
+	$reactive?: GenericValidator[];
+	$lazy?: GenericValidator[];
+}
+
+/** A context-independent version of the public Validator type */
+export type GenericValidator = GenericSyncValidator | GenericAsyncValidator;
+/** A context-independent version of the public SyncValidator type */
+export type GenericSyncValidator = SyncValidator<unknown, unknown, unknown, unknown, unknown>;
+/** A context-independent version of the public AsyncValidator type */
+export type GenericAsyncValidator = AsyncValidator<unknown, unknown, unknown, unknown, unknown>;
+
+/** A context-independent version of the public ValidationState type */
+export type GenericValidationState = GenericArrayValidationState & GenericPrimitiveValidationState & GenericBaseValidationState & {
+	[key: string]: GenericValidationState
+};
+/* A context-independent version of the public BaseValidationState type */
+export type GenericBaseValidationState = BaseValidationState<unknown>;
+/** A context-independent version of the public ArrayValidationState type */
+export type GenericArrayValidationState = ArrayValidationState<unknown, unknown>;
+/** A context-independent version of hte public PrimitiveValidationState type */
+export type GenericPrimitiveValidationState = PrimitiveValidationState<unknown>;
+
+export type GenericValidatorParams = ValidatorParams<unknown, unknown, unknown, unknown>;
+
 /** Stores the state and the validation configs of an element within an array. Used internally. */
-export type ElementValidationConfig<T, KParent, Args, FValidationReturn> = {
+export type ElementValidationConfig = {
 	/** 
 	 * The list of validation configs that can be used to validate this element.
 	 * Each one should modify a portion of the {@link validationState} 
 	 */
-	validationConfigs: PropertyValidationConfig<unknown, KParent, Args, FValidationReturn>[]
+	validationConfigs: PropertyValidationConfig[]
 	/** The validation state for this element */
-	validationState: RecursiveValidationState<T, FValidationReturn>;
+	validationState: GenericValidationState;
 }

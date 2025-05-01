@@ -7,13 +7,10 @@ export type Primitive = string | number | boolean;
 export type ValidationState<
 	T,
 	FValidationReturn
-> = T extends Array<infer U>
-		? ArrayValidationState<U, FValidationReturn>
-		: T extends IndexableObject
-			? RecursiveValidationState<T, FValidationReturn>
-			: T extends Primitive 
-				? PrimitiveValidationState<FValidationReturn>
-				: undefined;
+> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn>:
+	T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn>:
+	T extends Primitive ? PrimitiveValidationState<FValidationReturn>:
+	undefined;
 
 /** Intermediate type for handling nested objects for validation state. Used internally. */
 export type RecursiveValidationState<T, FValidationReturn> = BaseValidationState<FValidationReturn> & {
@@ -66,13 +63,8 @@ export type RecursiveValidation<
 	FValidationReturn,
 	ArrParent,
 	NLevel extends number
-> = {
-	/** The validators that are invoked whenever the form is changed. */
-	_reactive?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
-	/** The validators that are invoked only after {@link validate()} is invoked. */
-	_lazy?: Validator<T, KParent, ValidationArgs, FValidationReturn, ArrParent>[];
-} & {
-	// Recursively define the validation on the contents of this object
+> = ObjectValidationTypes<T, KParent, ValidationArgs, FValidationReturn, ArrParent> & {
+	// Recursively define validation on the contents of the object
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
 }
 
@@ -92,12 +84,7 @@ export type ObjectValidationTypes<
 	Args,
 	FValidationReturn,
 	ArrParent
-> = {
-	/** The validators that are invoked whenever the form is changed. */
-	_reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-	/** The validators that are invoked only after {@link validate()} is invoked. */
-	_lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
-}
+> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent>;
 
 type IndexableObject = {
 	[key: string]: any;
@@ -220,17 +207,16 @@ export type Validation<
 	KParent = T,
 	ArrParent = undefined,
 	NLevel extends number = 0
-> = T extends Array<infer U>
-	? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>
-	: T extends IndexableObject
-		? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>
-		// boolean is checked separately from Primitive 
-		// because TS splits it into true | false here. Resulting in undefined nested types.
-		: T extends boolean 
-			? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
-			: T extends Primitive
-				? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>
-				: undefined;
+> = 
+	// Arrays are objects, so we have to check those first
+	T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>:
+	// Use recursion to specify validation for nested properties
+	T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>:
+	// boolean is checked separately from other primitives
+	// because TypeScript splits it into true | false--resulting in undefined nested types.
+	T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>:
+	T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>:
+	never;
 
 export type ValidationConfig<
 	T,
