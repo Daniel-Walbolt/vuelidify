@@ -1,6 +1,6 @@
 import type { ValidationConfig, ValidationState } from './publicTypes.ts';
 import { ref, computed, watch, reactive, type Ref, type ComputedRef, type Reactive } from 'vue';
-import type { PropertyValidationConfig } from './privateTypes.ts';
+import type { GenericValidation, PropertyValidationConfig } from './privateTypes.ts';
 import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
 import { setupValidation } from './services/validatorProcessing.ts';
 
@@ -39,7 +39,7 @@ export function useValidation<
 		return allValidatorsValid;
 	});
 	/** List of objects that relates validation to the object's properties. */
-	let validationConfigs: PropertyValidationConfig<unknown, T, unknown, FValidationReturn>[] = [];
+	let validationConfigs: PropertyValidationConfig[] = [];
 
 	/** The reference for determining if the object has been changed or not.  */
 	const dirtyReference = ref(JSON.stringify(validationConfig.model.value));
@@ -50,8 +50,8 @@ export function useValidation<
 	 */
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
-	const setup = setupValidation<T, T, Args, FValidationReturn>(object as Ref<T>, validation);
-	const validationState = setup.propertyState;
+	const setup = setupValidation(object as Ref<T>, validation as GenericValidation);
+	const validationState = setup.state as ValidationState<T, FValidationReturn>;
 	validationConfigs = setup.validationConfigs;
 
 	/** 
