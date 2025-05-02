@@ -10,7 +10,7 @@
  * >(test);
  * ```
  */
-export function bufferAsync<F extends (...args: any) => any, K>(
+export function bufferAsync<F extends (...args: unknown[]) => unknown, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
@@ -46,7 +46,7 @@ export function bufferAsync<F extends (...args: any) => any, K>(
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
  * ```ts
  * async function test(): Promise<boolean> {}
- * // Call this constant instead of the function to get the thottle benefits
+ * // Call this constant instead of the function to get the throttle benefits
  * const throttledTest = throttleQueueAsync<
  * 		typeof test, // this type makes the return the same signature as test()
  * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
@@ -56,7 +56,7 @@ export function bufferAsync<F extends (...args: any) => any, K>(
  * @param delay milliseconds required between invocations of the function.
  *
  */
-export function throttleQueueAsync<F extends (...args: any) => any, K>(
+export function throttleQueueAsync<F extends (...args: unknown[]) => unknown, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
 	delay: number
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
