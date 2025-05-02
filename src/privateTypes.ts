@@ -33,14 +33,20 @@ export type ProcessedValidator = {
 export type PropertyValidationConfig = {
 	/** Identifies this config uniquely. */
 	id: string,
-	/** 
-	 * Identifier for the current iteration validating this property.
-	 * Because of concurrency, a previous iteration can finish while one is still running.
-	 * This results in the finished iteration setting the "isValidating" state to false when validation is still happening.
+	/**
+	 * Identifier for the current reactive validation happening on the target.
 	 * 
-	 * Certain state will only change if the current iteration equals the iteration that just finished.
+	 * Because of concurrency, a previous iteration can finish while one is still running.
+	 * This results in possible state changes that may not be wanted. e.g. setting "isValidating" to false when validation is actually still happening (in that other promise).
 	 */
-	validationIterationId: number,
+	reactiveIterationId: number,
+	/**
+	 * Identifier for the current lazy validation happening on the target.
+	 * 
+	 * This was created separately from reactive validation because of an edge case where validate() is called immediately after setting a property;
+	 * resulting in the reactive validation changing the current iteration id on the config before the lazy validation finished, thus cancelling its state changes.
+	 */
+	lazyIterationId: number
 
 	/** 
 	 * True if all reactive validators on this property have passed or if none exist.
@@ -64,9 +70,8 @@ export type PropertyValidationConfig = {
 	 */
 	lazyProcessedValidators: ProcessedValidator[];
 
-
-	/** Getter for the current value of the property this validation config is for. */
-	property: Readonly<Ref<unknown>>;
+	/** Getter for the current value to validate. */
+	target: Readonly<Ref<unknown>>;
 
 	/** The user specified validation object for this property */
 	validation: Readonly<AnyGenericValidationType>;

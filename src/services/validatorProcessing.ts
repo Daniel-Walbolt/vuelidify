@@ -61,10 +61,6 @@ export function setupPropertyValidation(
 	const validationState: GenericValidationState = reactive({
 		$state: {
 			isValid: computed(() => {
-				if (validationConfig.lazyProcessedValidators.length > 0) {
-					console.log("Valid: ", validationConfig.isLazyValid.value, validationConfig.isReactiveValid.value);
-				}
-
 				// If the lazy validators are undefined, then they haven't been called yet. The property can not be guaranteed to be valid until these validators are ran.
 				const isLazyValid = validationConfig.isLazyValid.value ?? false;
 				// If the reactive validators are undefined then they haven't been called yet. The property can not be guaranteed to be valid.
@@ -181,14 +177,15 @@ export function setupPropertyValidation(
 	
 	const validationConfig: PropertyValidationConfig = {
 		id: uniqueId(),
-		validationIterationId: 0,
+		reactiveIterationId: 0,
+		lazyIterationId: 0,
 		isReactiveValid: ref(initIsReactiveValid),
 		isValidatingReactive: ref(false),
 		reactiveProcessedValidators: reactiveValidators,
 		isLazyValid: ref(initIsLazyValid),
 		isValidatingLazy: ref(false),
 		lazyProcessedValidators: lazyValidators,
-		property: object,
+		target: object,
 		validation: validation,
 		validationState: validationState,
 		validationResults: ref([]),
