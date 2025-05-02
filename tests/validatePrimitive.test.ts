@@ -201,6 +201,6 @@ const testLazyValidation = async (test: Deno.TestContext) => {
 			await v$.validate();
 		}
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, testCase.error);		
+		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
 	}
 };
