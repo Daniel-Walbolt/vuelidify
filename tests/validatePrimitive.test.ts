@@ -12,6 +12,7 @@ Deno.test("Validating a primitive", async (test) => {
 	await test.step("MaxNumber Validator", testMaxNumber);
 	await test.step("Required Validator", testRequired);
 	await test.step("Lazy Validation", testLazyValidation);
+	await test.step("Lazy & Reactive Validation", testLazyAndReactiveValidation);
 });
 
 const testMinLength = async (test: Deno.TestContext) => {
@@ -202,5 +203,38 @@ const testLazyValidation = async (test: Deno.TestContext) => {
 		}
 		await pause();
 		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
+	}
+};
+
+const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
+	const MinLength = 5;
+	const model = ref<string | number | null | undefined>();
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$reactive: [
+				maxLength(MinLength*3)
+			],
+			$lazy: [
+				minLength(MinLength)
+			]
+		},
+		delayReactiveValidation: false
+	});
+
+	const tests = [
+		{ model: undefined, expected: false, callValidate: true, error: "Validation passed when it should have failed."},
+		{ model: "ThisIsGood", expected: true, callValidate: true, error: "Validation did not pass when it should have."},
+		{ model: "This", expected: true, callValidate: false, error: "Validation did not pass when it should have because lazy validation was not invoked."},
+		{ model: "This", expected: false, callValidate: true, error: "Validation passed when it should have failed after invoking lazy validation."}
+	];
+
+	for (const testCase of tests) {
+		model.value = testCase.model;
+		if (testCase.callValidate) {
+			await v$.validate();
+		}
+		await pause();
+		assert(v$.state.$state.isValid === testCase.expected);
 	}
 };
