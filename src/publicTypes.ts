@@ -98,7 +98,7 @@ export type BaseValidationTypes<
 	FValidationReturn,
 	ArrParent
 > = {
-	/** The validators that are invoked whenever the form is changed. */
+	/** The validators that are invoked whenever the model is changed. */
 	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
 	/** The validators that are invoked only after {@link validate()} is invoked. */
 	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
@@ -115,11 +115,9 @@ export type ArrayValidationTypes<
 	NLevel extends number
 > = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent> & {
 	/**
-	 * Can only be used with object arrays. Not string, number, or boolean (primitive) arrays.
+	 * Defines the validation for each element of the array.
 	 * 
-	 * Defines the validation that should be performed on each element of the array.
-	 * 
-	 * Element validation requires much more logic, which may introduce performance problems for large arrays.
+	 * Works best with arrays of objects; see documentation for details.
 	 */
 	$each?: Validation<
 		U,
@@ -127,7 +125,7 @@ export type ArrayValidationTypes<
 		FValidationReturn,
 		KParent,
 		ArrParent extends undefined
-			? Array<any> & { [key in NLevel]: U }
+			? Array<unknown> & { [key in NLevel]: U }
 			: ArrParent & { [key in NLevel]: U },
 		Increment<NLevel>
 	>;
@@ -223,8 +221,9 @@ export type ValidationConfig<
 	Args,
 	FValidationReturn
 > = {
-	/** The form object that needs validated */
+	/** The object to validate */
 	model: Ref<T | undefined | null>,
+	/** Configures the validation on the model. */
 	validation: Validation<T, Args, FValidationReturn, T>,
 	/**
 	 * False - reactive validation will always be active.
@@ -235,8 +234,9 @@ export type ValidationConfig<
 	 */
 	delayReactiveValidation?: boolean;
 	/**
-	 * Provide an object, ref, or function that will be passed to each validator.
-	 * Particularly useful when defining validation in separate files and you want to use variables outside of the object being validated.
+	 * Provide anything you want your validators to have access to.
+	 * 
+	 * Particularly useful when defining validation in separate files and you want to reference local variables.
 	 */
 	args?: Args;
 }
