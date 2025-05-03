@@ -13,6 +13,7 @@ Deno.test("Validating a primitive", async (test) => {
 	await test.step("Required Validator", testRequired);
 	await test.step("Lazy Validation", testLazyValidation);
 	await test.step("Lazy & Reactive Validation", testLazyAndReactiveValidation);
+	await test.step("Global isValid check", testGlobalIsValid);
 });
 
 const testMinLength = async (test: Deno.TestContext) => {
@@ -235,6 +236,33 @@ const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
 			await v$.validate();
 		}
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected);
+		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
+	}
+};
+
+const testGlobalIsValid = async (test: Deno.TestContext) => {
+	const MinLength = 5;
+	const model = ref<string | number | null | undefined>();
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$reactive: [
+				maxLength(MinLength * 3),
+				minLength(MinLength)
+			]
+		},
+		delayReactiveValidation: false
+	});
+
+	const tests = [
+		{ model: undefined, expected: false, error: "isValid was true when it was expected to be false (the model was not changed)" },
+		{ model: "This", expected: false, error: "isValid was true when it was expected to be false (the model should have failed validation)" },
+		{ model: "ThisIsGood", expected: true, error: "isValid was false when it was expected to be true (the model should have passed validation)" }
+	];
+
+	for (const testCase of tests) {
+		model.value = testCase.model;
+		await pause();
+		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
 	}
 };
