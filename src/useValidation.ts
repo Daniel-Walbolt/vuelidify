@@ -11,20 +11,25 @@ type UseValidationReturn<T, Return> = {
 	/** Stores the results of validation */
 	state: ComputedRef<ValidationState<T, Return>>,
 	isValid: ComputedRef<boolean>,
-	/** Sets the internal reference object for determining if the object being validated has changed (is dirty) */
+	/** Sets the internal reference object for determining {@link isDirty} */
 	setReference: (reference: T) => void,
+	/**
+	 * Reactively determines if the object being validated has changed from the reference state.
+	 *
+	 * The reference state can be changed using {@link setReference()}.
+	 */
 	isDirty: ComputedRef<boolean>
 }
 
 /** 
- * A simple and lightweight Vue3 model based validation library with strong type support.
+ * The starting point for validation with Vuelidify.
  * 
  * @author Daniel Walbolt
  */
 export function useValidation<
 	T,
-	Args = undefined,
-	Return = undefined
+	Args = unknown,
+	Return = unknown
 >(
 	validationConfig: ValidationConfig<T, Args, Return>
 ): Reactive<UseValidationReturn<T, Return>> {
@@ -43,11 +48,6 @@ export function useValidation<
 
 	/** The reference for determining if the object has been changed or not.  */
 	const dirtyReference = ref(JSON.stringify(validationConfig.model.value));
-	/**
-	 * Reactively determines if the object being validated has changed from the reference state.
-	 *
-	 * The reference state can be changed using {@link setReference()}.
-	 */
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
 	const setup = setupValidation(object as Ref<T>, validation as GenericValidation);
