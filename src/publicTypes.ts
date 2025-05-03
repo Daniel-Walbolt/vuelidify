@@ -6,20 +6,20 @@ export type Primitive = string | number | boolean;
 /** Defines the layout of validation results. Copies the format of the object being validated. */
 export type ValidationState<
 	T,
-	FValidationReturn
-> = T extends Array<infer U> ? ArrayValidationState<U, FValidationReturn>:
-	T extends IndexableObject ? RecursiveValidationState<T, FValidationReturn>:
-	T extends Primitive ? PrimitiveValidationState<FValidationReturn>:
+	Return
+> = T extends Array<infer U> ? ArrayValidationState<U, Return>:
+	T extends IndexableObject ? RecursiveValidationState<T, Return>:
+	T extends Primitive ? PrimitiveValidationState<Return>:
 	undefined;
 
 /** Intermediate type for handling nested objects for validation state. Used internally. */
-export type RecursiveValidationState<T, FValidationReturn> = BaseValidationState<FValidationReturn> & {
+export type RecursiveValidationState<T, Return> = BaseValidationState<Return> & {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
-	[key in keyof T]?: ValidationState<T[key], FValidationReturn>;
+	[key in keyof T]?: ValidationState<T[key], Return>;
 }
 
 /** Describes the Vuelidify validation state. */
-export type BaseValidationState<FValidationReturn> = {
+export type BaseValidationState<Return> = {
 	/** Stores the validation state for this object. Is named this way to avoid naming conflicts with existing object properties. */
 	$state?: {
 		/** True if all the validators defined for this property have passed. False otherwise. */
@@ -36,23 +36,23 @@ export type BaseValidationState<FValidationReturn> = {
 		errorMessages: string[];
 		/** A dictionary of the validators that returned with names. */
 		results: {
-			[key: string]: BaseValidationReturn<FValidationReturn> | undefined;
+			[key: string]: BaseValidationReturn<Return> | undefined;
 		},
-		resultsArray: BaseValidationReturn<FValidationReturn>[];
+		resultsArray: BaseValidationReturn<Return>[];
 	}
 };
 
 /** Contains the reactive state of validation for a property. */
-export type PrimitiveValidationState<FValidationReturn> = BaseValidationState<FValidationReturn>;
+export type PrimitiveValidationState<Return> = BaseValidationState<Return>;
 
 /** Defines the validation state for properties that are typed as arrays. */
-export type ArrayValidationState<U, FValidationReturn> = BaseValidationState<FValidationReturn> & {
+export type ArrayValidationState<U, Return> = BaseValidationState<Return> & {
 	/**
 	 * Contains the validation state for each element in the array.
 	 * 
 	 * Maps 1:1 to the array which was validated.
 	 */
-	$arrayState?: ValidationState<U, FValidationReturn>[];
+	$arrayState?: ValidationState<U, Return>[];
 }
 
 /** Intermediate type for handling validation of nested objects. */
@@ -60,12 +60,12 @@ export type RecursiveValidation<
 	T extends IndexableObject,
 	KParent, 
 	ValidationArgs,
-	FValidationReturn,
+	Return,
 	ArrParent,
 	NLevel extends number
-> = ObjectValidationTypes<T, KParent, ValidationArgs, FValidationReturn, ArrParent> & {
+> = ObjectValidationTypes<T, KParent, ValidationArgs, Return, ArrParent> & {
 	// Recursively define validation on the contents of the object
-	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, FValidationReturn, KParent, ArrParent, NLevel>;
+	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, ArrParent, NLevel>;
 }
 
 /** Defines the validation rules for propeties that are typed as primitive values. */
@@ -73,18 +73,18 @@ export type PrimitiveValidation<
 	T extends Primitive | undefined | null, 
 	KParent,
 	Args,
-	FValidationReturn,
+	Return,
 	ArrParent
-> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+> = BaseValidationTypes<T, KParent, Args, Return, ArrParent>;
 
 /** Defines the validation rules for objects */
 export type ObjectValidationTypes<
 	T extends IndexableObject,
 	KParent,
 	Args,
-	FValidationReturn,
+	Return,
 	ArrParent
-> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent>;
+> = BaseValidationTypes<T, KParent, Args, Return, ArrParent>;
 
 type IndexableObject = {
 	[key: string]: any;
@@ -95,13 +95,13 @@ export type BaseValidationTypes<
 	T,
 	KParent,
 	Args,
-	FValidationReturn,
+	Return,
 	ArrParent
 > = {
 	/** The validators that are invoked whenever the model is changed. */
-	$reactive?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+	$reactive?: Validator<T, KParent, Args, Return, ArrParent>[];
 	/** The validators that are invoked only after {@link validate()} is invoked. */
-	$lazy?: Validator<T, KParent, Args, FValidationReturn, ArrParent>[];
+	$lazy?: Validator<T, KParent, Args, Return, ArrParent>[];
 }
 
 /** Defines the validation rules for properties that are typed as arrays. */
@@ -110,10 +110,10 @@ export type ArrayValidationTypes<
 	T extends Array<U>,
 	KParent,
 	Args,
-	FValidationReturn,
+	Return,
 	ArrParent,
 	NLevel extends number
-> = BaseValidationTypes<T, KParent, Args, FValidationReturn, ArrParent> & {
+> = BaseValidationTypes<T, KParent, Args, Return, ArrParent> & {
 	/**
 	 * Defines the validation for each element of the array.
 	 * 
@@ -122,7 +122,7 @@ export type ArrayValidationTypes<
 	$each?: Validation<
 		U,
 		Args,
-		FValidationReturn,
+		Return,
 		KParent,
 		ArrParent extends undefined
 			? Array<unknown> & { [key in NLevel]: U }
@@ -135,9 +135,9 @@ export type Validator<
 	T,
 	KParent,
 	Args,
-	FValidationReturn,
+	Return,
 	ArrParent
-> = (SyncValidator<T, KParent, Args, FValidationReturn, ArrParent> | AsyncValidator<T, KParent, Args, FValidationReturn, ArrParent>);
+> = (SyncValidator<T, KParent, Args, Return, ArrParent> | AsyncValidator<T, KParent, Args, Return, ArrParent>);
 
 /** Represents the basic structure of a validator function */
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
@@ -190,9 +190,9 @@ export type BaseValidationReturn<F = any> = {
 }
 
 /** Used in the validation state on properties which are typed as arrays. */
-export type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<FValidationReturn> & {
+export type ArrayValidationReturn<U, Return> = BaseValidationReturn<Return> & {
 	/** The raw list of results from validating every object in the array. */
-	arrayResults?: ValidationState<U, FValidationReturn>[];
+	arrayResults?: ValidationState<U, Return>[];
 }
 
 /**
@@ -201,30 +201,30 @@ export type ArrayValidationReturn<U, FValidationReturn> = BaseValidationReturn<F
 export type Validation<
 	T,
 	Args = undefined,
-	FValidationReturn = undefined,
+	Return = undefined,
 	KParent = T,
 	ArrParent = undefined,
 	NLevel extends number = 0
 > = 
 	// Arrays are objects, so we have to check those first
-	T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, FValidationReturn, ArrParent, NLevel>:
+	T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
-	T extends IndexableObject ? RecursiveValidation<T, KParent, Args, FValidationReturn, ArrParent, NLevel>:
+	T extends IndexableObject ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
 	// boolean is checked separately from other primitives
 	// because TypeScript splits it into true | false--resulting in undefined nested types.
-	T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>:
-	T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, FValidationReturn, ArrParent>:
+	T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, Return, ArrParent>:
+	T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, Return, ArrParent>:
 	never;
 
 export type ValidationConfig<
 	T,
 	Args,
-	FValidationReturn
+	Return
 > = {
 	/** The object to validate */
 	model: Ref<T | undefined | null>,
 	/** Configures the validation on the model. */
-	validation: Validation<T, Args, FValidationReturn, T>,
+	validation: Validation<T, Args, Return, T>,
 	/**
 	 * False - reactive validation will always be active.
 	 *

@@ -4,12 +4,12 @@ import type { GenericValidation, PropertyValidationConfig } from './privateTypes
 import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
 import { setupValidation } from './services/validatorProcessing.ts';
 
-type UseValidationReturn<T, FValidationReturn> = {
+type UseValidationReturn<T, Return> = {
 	hasValidated: Ref<boolean>,
 	validate: () => Promise<boolean>,
 	isValidating: ComputedRef<boolean>,
 	/** Stores the results of validation */
-	state: ComputedRef<ValidationState<T, FValidationReturn>>,
+	state: ComputedRef<ValidationState<T, Return>>,
 	isValid: ComputedRef<boolean>,
 	/** Sets the internal reference object for determining if the object being validated has changed (is dirty) */
 	setReference: (reference: T) => void,
@@ -24,10 +24,10 @@ type UseValidationReturn<T, FValidationReturn> = {
 export function useValidation<
 	T,
 	Args = undefined,
-	FValidationReturn = undefined
+	Return = undefined
 >(
-	validationConfig: ValidationConfig<T, Args | undefined, FValidationReturn>
-): Reactive<UseValidationReturn<T, FValidationReturn>> {
+	validationConfig: ValidationConfig<T, Args, Return>
+): Reactive<UseValidationReturn<T, Return>> {
 	validationConfig.delayReactiveValidation ??= true; // Default value for delayReactiveValidation
 	const { model: object, validation, delayReactiveValidation, args } = validationConfig;
 
@@ -51,7 +51,7 @@ export function useValidation<
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
 	const setup = setupValidation(object as Ref<T>, validation as GenericValidation);
-	const validationState = setup.state as ValidationState<T, FValidationReturn>;
+	const validationState = setup.state as ValidationState<T, Return>;
 	validationConfigs = setup.validationConfigs;
 
 	/** 
