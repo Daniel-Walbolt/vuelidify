@@ -4,19 +4,19 @@
 [Types](#types)
 [Examples](#examples)
 ---
-*A simple and lightweight Vue 3 model based validation library with strong type support.*
+*Vuelidify is a Vue 3 model-based validation library providing strong TypeScript support and seamless handling of asynchronous validators, making complex form logic easy.*
 
-This library was inspired by Vuelidate but seeks to solve some of its biggest problems. This library does NOT support Vue2, and does NOT support commonJS. Technology must move forward.
+This library was inspired by Vuelidate and sought to solve some of its biggest problems. This library does NOT support Vue2, and does NOT support commonJS. Technology must move forward.
 
-**✨ Simple** because it does exactly what it needs to with no dependencies other than Vue.
+**✨ Powerful** because it handles complex validation scenarios cleanly and efficiently.
 
-**🪶 Lightweight** because the .mjs is <9KB (uncompressed), and ~3KB gzipped.
+**🪶 Lightweight** because the .mjs is <9KB (uncompressed), and ~3KB gzipped; no bloat or useless dependencies.
 
-**📝 Model based** refers to validation being done in the script tag on an object. This is an alternative to template based validation, which uses template components and attributes to validate an object.
+**📝 Model-based** refers to validation being done in your script alongside your data instead of in your templates.
 
-**💪 Strong types** makes setting up validation intuitive for developers. No more: "wait, how do I do that again?"
+**💪 Strong types** makes setup intuitive for developers. No more, "wait, how do I do that again?"
 
-Too many validation libraries for Vue lack good type support; which negatively impacts maintainability. Changes to models would not indicate that validation needs to be updated as well. This library was created to fix that problem.
+Too many validation libraries for Vue lack good type support, which makes maintaining codebases harder over time. When your data models change, there's often no clear signal that your validation needs updated as well. Vuelidify was built to solve this problem.
 
 ---
 
@@ -36,7 +36,7 @@ pnpm add vuelidify
 
 ## Types
 
-This was created for use in ```<script setup lang="ts">```, meaning you need TypeScript in order to get the full benefits of this library.
+This was created for use in ```<script setup lang="ts">```. You need TypeScript in order to get the full benefits of this library.
 
 **useValidation()** is the starting point for validating your models.
 
@@ -51,7 +51,7 @@ This was created for use in ```<script setup lang="ts">```, meaning you need Typ
 Here is a breakdown of the configuration object the composable expects.
 ```ts
 {
-  form: T, // The ref, computed, or reactive object you want to validate.
+  model: T, // The ref, computed, or reactive object you want to validate.
   validation: Validation<T>, // Describes how to validate your object.
   args: A = undefined, // Can be anything! Will be passed into every validator.
   delayReactiveValidation: boolean, // Should reactive validation be active immediately or only after calling validate()?
@@ -59,49 +59,57 @@ Here is a breakdown of the configuration object the composable expects.
 ```
 That's it, super simple!
 
-Just kidding, ```validation: Validation<T>``` isn't the full picture. The type here is quite complicated, but easy to use. Here's what you need to know.
+Just kidding, ```validation: Validation<T>``` isn't the full picture. The type here is quite complicated, but easy to use. Here's what you need to know:
 
 1. ```Validation<T>``` will copy the type of your object, down to the names of properties. Nested objects will also be copied, and their inner types as well. This type is recursive!
-2. Properties which are primitives or arrays are the exit conditions to the recursive type. Instead they will present ```PrimitiveValidationTypes``` or ```ArrayValidationTypes``` respectively.
+2. Objects which can be validated will have some unique properties available.
 ```ts
-{
-	// foo is a string
-	foo: {
-		$reactive?: [],
-		$lazy?: []
-	}
-	// bar is an array
-	bar: {
-		$each?: {},
-		$reactive?: [],
-		$lazy?: []
-	}
-}
-```
-3. Arrays are special. If you have an array of objects that need validated, ```$each``` will be your friend. ```$each``` will be the same type as ```Validation<U>``` where ```U``` is the type of each object in the array. This loop can go on forever, as long as your object also has sufficiently many children and arrays!
-4. ```$reactive``` is an array of validators that should be performed on that property reactively.
-5. ```$lazy``` is an array of validators that should be performed on that property whenever ```validate()``` is called. This was added so you can control when more expensive validatiors are invoked.
 
-Here is the breakdown of the return of the composable
+// foo is a string
+foo: {
+	$reactive?: [],
+	$lazy?: []
+}
+// bar is an array
+bar: {
+	$reactive?: [],
+	$lazy?: []
+	$each?: {},
+}
+// zaa is an object
+{
+	// These properties are added by Vuelidify
+	$reactive?: [],
+	$lazy?: [],
+	// your properties here...
+}
+
+```
+3. ```$each``` is the same type as ```Validation<U>``` where ```U``` is the type of each object in the array you are validating.
+4. ```$reactive``` is an array of validators that should be performed reactively. See technical details for more information.
+5. ```$lazy``` is an array of validators that should be performed on that property whenever ```validate()``` is called. This allows you to control when expensive validators are invoked.
+
+Here is the breakdown of the composable's return type
 ```ts
 {
 	hasValidated: boolean,
-	// True if you object has changed from the reference.
+	// True if your object has changed from the reference.
 	// Useful for enabling save buttons after changes have been made
 	isDirty: boolean,
-	isValid: boolean, 
+	// true only if every validator has passed
+	isValid: boolean,
 	isValidating: boolean,
-	// Access the results of validation. This will copy the properties of your object.
-	// Every "exit" condition have it's own type explained below
+	// Access the results of validation. This also copies the properties of your object.
+	// This type is explained below.
 	state: ValidationState<T>,
 	// Set the comparison object for determining dirty state.
-	// If your object must first load in asynchronously,
+	// If your object must load in asynchronously,
 	// use this function to set the reference once it has loaded.
-	setReference: (reference: T) => void, 
+	setReference: (reference: T) => void,
 	validate: () => Promise<boolean>
 }
 ```
-Here is the breakdown of the validation state
+Validation state also copies the layout of the model you passed in. However, instead of providing validators, you now get access to `$state` and `$arrayState`
 ```ts
 {
 	// The collected error messages returned from all the validators
@@ -152,13 +160,12 @@ Here is the breakdown of the parameters that are passed into validators
 	// The args that were specified in the composable configuration.
 	// This type will only appear for you when args is NOT undefined.
 	args: V,
-	// Will only appear for properties nested in some array.
+	// Will only appear on state nested in some array.
 	// The type will be an ordered array of strongly typed objects.
-	// Each element is a "parent" in the array, or an ancestor to the property you're validating.
+	// Each index is an ancestor to the what you're validating.
 	// Index 0 will be appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
-	// The limit of nested arrays is currently 20, and I don't think you'll need more than that.
-	// Extremely useful for complex validation of arrays where validation depends on the array object,
-	// rather than the top-most parent object which contains the array.
+	// The limit of nested arrays is currently 20, and we don't think you'll need more than that.
+	// Extremely useful for complex validation.
 	arrayParents: A
 }
 ```
