@@ -19,7 +19,7 @@ export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minLength<T extends string | undefined | null, P, V, R, A>(
+export function minLength<T extends string | number | undefined | null, P, V, R, A>(
 	minLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
@@ -77,11 +77,17 @@ export function maxNumber<T extends number | undefined | null, P, V, R, A>(
 }
 
 /**
- * Checks if the value of this property strictly equals the value returned by the provided getter.
+ * Validates a value using a provided predicate function.
+ * @param fn predicate that returns true if the value is valid.
+ * @param errorMessage the message to display when the values are not equal.
+ * @returns Synchronous validator
  */
-export function mustEqual<T, P, V, R, A>(getter: (params: ValidatorParams<T, P, V, A>) => T, errorMessage: string): SyncValidator<T, P, V, R, A> {
+export function must<T, P, V, R, A>(
+	fn: (params: ValidatorParams<T, P, V, A>) => boolean,
+	errorMessage: string
+): SyncValidator<T, P, V, R, A> {
 	return (params) => ({
-		isValid: params.value === getter(params),
+		isValid: fn(params),
 		message: errorMessage
 	});
 }
