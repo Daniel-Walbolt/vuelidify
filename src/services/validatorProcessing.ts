@@ -231,7 +231,7 @@ export function setupNestedPropertiesForValidation(
 		}
 
 		for (const key in rValidation) {
-			// Early continue if we're not looking at possible nested validations
+			// Early continue if we're not looking at possible nested validation rules.
 			if (key === "$reactive" || key === "$lazy" || key === "$each") {
 				continue;
 			}
