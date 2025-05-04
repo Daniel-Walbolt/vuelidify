@@ -41,7 +41,7 @@ const testMinLength = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, `minLength did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, using a minLength of ${MinLength}.`);
+		assert(v$.state.$state?.isValid === testCase.expected, `minLength did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, using a minLength of ${MinLength}.`);
 	}
 }; 
 
@@ -60,11 +60,11 @@ const testMaxLength = async (test: Deno.TestContext) => {
 
 	model.value = "Test";
 	await pause();
-	assert(v$.state.$state.isValid === true, `Max length did not pass even though the length was ${model.value.length}.`);
+	assert(v$.state.$state?.isValid === true, `Max length did not pass even though the length was ${model.value.length}.`);
 	
 	model.value = "This One is Too Long";
 	await pause();
-	assert(v$.state.$state.isValid === false, `Max length did not make the state invalid when length was ${model.value.length}.`);
+	assert(v$.state.$state?.isValid === false, `Max length did not make the state invalid when length was ${model.value.length}.`);
 };
 
 const testEmail = async (test: Deno.TestContext) => {
@@ -92,7 +92,7 @@ const testEmail = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, `"${testCase.model}" was expected to be ${testCase.expected ? "valid" : "invalid"}, but was not.`);
+		assert(v$.state.$state?.isValid === testCase.expected, `"${testCase.model}" was expected to be ${testCase.expected ? "valid" : "invalid"}, but was not.`);
 	}
 };
 
@@ -117,7 +117,7 @@ const testMinNumber = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid == testCase.expected, `minNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`);
+		assert(v$.state.$state?.isValid == testCase.expected, `minNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`);
 	}
 };
 
@@ -146,7 +146,7 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, `maxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`);
+		assert(v$.state.$state?.isValid === testCase.expected, `maxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`);
 	}
 };
 
@@ -175,7 +175,7 @@ const testRequired = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, `required did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`);
+		assert(v$.state.$state?.isValid === testCase.expected, `required did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`);
 	}
 };
 
@@ -203,7 +203,7 @@ const testLazyValidation = async (test: Deno.TestContext) => {
 			await v$.validate();
 		}
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
+		assert(v$.state.$state?.isValid === testCase.expected, testCase.error);
 	}
 };
 
@@ -236,7 +236,7 @@ const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
 			await v$.validate();
 		}
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
+		assert(v$.state.$state?.isValid === testCase.expected, testCase.error);
 	}
 };
 
@@ -263,6 +263,6 @@ const testGlobalIsValid = async (test: Deno.TestContext) => {
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state.isValid === testCase.expected, testCase.error);
+		assert(v$.state.$state?.isValid === testCase.expected, testCase.error);
 	}
 };
