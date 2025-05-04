@@ -20,7 +20,7 @@ export function setupValidation(
  * @param validators
  * @param markReactive
  */
-export function setupValidators(
+export function processValidators(
 	validators: GenericValidator[],
 	/** Mark the processed validators as reactive or lazy */
 	markReactive: boolean,
@@ -49,7 +49,7 @@ export function setupValidators(
 /**
  * Performs setup of validation on a property. Creates a property validation config, and validation state object for it.
  */
-export function setupPropertyValidation(
+export function createValidationConfig(
 	object: Ref<unknown>,
 	validation: AnyGenericValidationType,
 	/** Specify the getters for the array parents that came before this property. */
@@ -167,12 +167,12 @@ export function setupPropertyValidation(
 	let lazyValidators: ProcessedValidator[] = [];
 	if (validation.$reactive && validation.$reactive.length > 0) {
 		initIsReactiveValid = false;
-		reactiveValidators = setupValidators(validation.$reactive, true);
+		reactiveValidators = processValidators(validation.$reactive, true);
 	}
 
 	if (validation.$lazy && validation.$lazy?.length > 0) {
 		initIsLazyValid = false;
-		lazyValidators = setupValidators(validation.$lazy, false);
+		lazyValidators = processValidators(validation.$lazy, false);
 	}
 	
 	const validationConfig: PropertyValidationConfig = {
@@ -210,20 +210,21 @@ export function setupNestedPropertiesForValidation(
 	// Check if the validation object provided has validation
 	if (isValidation(validation)) {
 		const target = computed(() => toValue(object));
-		const validatedPropertyConfig = setupPropertyValidation(target, validation, arrayParents);
+		const validatedPropertyConfig = createValidationConfig(target, validation, arrayParents);
 		resultConfigs.push(validatedPropertyConfig);
 		ret = validatedPropertyConfig.validationState;
 	}
 	
 	if (validation != undefined) {
 		// Recursively find nested validation objects
-		recursiveSetup(object, validation);
+		recursiveSetup(object, validation, ret);
 	}
 
 	/** Recursive function to iterate through a validation object and create validation configs. */
 	function recursiveSetup(
 		rObject: MaybeRefOrGetter<unknown>,
-		rValidation: GenericValidation
+		rValidation: GenericValidation,
+		rState: GenericValidationState
 	) {
 		// Early return
 		if (isGenericEnumerableObject<IndexableGenericValidation>(rValidation) === false) {
@@ -235,6 +236,7 @@ export function setupNestedPropertiesForValidation(
 			if (key === "$reactive" || key === "$lazy" || key === "$each") {
 				continue;
 			}
+
 			/** 
 			 * Can return null, undefined, a primitive, array, or custom object.
 			 * Note, this has to be a getter Ref in order to maintain reactivity.
@@ -251,19 +253,19 @@ export function setupNestedPropertiesForValidation(
 			const maybeNestedValidation = rValidation[key];
 
 			if (isValidation(maybeNestedValidation)) {
-				const validatedPropertyConfig = setupPropertyValidation(target, maybeNestedValidation, arrayParents);
-				resultConfigs.push(validatedPropertyConfig);
-				ret[key] = validatedPropertyConfig.validationState;
+				const setup = createValidationConfig(target, maybeNestedValidation, arrayParents);
+				resultConfigs.push(setup);
+				rState[key] = setup.validationState;
 			}
 
 			if (isGenericEnumerableObject(maybeNestedValidation)) {
-				// Lastly, the property is an object that may have nested properties
-				// The property can be null, undefined, or a nested object.
-				const nestedState: GenericValidationState = {};
-				ret[key] = nestedState;
+				// This property is an object that may have nested properties
+				const nestedState: GenericValidationState = rState[key] ?? {};
+				rState[key] = nestedState;
 				recursiveSetup(
 					target,
-					maybeNestedValidation
+					maybeNestedValidation,
+					nestedState
 				);
 			}
 		}

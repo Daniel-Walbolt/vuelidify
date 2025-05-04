@@ -1,7 +1,7 @@
 import { computed, MaybeRefOrGetter, toValue, type Ref } from 'vue';
 import { bufferAsync, throttleQueueAsync } from '../throttleFunctions.ts';
 import type { GenericSyncValidator, GenericValidator, GenericValidatorParams, ProcessedValidator, PropertyValidationConfig } from '../privateTypes.ts';
-import { setupValidators } from './validatorProcessing.ts';
+import { processValidators } from './validatorProcessing.ts';
 import type { BaseValidationReturn } from '../publicTypes.ts';
 
 type ResultProcessor = (
@@ -277,7 +277,7 @@ function handleReturnedValidators(
 	returnedValidators: GenericValidator[],
 	recursionCount: number
 ) {
-	const processedRetValidators = setupValidators(
+	const processedRetValidators = processValidators(
 		returnedValidators,
 		parentProcessedValidator.isReactive,
 		parentProcessedValidator.validatorId
