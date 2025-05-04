@@ -28,7 +28,7 @@ type UseValidationReturn<T, Return> = {
  */
 export function useValidation<
 	T,
-	Args = unknown,
+	Args = unknown, // setting these default types to undefined creates problems with the must() validator that I don't fully understand.
 	Return = unknown
 >(
 	validationConfig: ValidationConfig<T, Args, Return>
