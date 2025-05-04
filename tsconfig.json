@@ -1,6 +1,9 @@
 {
 	"compilerOptions": {
 		"moduleResolution": "node",
-		"allowImportingTsExtensions": true
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"allowImportingTsExtensions": true,
+		"strictNullChecks": true
 	}
 }
