@@ -13,7 +13,7 @@ export type Person = {
 	countChildren: number;
 	children: Child[],
 	neighbors: Person[],
-	bestFriend: Person;
+	bestFriend?: Person;
 }
 
 const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony", "Bailey", "Haley", "Elvis", "Ty"];
@@ -32,10 +32,10 @@ export const randomPerson = (params?: {
 	} = params ?? {};
 
 	const countChildren = Math.ceil(Math.random() * maxChildren);
-	const children = [];
+	const children: Child[] = [];
 	for (let i = 0; i < countChildren; i++) { children.push(randomChild()); }
 	const countNeighbors = Math.ceil(Math.random() * maxNeighbors);
-	const neighbors = [];
+	const neighbors: Person[] = [];
 	if (genNeighbors) {
 		for (let i = 0; i < countNeighbors; i++) { neighbors.push(randomPerson({ genNeighbors: false, genBestFriend: false })); }
 	}
