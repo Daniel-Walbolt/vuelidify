@@ -10,7 +10,7 @@ export type ValidationState<
 > = T extends Array<infer U> ? ArrayValidationState<U, Return>:
 	T extends IndexableObject ? RecursiveValidationState<T, Return>:
 	T extends Primitive ? PrimitiveValidationState<Return>:
-	undefined;
+	never;
 
 /** Intermediate type for handling nested objects for validation state. Used internally. */
 export type RecursiveValidationState<T, Return> = BaseValidationState<Return> & {
@@ -70,7 +70,7 @@ export type RecursiveValidation<
 
 /** Defines the validation rules for propeties that are typed as primitive values. */
 export type PrimitiveValidation<
-	T extends Primitive | undefined | null, 
+	T extends Primitive,
 	KParent,
 	Args,
 	Return,
@@ -212,8 +212,8 @@ export type Validation<
 	T extends IndexableObject ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
 	// boolean is checked separately from other primitives
 	// because TypeScript splits it into true | false--resulting in undefined nested types.
-	T extends boolean ? PrimitiveValidation<boolean | undefined | null, KParent | undefined | null, Args, Return, ArrParent>:
-	T extends Primitive ? PrimitiveValidation<T | undefined | null, KParent | undefined | null, Args, Return, ArrParent>:
+	T extends boolean ? PrimitiveValidation<boolean, KParent, Args, Return, ArrParent>:
+	T extends Primitive ? PrimitiveValidation<T, KParent, Args, Return, ArrParent>:
 	never;
 
 export type ValidationConfig<
@@ -248,11 +248,11 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		/** The entire object that was passed into the useValidation() composable to be validated. */
 		parent: KParent
 	} &
-	(Args extends undefined ? unknown : { 
+	(Args extends undefined ? Record<string, never> : { 
 		/** The args passed in to the useValidation() composable configuration. */
 		args: Args
 	}) &
-	(ArrParent extends undefined ? unknown : {
+	(ArrParent extends undefined ? Record<string, never> : {
 		/**
 		 * An ordered list of objects that were traversed through while navigating to this validator.
 		 * 
