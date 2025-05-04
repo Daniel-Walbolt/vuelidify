@@ -24,6 +24,9 @@ const testDelayedReactiveValidation = async (test: Deno.TestContext) => {
 	
 	model.value = "ThisIsLongEnough";
 	await pause();
+	if (v$.state.$state === undefined) {
+		throw new Error("Validation state was undefined when it shouldn't have been.");
+	}
 	assert(v$.isValid === false, "isValid was true when it was expected to be false. Reactive validation should not have executed.");
 	assert(v$.state.$state.resultsArray.length === 0, "Results array of the state was not empty. Reactive validation should not have executed.");
 	await v$.validate();
