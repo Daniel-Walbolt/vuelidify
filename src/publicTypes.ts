@@ -124,9 +124,7 @@ export type ArrayValidationTypes<
 		Args,
 		Return,
 		KParent,
-		ArrParent extends undefined
-			? Array<unknown> & { [key in NLevel]: U }
-			: ArrParent & { [key in NLevel]: U },
+		ArrParent & { [key in NLevel]: U },
 		Increment<NLevel>
 	>;
 }
@@ -200,10 +198,10 @@ export type ArrayValidationReturn<U, Return> = BaseValidationReturn<Return> & {
  */
 export type Validation<
 	T,
-	Args = undefined,
-	Return = undefined,
+	Args = unknown,
+	Return = unknown,
 	KParent = T,
-	ArrParent = undefined,
+	ArrParent = unknown,
 	NLevel extends number = 0
 > = 
 	// Arrays are objects, so we have to check those first
@@ -222,9 +220,9 @@ export type ValidationConfig<
 	Return
 > = {
 	/** The object to validate */
-	model: Ref<T | undefined | null>,
+	model: Ref<T | undefined | null>;
 	/** Configures the validation on the model. */
-	validation: Validation<T, Args, Return, T>,
+	validation: Validation<T, Args, Return, T>;
 	/**
 	 * False - reactive validation will always be active.
 	 *
