@@ -1,11 +1,11 @@
-import type { SyncValidator, ValidatorParams } from './publicTypes.ts';
+import type { Primitive, SyncValidator, ValidatorParams } from './publicTypes.ts';
 
 /** 
  * Makes sure the object is not loosely undefined and the trim length is greater than 0.
  * @param value
  * @returns Synchronous validator
  */
-export function required<T, P, V = undefined, R = undefined, A = undefined>(): SyncValidator<T, P, V, R, A> {
+export function required<T extends Primitive, P, V = undefined, R = undefined, A = undefined>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		return {
 			isValid: params.value != undefined && String(params.value).trim().length > 0,
