@@ -57,7 +57,7 @@ export type ArrayValidationState<U, Return> = BaseValidationState<Return> & {
 
 /** Intermediate type for handling validation of nested objects. */
 export type RecursiveValidation<
-	T extends IndexableObject,
+	T,
 	KParent, 
 	ValidationArgs,
 	Return,
@@ -68,9 +68,9 @@ export type RecursiveValidation<
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, ArrParent, NLevel>;
 }
 
-/** Defines the validation rules for propeties that are typed as primitive values. */
+/** Defines the validation rules for properties that are typed as primitive values. */
 export type PrimitiveValidation<
-	T extends Primitive,
+	T,
 	KParent,
 	Args,
 	Return,
@@ -79,7 +79,7 @@ export type PrimitiveValidation<
 
 /** Defines the validation rules for objects */
 export type ObjectValidationTypes<
-	T extends IndexableObject,
+	T,
 	KParent,
 	Args,
 	Return,
@@ -124,7 +124,9 @@ export type ArrayValidationTypes<
 		Args,
 		Return,
 		KParent,
-		ArrParent & { [key in NLevel]: U },
+		ArrParent extends undefined
+			? Record<string, never> & { [key in NLevel]: U }
+			: ArrParent & { [key in NLevel]: U },
 		Increment<NLevel>
 	>;
 }
@@ -198,20 +200,20 @@ export type ArrayValidationReturn<U, Return> = BaseValidationReturn<Return> & {
  */
 export type Validation<
 	T,
-	Args = unknown,
-	Return = unknown,
+	Args = undefined,
+	Return = undefined,
 	KParent = T,
-	ArrParent = unknown,
+	ArrParent = undefined,
 	NLevel extends number = 0
 > = 
 	// Arrays are objects, so we have to check those first
-	T extends Array<infer U> ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, U[], KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
-	T extends IndexableObject ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [IndexableObject] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
 	// boolean is checked separately from other primitives
 	// because TypeScript splits it into true | false--resulting in undefined nested types.
-	T extends boolean ? PrimitiveValidation<boolean, KParent, Args, Return, ArrParent>:
-	T extends Primitive ? PrimitiveValidation<T, KParent, Args, Return, ArrParent>:
+	[NonNullable<T>] extends [boolean] ? PrimitiveValidation<boolean, KParent, Args, Return, ArrParent>:
+	[NonNullable<T>] extends [Primitive] ? PrimitiveValidation<T, KParent, Args, Return, ArrParent>:
 	never;
 
 export type ValidationConfig<
@@ -220,7 +222,7 @@ export type ValidationConfig<
 	Return
 > = {
 	/** The object to validate */
-	model: Ref<T | undefined | null>;
+	model: Ref<T>;
 	/** Configures the validation on the model. */
 	validation: Validation<T, Args, Return, T>;
 	/**
