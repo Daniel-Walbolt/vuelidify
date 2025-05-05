@@ -31,7 +31,7 @@ const testDelayedReactiveValidation = async (test: Deno.TestContext) => {
 	assert(v$.isValid === false, "isValid was true when it was expected to be false. Reactive validation should not have executed.");
 	assert(v$.state.$state.resultsArray.length === 0, "Results array of the state was not empty. Reactive validation should not have executed.");
 	await v$.validate();
-	assert(v$.state.$state.resultsArray.length > 0, "Results array had zero length after calling validate. Reactive valiidation should have executed.");
+	assert(v$.state.$state.resultsArray.length > 0, "Results array had zero length after calling validate. Reactive validation should have executed.");
 	model.value = "This";
 	await pause();
 	assert(v$.isValid === false, "isValid was true when it was expected to be false. Reactive validation should have executed and failed.");
