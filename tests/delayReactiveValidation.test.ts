@@ -12,11 +12,12 @@ Deno.test("Test delayReactiveValidation configuration", async (test: Deno.TestCo
 
 const testDelayedReactiveValidation = async (test: Deno.TestContext) => {
 	const model = ref<string | number>();
+	const MinLength = 10;
 	const v$ = useValidation({
 		model: model,
 		validation: {
 			$reactive: [
-				minLength(10)
+				minLength(MinLength)
 			]
 		},
 		delayReactiveValidation: true
