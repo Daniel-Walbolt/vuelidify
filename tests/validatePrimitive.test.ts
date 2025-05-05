@@ -1,7 +1,7 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
 import { ref } from "vue";
-import { isEmailSync, maxLength, maxNumber, minLength, minNumber, required } from "../src/validators.ts";
+import { isEmailSync, maxLength, maxNumber, minLength, minNumber, must, required } from "../src/validators.ts";
 import { pause } from "./main.ts";
 
 Deno.test("Validating a primitive", async (test) => {
