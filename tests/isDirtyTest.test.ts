@@ -1,8 +1,8 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
 import { ref } from "vue";
-import { isEmailSync, maxLength, maxNumber, minLength, minNumber, required } from "../src/validators.ts";
-import { pause, Person, randomPerson } from "./main.ts";
+import { maxLength } from "../src/validators.ts";
+import { Person, randomPerson } from "./main.ts";
 
 Deno.test("Test isDirty", async (test: Deno.TestContext) => {
 	await test.step("Dirty Primitives", testIsDirtyOnPrimitive);
