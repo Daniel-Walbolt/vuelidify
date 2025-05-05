@@ -5,7 +5,7 @@ import type { SyncValidator, ValidatorParams } from './publicTypes.ts';
  * @param value
  * @returns Synchronous validator
  */
-export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
+export function required<T, P, V = undefined, R = undefined, A = undefined>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		return {
 			isValid: params.value != undefined && String(params.value).trim().length > 0,
@@ -19,7 +19,7 @@ export function required<T,P,V,R,A>(): SyncValidator<T, P, V, R, A> {
  * @param minLength 
  * @returns Synchronous validator
  */
-export function minLength<T extends string | number | undefined | null, P, V, R, A>(
+export function minLength<T extends string | number | undefined | null, P, V = undefined, R = undefined, A = undefined>(
 	minLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
@@ -36,7 +36,7 @@ export function minLength<T extends string | number | undefined | null, P, V, R,
  * @param maxLength 
  * @return Synchronous validator
  */
-export function maxLength<T extends string | number | undefined | null, P, V, R, A>(
+export function maxLength<T extends string | number | undefined | null, P, V = undefined, R = undefined, A = undefined>(
 	maxLength: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
@@ -53,7 +53,7 @@ export function maxLength<T extends string | number | undefined | null, P, V, R,
  * @param minNumber 
  * @returns Synchronous validator
  */
-export function minNumber<T extends number | undefined | null, P, V, R, A>(
+export function minNumber<T extends number | undefined | null, P, V = undefined, R = undefined, A = undefined>(
 	minNumber: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
@@ -67,7 +67,7 @@ export function minNumber<T extends number | undefined | null, P, V, R, A>(
  * @param maxNumber 
  * @returns Synchronous validator
  */
-export function maxNumber<T extends number | undefined | null, P, V, R, A>(
+export function maxNumber<T extends number | undefined | null, P, V = undefined, R = undefined, A = undefined>(
 	maxNumber: number
 ): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
@@ -82,7 +82,7 @@ export function maxNumber<T extends number | undefined | null, P, V, R, A>(
  * @param errorMessage the message to display when the values are not equal.
  * @returns Synchronous validator
  */
-export function must<T, P, V, R, A>(
+export function must<T, P, V = undefined, R = undefined, A = undefined>(
 	fn: (params: ValidatorParams<T, P, V, A>) => boolean,
 	errorMessage: string
 ): SyncValidator<T, P, V, R, A> {
@@ -98,7 +98,7 @@ export function must<T, P, V, R, A>(
  * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
  * @returns Synchronous validator
  */
-export function isEmailSync<T extends string | undefined | null, P, V, R, A>(): SyncValidator<T, P, V, R, A> {
+export function isEmailSync<T extends string | undefined | null, P, V = undefined, R = undefined, A = undefined>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => ({
 		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
 		message: 'Invalid email format'
