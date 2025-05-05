@@ -107,7 +107,7 @@ export type BaseValidationTypes<
 /** Defines the validation rules for properties that are typed as arrays. */
 export type ArrayValidationTypes<
 	U,
-	T extends Array<U>,
+	T,
 	KParent,
 	Args,
 	Return,
@@ -205,9 +205,9 @@ export type Validation<
 	KParent = T,
 	ArrParent = undefined,
 	NLevel extends number = 0
-> = 
+> =
 	// Arrays are objects, so we have to check those first
-	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, U[], KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
 	[NonNullable<T>] extends [IndexableObject] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
 	// boolean is checked separately from other primitives
