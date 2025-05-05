@@ -210,9 +210,6 @@ export type Validation<
 	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
 	[NonNullable<T>] extends [IndexableObject] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
-	// boolean is checked separately from other primitives
-	// because TypeScript splits it into true | false--resulting in undefined nested types.
-	[NonNullable<T>] extends [boolean] ? PrimitiveValidation<boolean, KParent, Args, Return, ArrParent>:
 	[NonNullable<T>] extends [Primitive] ? PrimitiveValidation<T, KParent, Args, Return, ArrParent>:
 	never;
 
