@@ -1,8 +1,8 @@
 import { ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { minLength } from "../src/validators.ts";
-import { assert } from "node:console";
 import { pause } from "./main.ts";
+import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
 Deno.test("Test delayReactiveValidation configuration", async (test: Deno.TestContext) => {
 	// Almost every other test relies on delayReactiveValidation: false.
