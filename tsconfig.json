@@ -4,6 +4,7 @@
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"allowImportingTsExtensions": true,
-		"strictNullChecks": true
+		"strictNullChecks": true,
+		"strict": true
 	}
 }
