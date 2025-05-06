@@ -5,7 +5,7 @@ import type { SyncValidator, ValidatorParams } from './publicTypes.ts';
  * @param value
  * @returns Synchronous validator
  */
-export function required<T, P, V = undefined, R = undefined, A = undefined>(): SyncValidator<T, P, V, R, A> {
+export function required<T, P = any, V = any, R = any, A = any>(): SyncValidator<T, P, V, R, A> {
 	return (params: ValidatorParams<T, P, V, A>) => {
 		return {
 			isValid: params.value != undefined,
