@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { type UseValidationReturn, useValidation } from './useValidation';
 
 /** Shorthand union of the primitive types */
 export type Primitive = string | number | boolean;
@@ -8,13 +9,13 @@ export type ValidationState<
 	T,
 	Return = unknown
 > = T extends Array<infer U> ? ArrayValidationState<U, Return>:
-	T extends IndexableObject ? RecursiveValidationState<T, Return>:
+	T extends IndexableRecord ? RecursiveValidationState<T, Return>:
 	T extends Primitive ? PrimitiveValidationState<Return>:
 	never;
 
 /** Determines the validation state available to objects. */
 export type RecursiveValidationState<
-	T extends IndexableObject,
+	T extends IndexableRecord,
 	Return = unknown
 > = BaseValidationState<Return> & {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
@@ -25,21 +26,28 @@ export type RecursiveValidationState<
 export type BaseValidationState<
 	Return = unknown
 > = {
-	/** Stores the validation state for this object. Is named this way to avoid naming conflicts with existing object properties. */
+	/** 
+	 * The validation state for this object.
+	 * 
+	 * Is named this way to avoid naming conflicts with existing object properties.
+	 */
 	$state?: {
-		/** True if all the validators defined for this property have passed. False otherwise. */
+		/** True if all the validators defined have passed. False otherwise. */
 		isValid: boolean;
 		isValidating: boolean;
 		/** 
 		 * True if there are any results that failed validation.
 		 * 
-		 * Not quite the complement of {@link isValid} because !{@link isValid} can be true when no validators have been called yet.
-		 * This will only ever be true when validation results have returned.
+		 * Not always equal to `!isValid` because `!isValid` can be true when validators haven't been invoked.
 		 */
 		isErrored: boolean;
-		/** Easy collection of the error messages from the raw validation returns */
+		/** Collection of the error messages from validators */
 		errorMessages: string[];
-		/** A dictionary of the validators that returned with names. */
+		/** 
+		 * An indexable object of the validators that returned with names.
+		 * 
+		 * Useful for validators which return data you want to use.
+		 */
 		results: {
 			[key: string]: BaseValidationReturn<Return> | undefined;
 		},
@@ -47,12 +55,12 @@ export type BaseValidationState<
 	}
 };
 
-/** Contains the reactive state of validation for a property. */
+/** Defines the validation state for a primitive value. */
 export type PrimitiveValidationState<
 	Return = unknown
 > = BaseValidationState<Return>;
 
-/** Defines the validation state for properties that are typed as arrays. */
+/** Defines the validation state for an array. */
 export type ArrayValidationState<
 	U,
 	Return = unknown
@@ -65,7 +73,7 @@ export type ArrayValidationState<
 	$arrayState?: ValidationState<U, Return>[];
 }
 
-/** Intermediate type for handling validation of nested objects. */
+/** Defines validation rules for records. */
 export type RecursiveValidation<
 	T,
 	KParent,
@@ -78,35 +86,33 @@ export type RecursiveValidation<
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, ArrParent, NLevel>;
 }
 
-/** Defines the validation rules for objects */
+/** Defines the validation rules for records */
 export type ObjectValidationTypes<
 	T,
 	KParent,
 	Args,
 	Return,
 	ArrParent
-> = BaseValidationTypes<T, KParent, Args, Return, ArrParent>;
+> = BaseValidation<T, KParent, Args, Return, ArrParent>;
 
-type IndexableObject = {
-	[key: string]: any;
-};
+type IndexableRecord = Record<string, unknown>;
 
-/** Specifies the reactive and lazy validators */
-export type BaseValidationTypes<
+/** Defines the validation rules for all supported objects. */
+export type BaseValidation<
 	T,
 	KParent,
 	Args,
 	Return,
 	ArrParent
 > = {
-	/** The validators that are invoked whenever the model is changed. */
+	/** Validators invoked whenever the model is changed. */
 	$reactive?: Validator<T, KParent, Args, Return, ArrParent>[];
-	/** The validators that are invoked only after {@link validate()} is invoked. */
+	/** Validators invoked only after {@link UseValidationReturn.validate | validate()} is invoked. */
 	$lazy?: Validator<T, KParent, Args, Return, ArrParent>[];
 }
 
-/** Defines the validation rules for properties that are typed as arrays. */
-export type ArrayValidationTypes<
+/** Defines the validation rules for an array. */
+export type ArrayValidation<
 	U,
 	T,
 	KParent,
@@ -114,9 +120,9 @@ export type ArrayValidationTypes<
 	Return,
 	ArrParent,
 	NLevel extends number
-> = BaseValidationTypes<T, KParent, Args, Return, ArrParent> & {
+> = BaseValidation<T, KParent, Args, Return, ArrParent> & {
 	/**
-	 * Defines the validation for each element of the array.
+	 * Defines the validation rules for each element of an array.
 	 * 
 	 * Works best with arrays of objects; see documentation for details.
 	 */
@@ -131,19 +137,20 @@ export type ArrayValidationTypes<
 		Increment<NLevel>
 	>;
 }
+
 /** A synchronous or asynchronous validator. */
 export type Validator<
-	T,
-	KParent,
-	Args,
-	Return,
-	ArrParent
+	T = unknown,
+	KParent = unknown,
+	Args = unknown,
+	Return = unknown,
+	ArrParent = unknown
 > = (SyncValidator<T, KParent, Args, Return, ArrParent> | AsyncValidator<T, KParent, Args, Return, ArrParent>);
 
-/** Represents the basic structure of a validator function */
+/** Defines a validator function */
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
 
-/** Indicates a validator which run synchronously */
+/** Defines a validator which always runs synchronously */
 export type SyncValidator<
 	T = unknown,
 	Parent = unknown,
@@ -158,7 +165,7 @@ export type SyncValidator<
 	ArrParent
 >
 
-/** Indicates a validator which returns a promise */
+/** Defines a validator which returns a promise */
 export type AsyncValidator<
 	T = unknown,
 	Parent = unknown,
@@ -173,11 +180,11 @@ export type AsyncValidator<
 	ArrParent
 >
 
-/** The base type for the return value of validators */
+/** Defines the return value of validators */
 export type BaseValidationReturn<F = never> = {
 	/** 
-	 * Assign this validator's result a name.
-	 * The result will then be added to a indexable object using the name as the key
+	 * The validation result's name.
+	 * The result will be added to a record using the name as the key
 	 * 
 	 * Note, the entry will not exist until this validator has been ran once, so account for undefined.
 	 */
@@ -188,28 +195,22 @@ export type BaseValidationReturn<F = never> = {
 	 * Assigned and used internally, but can be used as an element's ID or key.
 	 */
 	id?: string;
-	/** Used to determine if validation passed. */
+	/** Determines if this validator passed. */
 	isValid: boolean;
 	/** The error message for this validator. */
 	message?: string;
 	/**
-	 * Return a custom object from this validator.
+	 * Return any extra data you want from this validator.
 	 * 
-	 * Should be used for more sophisticated return types than a boolean.
-	 * 
-	 * i.e. password strength, severity levels, functions, etc.
+	 * Meant for more sophisticated validation which returns data instead of just an error message (e.g. password strength, severity levels, or arrays).
 	 */
 	custom?: F
 }
 
-/** Used in the validation state on properties which are typed as arrays. */
-export type ArrayValidationReturn<U, Return> = BaseValidationReturn<Return> & {
-	/** The raw list of results from validating every object in the array. */
-	arrayResults?: ValidationState<U, Return>[];
-}
-
 /**
- * The main recursive type which dictates the layout of the validation rules.
+ * The entry point for validation with Vuelidify.
+ * 
+ * Defines the validation rules for all the supported object types.
  */
 export type Validation<
 	T,
@@ -220,27 +221,29 @@ export type Validation<
 	NLevel extends number = 0
 > =
 	// Arrays are objects, so we have to check those first
-	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidation<U, T, KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
-	[NonNullable<T>] extends [IndexableObject] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
-	[NonNullable<T>] extends [Primitive] ? BaseValidationTypes<T, KParent, Args, Return, ArrParent>:
+	[NonNullable<T>] extends [IndexableRecord] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [Primitive] ? BaseValidation<T, KParent, Args, Return, ArrParent>:
 	never;
 
+/** Defines the configuration for the {@link useValidation | useValidation() } composable */
 export type ValidationConfig<
-	T,
-	Args,
-	Return
+	T = unknown,
+	Args = unknown,
+	Return = unknown
 > = {
 	/** The object to validate */
 	model: Ref<T>;
 	/** Configures the validation on the model. */
 	validation: Validation<T, Args, Return, T>;
 	/**
-	 * False - reactive validation will always be active.
+	 * Controls when reactive validation is triggered.
 	 *
-	 * True - reactive validation will start after the first invocation of {@link validate()}.
+	 * - `false`: Reactive validation is always active.
+	 * - `true`: Reactive validation starts after the first invocation of {@link validate()}.
 	 *
-	 * Defaults to true.
+	 * Defaults to `true`.
 	 */
 	delayReactiveValidation?: boolean;
 	/**
@@ -251,12 +254,12 @@ export type ValidationConfig<
 	args?: Args;
 }
 
-/** Describes the parameter passed into validator functions */
+/** Defines the parameters passed into every validator */
 export type ValidatorParams<
 	T = unknown,
 	KParent = unknown,
-	Args = DefaultValidationArgs,
-	ArrParent = DefaultValidationArrParent
+	Args = unknown,
+	ArrParent = unknown
 > = {
 	/** The current value of the property */
 	value: T,
@@ -274,7 +277,7 @@ export type ValidatorParams<
 	arrayParents: ArrParent
 }
 
-/** Type that increments a provided integer (0-19). */
+/** Increments a provided integer. Only works for 0 through 19, inclusive. */
 type Increment<N extends number> = [
 	1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
 	...number[]

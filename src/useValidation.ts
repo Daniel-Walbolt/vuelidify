@@ -1,10 +1,13 @@
-import type { DefaultValidationArgs, DefaultValidationReturn, ValidationConfig, ValidationState } from './publicTypes.ts';
+import type { ValidationConfig, ValidationState } from './publicTypes.ts';
 import { ref, computed, watch, reactive, type Ref, type ComputedRef, type Reactive } from 'vue';
 import type { GenericValidation, PropertyValidationConfig } from './privateTypes.ts';
 import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
 import { setupValidation } from './services/validatorProcessing.ts';
 
-type UseValidationReturn<T, Return> = {
+export type UseValidationReturn<
+	T = unknown,
+	Return = unknown
+> = {
 	hasValidated: Ref<boolean>,
 	validate: () => Promise<boolean>,
 	isValidating: ComputedRef<boolean>,
