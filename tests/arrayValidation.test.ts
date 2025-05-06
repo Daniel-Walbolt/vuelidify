@@ -2,7 +2,6 @@ import { Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { pause } from "./main.ts";
-import { minLength, required } from "../src/validators.ts";
 
 Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 	await test.step("Primitive Array Validation", testPrimitiveArrayValidation);
@@ -15,20 +14,25 @@ Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 	const model: Ref<string[]> = ref([]);
 	const reactiveValidationCount = ref(0);
+	const arrayValidationCount = ref(0);
 	const v$ = useValidation({
 		model: model,
 		validation: {
 			$each: {
 				$reactive: [
-					required(),
-					minLength(10),
+					(params) => {
+						arrayValidationCount.value++;
+						return {
+							isValid: params.value === "Test",
+						};
+					},
 				]
 			},
 			$reactive: [
-				(params) => {
+				() => {
 					reactiveValidationCount.value++;
 					return {
-						isValid: params.value === "Test",
+						isValid: false,
 						message: "This is an error message"
 					};
 				}
@@ -44,8 +48,9 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 	];
 	await pause();
 	assert(reactiveValidationCount.value > 0, `Array validation did not happen reactively after assignment.`);
-	assert(reactiveValidationCount.value === 1, `Reactive Array validation happened ${reactiveValidationCount.value} times, but should have only happened once.`);
-	assert(v$.)
+	assert(reactiveValidationCount.value === 1, `Reactive Array validation happened ${reactiveValidationCount.value} times, but should have happened once.`);
+	assert(arrayValidationCount.value != 0, "Array element validation was not performed when it should have been. This is likely because the $arrayState computed function is not executed.");
+	assert(arrayValidationCount.value === model.value.length, `Validation of array elements happened ${arrayValidationCount.value} times, but should have happened ${model.value.length} times`);
 };
 
 /** For testing if basic object array validation works */
