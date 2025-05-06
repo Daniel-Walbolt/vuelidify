@@ -55,7 +55,59 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 
 /** For testing if basic object array validation works */
 const testObjectArrayValidation = async (test: Deno.TestContext) => {
-	
+	type TestObject = {
+		name: string;
+		age: number;
+		isEmployed: boolean;
+	}
+	const model: Ref<TestObject[]> = ref([]);
+	const isElementReactiveValidationPerformed = ref(false);
+	const isElementLazyValidationPerformed = ref(false);
+	const arrayValidationCount = ref(0);
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$each: {
+				$lazy: [
+					() => {
+						isElementLazyValidationPerformed.value = true;
+						return {
+							isValid: true
+						};
+					}
+				],
+				$reactive: [
+					() => {
+						arrayValidationCount.value++;
+						isElementReactiveValidationPerformed.value = true;
+						return {
+							isValid: true
+						};
+					}
+				]
+			}
+		},
+		delayReactiveValidation: true
+	});
+	model.value = [
+		{
+			name: "Test",
+			age: 5,
+			isEmployed: true
+		},
+		{
+			name: "Test2",
+			age: 10,
+			isEmployed: false
+		}
+	];
+	await pause();
+	assert(isElementReactiveValidationPerformed.value === false, "Reactive array validation happened even though it was delayed and validate() was not invoked.");
+	assert(isElementLazyValidationPerformed.value === false, "Lazy validation happened even though validate() was not invoked.");
+	await v$.validate();
+	assert(isElementLazyValidationPerformed.value === true, "Lazy element validation was not performed even though validate() was invoked.");
+	assert(isElementReactiveValidationPerformed.value === true, "Reactive element validation was not performed even though validate() was invoked.");
+	assert(arrayValidationCount.value === model.value.length, `Element validation happened ${arrayValidationCount.value} times when it should have happened ${model.value} times.`);
 };
 
 const testArrayParentParameter = async (test: Deno.TestContext) => {
