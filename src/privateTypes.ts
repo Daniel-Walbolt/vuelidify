@@ -88,7 +88,7 @@ export type PropertyValidationConfig = {
 	arrayConfigMap: { [key: number]: ElementValidationConfig },
 	/** Stores the next available id to use for elements in the array. */
 	elementId: number;
-	/** The validation the user provided for each element in the array. Is undefined if the property is not an array. */
+	/** The validation the user provided for each element in the array. */
 	elementValidation: Readonly<GenericValidation | undefined>;
 	/** 
 	 * An array of all the array elements that were traversed through during validation.
@@ -126,9 +126,12 @@ export type GenericSyncValidator = SyncValidator<unknown, unknown, unknown, unkn
 export type GenericAsyncValidator = AsyncValidator<unknown, unknown, unknown, unknown, unknown>;
 
 /** A context-independent version of the public ValidationState type */
-export type GenericValidationState = GenericArrayValidationState & GenericPrimitiveValidationState | (GenericBaseValidationState & {
-	[key: string]: GenericValidationState
-});
+export type GenericValidationState = (GenericArrayValidationState & GenericPrimitiveValidationState) | IndexableGenericValidation;
+/* A context-independent version of the public RecursiveValidationState type */
+export type IndexableGenericValidationState = GenericBaseValidationState & {
+	[key: string]: GenericValidationState  // I would use Record<> here if it didn't make TypeScript think it was a circular reference
+};
+
 /* A context-independent version of the public BaseValidationState type */
 export type GenericBaseValidationState = BaseValidationState<unknown>;
 /** A context-independent version of the public ArrayValidationState type */

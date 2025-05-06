@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, reactive, type Ref, ref, toValue } from 'vue';
-import type { AnyGenericValidationType, GenericValidation, GenericValidationState, IndexableObject, GenericObjectValidation, ProcessedValidator, PropertyValidationConfig, GenericArrayValidation, IndexableGenericValidation, GenericValidator } from '../privateTypes.ts';
+import type { AnyGenericValidationType, GenericValidation, GenericValidationState, IndexableObject, GenericObjectValidation, ProcessedValidator, PropertyValidationConfig, GenericArrayValidation, IndexableGenericValidation, GenericValidator, IndexableGenericValidationState, AnyGenericValidationState, GenericArrayValidationState } from '../privateTypes.ts';
 import { reduceUndefined } from '../throttleFunctions.ts';
 
 function uniqueId() {
@@ -58,6 +58,8 @@ export function createValidationConfig(
 	// Create a reactive object for the validation state just for convenience.
 	// Users don't have to type .value on any of the these properties in
 	// JavaScript or in the Vue templates while still having reactivity.
+	// 
+	// Type is casted because TypeScript is unable to infer the type in strict mode (I think that's the problem)
 	const validationState: GenericValidationState = reactive({
 		$state: {
 			isValid: computed(() => {
@@ -75,6 +77,8 @@ export function createValidationConfig(
 			results: computed(() => validationConfig.namedValidationResults.value),
 			resultsArray: computed(() => validationConfig.validationResults.value),
 		},
+		// Important to note that if nothing refers to $arrayState, it will never execute.
+		// So if something depends on a byproduct of this computed function, it may not behave as expected.
 		$arrayState: computed(() => {
 			// Array state should be empty until the value is actually an array.
 			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
@@ -157,7 +161,7 @@ export function createValidationConfig(
 			validationConfig.arrayConfigMap = prunedValidationMap;
 			return elemValidationState;
 		})
-	});
+	}) as GenericValidationState;
 
 	// If there are no lazy validators, lazy validation is automatically valid (true).
 	let initIsLazyValid = true;
@@ -198,33 +202,35 @@ export function createValidationConfig(
 	return validationConfig;
 }
 
-/** Analyzes the validation config provided and creates validation state for each validatable object. */
+/** Analyzes the validation rules provided and sets up the validation that it represents. */
 export function setupNestedPropertiesForValidation(
 	object: MaybeRefOrGetter<unknown>,
 	validation: GenericValidation | undefined,
 	arrayParents: object[] = []
 ) {
-	/** The list of validation configs that were created from the provided object. */
-	const resultConfigs: PropertyValidationConfig[] = [];
-	let ret: GenericValidationState = {};
+	/** Validation configs created from the provided validation rules. */
+	const configs: PropertyValidationConfig[] = [];
+	/** Validation state created from the provided validation rules */
+	let state: GenericValidationState = {};
+
 	// Check if the validation object provided has validation
 	if (isValidation(validation)) {
 		const target = computed(() => toValue(object));
 		const validatedPropertyConfig = createValidationConfig(target, validation, arrayParents);
-		resultConfigs.push(validatedPropertyConfig);
-		ret = validatedPropertyConfig.validationState;
+		configs.push(validatedPropertyConfig);
+		state = validatedPropertyConfig.validationState;
 	}
 	
 	if (validation != undefined) {
 		// Recursively find nested validation objects
-		recursiveSetup(object, validation, ret);
+		recursiveSetup(object, validation, state);
 	}
 
 	/** Recursive function to iterate through a validation object and create validation configs. */
 	function recursiveSetup(
 		rObject: MaybeRefOrGetter<unknown>,
 		rValidation: GenericValidation,
-		rState: GenericValidationState
+		rState: IndexableGenericValidationState
 	) {
 		// Early return
 		if (isGenericEnumerableObject<IndexableGenericValidation>(rValidation) === false) {
@@ -254,7 +260,7 @@ export function setupNestedPropertiesForValidation(
 
 			if (isValidation(maybeNestedValidation)) {
 				const setup = createValidationConfig(target, maybeNestedValidation, arrayParents);
-				resultConfigs.push(setup);
+				configs.push(setup);
 				rState[key] = setup.validationState;
 			}
 
@@ -273,9 +279,9 @@ export function setupNestedPropertiesForValidation(
 
 	return {
 		/** All the validation configs from all the validators the user defined */
-		validationConfigs: resultConfigs,
+		validationConfigs: configs,
 		/** The object that can be used to represent that state of validation for the provided object. */
-		state: ret
+		state: state
 	};
 }
 
