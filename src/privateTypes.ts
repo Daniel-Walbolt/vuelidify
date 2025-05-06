@@ -126,7 +126,7 @@ export type GenericSyncValidator = SyncValidator<unknown, unknown, unknown, unkn
 export type GenericAsyncValidator = AsyncValidator<unknown, unknown, unknown, unknown, unknown>;
 
 /** A context-independent version of the public ValidationState type */
-export type GenericValidationState = (GenericArrayValidationState & GenericPrimitiveValidationState) | IndexableGenericValidation;
+export type GenericValidationState = Partial<GenericArrayValidationState> & GenericPrimitiveValidationState & IndexableGenericValidation;
 /* A context-independent version of the public RecursiveValidationState type */
 export type IndexableGenericValidationState = GenericBaseValidationState & {
 	[key: string]: GenericValidationState  // I would use Record<> here if it didn't make TypeScript think it was a circular reference
