@@ -1,6 +1,18 @@
 import type { Ref } from 'vue';
 import { type UseValidationReturn, useValidation } from './useValidation';
 
+// I'm not sure where to put this comment, but here's the explanation of why this library uses unknown instead of undefined in many places.
+// In TypeScript, and especially `strict` typescript, undefined is not assignable to anything but undefined.
+// However, unknown is assignable to anything.
+// If the default values of the Args or ArrParent generics were undefined, generic validators end up having type problems.
+// Many generic validators will not care about Args, ArrParent, or Return values, and they should still be usable in specifically typed situations.
+// To do this, without using `any` for those generics, the generic validators would use unknown to indicate they don't care about that type.
+// This lead to problems because the array holding the validators would expect validators that had undefined ArrParent, or undefined Args, and unknown isn't assignable to it.
+// The one useful feature of using undefined as the default value for Args and ArrParent was that it is detectable in conditional types.
+// As a result, I could completely omit the `args` and `arrayParents` property from the validator parameters if it was undefined in that context.
+// However, because undefined makes the type system unstable, I chose to use unknown instead and just have the `args` and `arrayParents` properties show up as `unknown`.
+// TypeScript is hard... hopefully you don't fall down the rabbit hole of trying to make Args undefined by default in the future.
+
 /** Shorthand union of the primitive types */
 export type Primitive = string | number | boolean;
 
