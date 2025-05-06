@@ -125,7 +125,7 @@ export type ArrayValidationTypes<
 		Return,
 		KParent,
 		ArrParent extends undefined
-			? Record<string, never> & { [key in NLevel]: U }
+			? { [key in NLevel]: U }
 			: ArrParent & { [key in NLevel]: U },
 		Increment<NLevel>
 	>;
@@ -161,7 +161,7 @@ export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 >
 
 /** The base type for the return value of validators */
-export type BaseValidationReturn<F = any> = {
+export type BaseValidationReturn<F = never> = {
 	/** 
 	 * Assign this validator's result a name.
 	 * The result will then be added to a indexable object using the name as the key
@@ -245,11 +245,11 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		/** The entire object that was passed into the useValidation() composable to be validated. */
 		parent: KParent
 	} &
-	([Args] extends [undefined] ? Record<string, never> : { 
+	(Args extends undefined ? Record<string, never> : { 
 		/** The args passed in to the useValidation() composable configuration. */
 		args: Args
 	}) &
-	([ArrParent] extends [undefined] ? Record<string, never> : {
+	(ArrParent extends undefined ? Record<string, never> : {
 		/**
 		 * An ordered list of objects that were traversed through while navigating to this validator.
 		 * 
@@ -259,7 +259,6 @@ export type ValidatorParams<T, KParent, Args, ArrParent> = {
 		 */
 		arrayParents: ArrParent
 	})
-
 
 /** Type that increments a provided integer (0-19). */
 type Increment<N extends number> = [
