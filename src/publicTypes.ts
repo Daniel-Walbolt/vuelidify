@@ -144,10 +144,25 @@ export type ArrayValidation<
 		Return,
 		KParent,
 		ArrParent extends undefined
-			? { [key in NLevel]: U }
-			: ArrParent & { [key in NLevel]: U },
+			? ArrayParentParameter<U, T, NLevel>
+			: ArrParent & ArrayParentParameter<U, T, NLevel>,
 		Increment<NLevel>
 	>;
+}
+
+export type ArrayParentParameter<
+	U, // the type of T's elements
+	T, // the array of U
+	NLevel extends number
+> = {
+	[key in NLevel]: {
+		/** The index this ancestor is at in `array` */
+		index: number,
+		/** The array which contains the ancestor. Useful for referencing this ancestor's siblings. */
+		array: T,
+		/** An object which contains the value you are validating. */
+		ancestor: U
+	}
 }
 
 /** A synchronous or asynchronous validator. */
