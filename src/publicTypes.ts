@@ -301,7 +301,7 @@ export type ValidatorParams<
 	 * 
 	 * Useful for inter-property dependence when validating arrays of complex objects.
 	 */
-	arrayParents: ArrParent
+	arrayAncestors: ArrParent
 }
 
 /** Increments a provided integer. Only works for 0 through 19, inclusive. */

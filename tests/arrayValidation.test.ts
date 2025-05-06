@@ -6,8 +6,7 @@ import { pause } from "./main.ts";
 Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 	await test.step("Primitive Array Validation", testPrimitiveArrayValidation);
 	await test.step("Basic Object Array Validation", testObjectArrayValidation);
-	await test.step("Array parent parameter", testArrayParentParameter);
-	await test.step("Array parent index parameter", testArrayIndexParameter);
+	await test.step("Test Array Ancestors parameter", testArrayParentParameter);
 	await test.step("Deeply nested arrays", testDeeplyNestedArrayValidation);
 });
 
@@ -183,10 +182,6 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 };
 
 const testArrayParentParameter = async (test: Deno.TestContext) => {
-	
-};
-
-const testArrayIndexParameter = async (test: Deno.TestContext) => {
 	
 };
 

@@ -141,7 +141,7 @@ function recursiveInvokeAndOptimizeValidators(
 				value: property,
 				parent: parent,
 				args: args,
-				arrayParents: propertyConfig.arrayParents
+				arrayAncestors: propertyConfig.arrayAncestors
 			};
 			validationReturn = processedValidator.validator(params);
 		} else {
@@ -233,7 +233,7 @@ function recursiveInvokeAndOptimizeValidators(
 							value: propertyConfig.target.value, // Setup a reactive dependency on the property value
 							parent: parent,
 							args: args,
-							arrayParents: propertyConfig.arrayParents
+							arrayAncestors: propertyConfig.arrayAncestors
 						};
 						return typedValidator(params);
 					});

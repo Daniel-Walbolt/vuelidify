@@ -144,12 +144,12 @@ export function createValidationConfig(
 				// Setup validation
 				const target = computed(() => arr[i]);
 				if (isObject) {
-					validationConfig.arrayParents.push(target);
+					validationConfig.arrayAncestors.push(target);
 				}
 				const elValidationSetup = setupNestedPropertiesForValidation(
 					target,
 					elValidation,
-					validationConfig.arrayParents
+					validationConfig.arrayAncestors
 				);
 				validationMap[tempId] = {
 					validationConfigs: elValidationSetup.validationConfigs,
@@ -197,7 +197,7 @@ export function createValidationConfig(
 		arrayConfigMap: {},
 		elementId: 0,
 		elementValidation: (validation as GenericArrayValidation).$each,
-		arrayParents: reactive(arrayParents),
+		arrayAncestors: reactive(arrayParents),
 	};
 	return validationConfig;
 }
