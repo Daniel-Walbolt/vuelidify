@@ -10,7 +10,7 @@
  * >(test);
  * ```
  */
-export function bufferAsync<F extends (...args: unknown[]) => unknown, K>(
+export function bufferAsync<F extends (...args: any[]) => any, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
@@ -56,7 +56,7 @@ export function bufferAsync<F extends (...args: unknown[]) => unknown, K>(
  * @param delay milliseconds required between invocations of the function.
  *
  */
-export function throttleQueueAsync<F extends (...args: unknown[]) => unknown, K>(
+export function throttleQueueAsync<F extends (...args: any[]) => any, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
 	delay: number
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
