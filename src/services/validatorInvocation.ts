@@ -417,11 +417,13 @@ export function invokeValidatorConfigs(
 		}
 		
 		// Check if there are array elements to validate. Each element can have its own lazy or reactive properties.
-		if (validationConfig.elementValidation !== undefined) {
+		// This check on $arrayState is EXTREMELY important for making sure $arrayState is invoked at least once
+		if (Array.isArray(validationConfig.validationState.$arrayState)) {
 			const elementValidationConfigs: PropertyValidationConfig[] = [];
 			for (const key in validationConfig.arrayConfigMap) {
 				elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
 			}
+			console.log("Invoking array validation", elementValidationConfigs.length);
 			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
 		}
 	}

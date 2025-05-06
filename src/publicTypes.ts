@@ -82,7 +82,7 @@ export type ArrayValidationState<
 	 * 
 	 * Maps 1:1 to the array which was validated.
 	 */
-	$arrayState?: ValidationState<U, Return>[];
+	$arrayState: ValidationState<U, Return>[];
 }
 
 /** Defines validation rules for records. */
