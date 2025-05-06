@@ -6,20 +6,25 @@ export type Primitive = string | number | boolean;
 /** Defines the layout of validation results. Copies the format of the object being validated. */
 export type ValidationState<
 	T,
-	Return
+	Return = unknown
 > = T extends Array<infer U> ? ArrayValidationState<U, Return>:
 	T extends IndexableObject ? RecursiveValidationState<T, Return>:
 	T extends Primitive ? PrimitiveValidationState<Return>:
 	never;
 
-/** Intermediate type for handling nested objects for validation state. Used internally. */
-export type RecursiveValidationState<T, Return> = BaseValidationState<Return> & {
+/** Determines the validation state available to objects. */
+export type RecursiveValidationState<
+	T extends IndexableObject,
+	Return = unknown
+> = BaseValidationState<Return> & {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
 	[key in keyof T]?: ValidationState<T[key], Return>;
 }
 
 /** Describes the Vuelidify validation state. */
-export type BaseValidationState<Return> = {
+export type BaseValidationState<
+	Return = unknown
+> = {
 	/** Stores the validation state for this object. Is named this way to avoid naming conflicts with existing object properties. */
 	$state?: {
 		/** True if all the validators defined for this property have passed. False otherwise. */
@@ -43,10 +48,15 @@ export type BaseValidationState<Return> = {
 };
 
 /** Contains the reactive state of validation for a property. */
-export type PrimitiveValidationState<Return> = BaseValidationState<Return>;
+export type PrimitiveValidationState<
+	Return = unknown
+> = BaseValidationState<Return>;
 
 /** Defines the validation state for properties that are typed as arrays. */
-export type ArrayValidationState<U, Return> = BaseValidationState<Return> & {
+export type ArrayValidationState<
+	U,
+	Return = unknown
+> = BaseValidationState<Return> & {
 	/**
 	 * Contains the validation state for each element in the array.
 	 * 
@@ -58,7 +68,7 @@ export type ArrayValidationState<U, Return> = BaseValidationState<Return> & {
 /** Intermediate type for handling validation of nested objects. */
 export type RecursiveValidation<
 	T,
-	KParent, 
+	KParent,
 	ValidationArgs,
 	Return,
 	ArrParent,
@@ -67,15 +77,6 @@ export type RecursiveValidation<
 	// Recursively define validation on the contents of the object
 	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, ArrParent, NLevel>;
 }
-
-/** Defines the validation rules for properties that are typed as primitive values. */
-export type PrimitiveValidation<
-	T,
-	KParent,
-	Args,
-	Return,
-	ArrParent
-> = BaseValidationTypes<T, KParent, Args, Return, ArrParent>;
 
 /** Defines the validation rules for objects */
 export type ObjectValidationTypes<
@@ -143,7 +144,13 @@ export type Validator<
 export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
 
 /** Indicates a validator which run synchronously */
-export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
+export type SyncValidator<
+	T = unknown,
+	Parent = unknown,
+	Args = unknown,
+	Return = unknown,
+	ArrParent = unknown
+> = BaseValidator<
 	T,
 	Parent,
 	Args,
@@ -152,7 +159,13 @@ export type SyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
 >
 
 /** Indicates a validator which returns a promise */
-export type AsyncValidator<T, Parent, Args, Return, ArrParent> = BaseValidator<
+export type AsyncValidator<
+	T = unknown,
+	Parent = unknown,
+	Args = unknown,
+	Return = unknown,
+	ArrParent = unknown
+> = BaseValidator<
 	T,
 	Parent,
 	Args,
@@ -200,17 +213,17 @@ export type ArrayValidationReturn<U, Return> = BaseValidationReturn<Return> & {
  */
 export type Validation<
 	T,
-	Args = undefined,
-	Return = undefined,
+	Args = unknown,
+	Return = unknown,
 	KParent = T,
-	ArrParent = undefined,
+	ArrParent = unknown,
 	NLevel extends number = 0
 > =
 	// Arrays are objects, so we have to check those first
 	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidationTypes<U, T, KParent, Args, Return, ArrParent, NLevel>:
 	// Use recursion to specify validation for nested properties
 	[NonNullable<T>] extends [IndexableObject] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
-	[NonNullable<T>] extends [Primitive] ? PrimitiveValidation<T, KParent, Args, Return, ArrParent>:
+	[NonNullable<T>] extends [Primitive] ? BaseValidationTypes<T, KParent, Args, Return, ArrParent>:
 	never;
 
 export type ValidationConfig<
@@ -239,26 +252,27 @@ export type ValidationConfig<
 }
 
 /** Describes the parameter passed into validator functions */
-export type ValidatorParams<T, KParent, Args, ArrParent> = {
-		/** The current value of the property */
-		value: T,
-		/** The entire object that was passed into the useValidation() composable to be validated. */
-		parent: KParent
-	} &
-	(Args extends undefined ? Record<string, never> : { 
-		/** The args passed in to the useValidation() composable configuration. */
-		args: Args
-	}) &
-	(ArrParent extends undefined ? Record<string, never> : {
-		/**
-		 * An ordered list of objects that were traversed through while navigating to this validator.
-		 * 
-		 * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
-		 * 
-		 * Useful for inter-property dependence when validating arrays of complex objects.
-		 */
-		arrayParents: ArrParent
-	})
+export type ValidatorParams<
+	T = unknown,
+	KParent = unknown,
+	Args = DefaultValidationArgs,
+	ArrParent = DefaultValidationArrParent
+> = {
+	/** The current value of the property */
+	value: T,
+	/** The entire object that was passed into the useValidation() composable to be validated. */
+	parent: KParent
+	/** The args passed in to the useValidation() composable configuration. */
+	args: Args
+	/**
+	 * An ordered list of objects that were traversed through while navigating to this validator.
+	 * 
+	 * Each nested array will add 1 entry to this list. Each entry will be strongly-typed to the element of its respective array.
+	 * 
+	 * Useful for inter-property dependence when validating arrays of complex objects.
+	 */
+	arrayParents: ArrParent
+}
 
 /** Type that increments a provided integer (0-19). */
 type Increment<N extends number> = [
