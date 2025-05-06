@@ -1,8 +1,8 @@
-import { ref } from "vue";
+import { Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { pause } from "./main";
-import { minLength } from "../src/validators.ts";
+import { pause } from "./main.ts";
+import { minLength, required } from "../src/validators.ts";
 
 Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 	await test.step("Primitive Array Validation", testPrimitiveArrayValidation);
@@ -13,13 +13,14 @@ Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 });
 
 const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
-	const model = ref<string[]>([]);
+	const model: Ref<string[]> = ref([]);
 	const reactiveValidationCount = ref(0);
-	const v$ = useValidation<string[]>({
+	const v$ = useValidation({
 		model: model,
 		validation: {
 			$each: {
 				$reactive: [
+					required(),
 					minLength(10),
 				]
 			},
@@ -27,18 +28,24 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 				(params) => {
 					reactiveValidationCount.value++;
 					return {
-						isValid: Math.random() > 0.5,
+						isValid: params.value === "Test",
 						message: "This is an error message"
 					};
 				}
 			]
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
+		args: ""
 	});
-	model.value.push("Test");
+	model.value = [
+		"Test",
+		"Test2",
+		"Test3"
+	];
 	await pause();
-	assert(reactiveValidationCount.value > 0, "Array validation did not happen reactively after adding an element.");
-
+	assert(reactiveValidationCount.value > 0, `Array validation did not happen reactively after assignment.`);
+	assert(reactiveValidationCount.value === 1, `Reactive Array validation happened ${reactiveValidationCount.value} times, but should have only happened once.`);
+	assert(v$.)
 };
 
 /** For testing if basic object array validation works */

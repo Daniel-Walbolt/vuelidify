@@ -1,6 +1,6 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
-import { ref } from "vue";
+import { Ref, ref } from "vue";
 import { isEmailSync, maxLength, maxNumber, minLength, minNumber, required } from "../src/validators.ts";
 import { pause } from "./main.ts";
 
@@ -18,7 +18,7 @@ Deno.test("Validating a primitive", async (test) => {
 
 const testMinLength = async (test: Deno.TestContext) => {
 	const MinLength = 5;
-	const model = ref<string | number>("");
+	const model: Ref<string | number> = ref("");
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -47,7 +47,7 @@ const testMinLength = async (test: Deno.TestContext) => {
 
 const testMaxLength = async (test: Deno.TestContext) => {
 	const MaxLength = 5;
-	const model = ref<string>("");
+	const model: Ref<string> = ref("");
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -68,7 +68,7 @@ const testMaxLength = async (test: Deno.TestContext) => {
 };
 
 const testEmail = async (test: Deno.TestContext) => {
-	const model = ref<string>("");
+	const model: Ref<string> = ref("");
 	const v$ = useValidation<string>({
 		model: model,
 		validation: {
@@ -98,7 +98,7 @@ const testEmail = async (test: Deno.TestContext) => {
 
 const testMinNumber = async (test: Deno.TestContext) => {
 	const MinNumber = 5;
-	const model = ref<number>(0);
+	const model: Ref<number> = ref(0);
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -123,7 +123,7 @@ const testMinNumber = async (test: Deno.TestContext) => {
 
 const testMaxNumber = async (test: Deno.TestContext) => {
 	const MaxNumber = 100;
-	const model = ref<number>(0);
+	const model: Ref<number> = ref(0);
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -151,7 +151,7 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 };
 
 const testRequired = async (test: Deno.TestContext) => {
-	const model = ref<string | number | boolean | null | undefined>();
+	const model: Ref<string | number | boolean | null | undefined> = ref();
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -181,7 +181,7 @@ const testRequired = async (test: Deno.TestContext) => {
 
 const testLazyValidation = async (test: Deno.TestContext) => {
 	const MinLength = 5;
-	const model = ref<string | number>();
+	const model: Ref<string | number | undefined> = ref();
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -209,7 +209,7 @@ const testLazyValidation = async (test: Deno.TestContext) => {
 
 const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
 	const MinLength = 5;
-	const model = ref<string | number | null | undefined>();
+	const model: Ref<string | number | null | undefined> = ref();
 	const v$ = useValidation({
 		model: model,
 		validation: {
@@ -242,7 +242,7 @@ const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
 
 const testGlobalIsValid = async (test: Deno.TestContext) => {
 	const MinLength = 5;
-	const model = ref<string | number | null | undefined>();
+	const model: Ref<string | number | null | undefined> = ref();
 	const v$ = useValidation({
 		model: model,
 		validation: {

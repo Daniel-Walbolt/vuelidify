@@ -1,5 +1,5 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { ref } from "vue";
+import { Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { must } from "../src/validators.ts";
 import { pause } from "./main.ts";
@@ -19,7 +19,7 @@ type SimpleObject = {
 };
 
 const testMustEqualValidator = async (test: Deno.TestContext) => {
-	const model = ref<SimpleObject>({
+	const model: Ref<SimpleObject> = ref({
 		password: "",
 		relatedEntity: {}
 	});
@@ -46,7 +46,7 @@ const testMustEqualValidator = async (test: Deno.TestContext) => {
 };
 
 const testNullableObjectValidation = async (test: Deno.TestContext) => {
-	const model = ref<SimpleObject>({
+	const model: Ref<SimpleObject> = ref({
 		age: 10,
 		name: "Foo"
 	});
