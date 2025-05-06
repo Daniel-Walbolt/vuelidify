@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ArrayValidationState, BaseValidationReturn, BaseValidationState, AsyncValidator, PrimitiveValidationState, SyncValidator, ValidatorParams } from './publicTypes.ts';
+import type { ArrayValidationState, BaseValidationReturn, BaseValidationState, AsyncValidator, PrimitiveValidationState, SyncValidator, ValidatorParams, ArrayAncestor as ArrayAncestor } from './publicTypes.ts';
 
 /** An internally used type for allowing indexing of unknown types. i.e. obj[key] */
 export type IndexableObject = {
@@ -96,8 +96,10 @@ export type PropertyValidationConfig = {
 	 * Add computed getters to this list
 	 * TODO: Are we sure we want to push computed getters to this list? I think this would lead to problems when the index the getter refers to becomes a different object.
 	 */
-	arrayAncestors: object[]
+	arrayAncestors: GenericArrayAncestor[]
 }
+
+export type GenericArrayAncestor = Partial<ArrayAncestor<unknown, unknown[]>>;
 
 /** A context-independent version of the public Validation type */
 export type GenericValidation = AnyGenericValidationType | IndexableGenericValidation;

@@ -144,7 +144,11 @@ export function createValidationConfig(
 				// Setup validation
 				const target = computed(() => arr[i]);
 				if (isObject) {
-					validationConfig.arrayAncestors.push(target);
+					validationConfig.arrayAncestors.push({
+						ancestor: target,
+						array: arr,
+						index: i
+					});
 				}
 				const elValidationSetup = setupNestedPropertiesForValidation(
 					target,
