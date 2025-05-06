@@ -4,11 +4,11 @@ import { type UseValidationReturn, useValidation } from './useValidation';
 // I'm not sure where to put this comment, but here's the explanation of why this library uses unknown instead of undefined in many places.
 // In TypeScript, and especially `strict` typescript, undefined is not assignable to anything but undefined.
 // However, unknown is assignable to anything.
-// If the default values of the Args or ArrParent generics were undefined, generic validators end up having type problems.
-// Many generic validators will not care about Args, ArrParent, or Return values, and they should still be usable in specifically typed situations.
+// If the default values of the Args or Ancestors generics were undefined, generic validators end up having type problems.
+// Many generic validators will not care about Args, Ancestors, or Return values, and they should still be usable in specifically typed situations.
 // To do this, without using `any` for those generics, the generic validators would use unknown to indicate they don't care about that type.
-// This lead to problems because the array holding the validators would expect validators that had undefined ArrParent, or undefined Args, and unknown isn't assignable to it.
-// The one useful feature of using undefined as the default value for Args and ArrParent was that it is detectable in conditional types.
+// This lead to problems because the array holding the validators would expect validators that had undefined Ancestors, or undefined Args, and unknown isn't assignable to it.
+// The one useful feature of using undefined as the default value for Args and Ancestors was that it is detectable in conditional types.
 // As a result, I could completely omit the `args` and `arrayParents` property from the validator parameters if it was undefined in that context.
 // However, because undefined makes the type system unstable, I chose to use unknown instead and just have the `args` and `arrayParents` properties show up as `unknown`.
 // TypeScript is hard... hopefully you don't fall down the rabbit hole of trying to make Args undefined by default in the future.
@@ -91,11 +91,11 @@ export type RecursiveValidation<
 	KParent,
 	ValidationArgs,
 	Return,
-	ArrParent,
+	Ancestors,
 	NLevel extends number
-> = ObjectValidationTypes<T, KParent, ValidationArgs, Return, ArrParent> & {
+> = ObjectValidationTypes<T, KParent, ValidationArgs, Return, Ancestors> & {
 	// Recursively define validation on the contents of the object
-	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, ArrParent, NLevel>;
+	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, Ancestors, NLevel>;
 }
 
 /** Defines the validation rules for records */
@@ -104,8 +104,8 @@ export type ObjectValidationTypes<
 	KParent,
 	Args,
 	Return,
-	ArrParent
-> = BaseValidation<T, KParent, Args, Return, ArrParent>;
+	Ancestors
+> = BaseValidation<T, KParent, Args, Return, Ancestors>;
 
 type IndexableRecord = Record<string, unknown>;
 
@@ -115,12 +115,12 @@ export type BaseValidation<
 	KParent,
 	Args,
 	Return,
-	ArrParent
+	Ancestors
 > = {
 	/** Validators invoked whenever the model is changed. */
-	$reactive?: Validator<T, KParent, Args, Return, ArrParent>[];
+	$reactive?: Validator<T, KParent, Args, Return, Ancestors>[];
 	/** Validators invoked only after {@link UseValidationReturn.validate | validate()} is invoked. */
-	$lazy?: Validator<T, KParent, Args, Return, ArrParent>[];
+	$lazy?: Validator<T, KParent, Args, Return, Ancestors>[];
 }
 
 /** Defines the validation rules for an array. */
@@ -130,9 +130,9 @@ export type ArrayValidation<
 	KParent,
 	Args,
 	Return,
-	ArrParent,
+	Ancestors,
 	NLevel extends number
-> = BaseValidation<T, KParent, Args, Return, ArrParent> & {
+> = BaseValidation<T, KParent, Args, Return, Ancestors> & {
 	/**
 	 * Defines the validation rules for each element of an array.
 	 * 
@@ -143,27 +143,24 @@ export type ArrayValidation<
 		Args,
 		Return,
 		KParent,
-		ArrParent extends undefined
-			? ArrayParentParameter<U, T, NLevel>
-			: ArrParent & ArrayParentParameter<U, T, NLevel>,
+		Ancestors extends undefined
+			? { [key in NLevel]: ArrayAncestorParameter<U, T> }
+			: Ancestors & { [key in NLevel]: ArrayAncestorParameter<U, T> },
 		Increment<NLevel>
 	>;
 }
 
-export type ArrayParentParameter<
+export type ArrayAncestorParameter<
 	U, // the type of T's elements
 	T, // the array of U
-	NLevel extends number
-> = {
-	[key in NLevel]: {
-		/** The index this ancestor is at in `array` */
-		index: number,
-		/** The array which contains the ancestor. Useful for referencing this ancestor's siblings. */
-		array: T,
-		/** An object which contains the value you are validating. */
-		ancestor: U
-	}
-}
+> = Readonly<{
+	/** The index this ancestor is at in `array` */
+	index: number,
+	/** The array which contains the ancestor. Useful for referencing this ancestor's siblings. */
+	array: T,
+	/** An object which contains the value you are validating. */
+	ancestor: U
+}>
 
 /** A synchronous or asynchronous validator. */
 export type Validator<
@@ -171,11 +168,11 @@ export type Validator<
 	KParent = unknown,
 	Args = unknown,
 	Return = unknown,
-	ArrParent = unknown
-> = (SyncValidator<T, KParent, Args, Return, ArrParent> | AsyncValidator<T, KParent, Args, Return, ArrParent>);
+	Ancestors = unknown
+> = (SyncValidator<T, KParent, Args, Return, Ancestors> | AsyncValidator<T, KParent, Args, Return, Ancestors>);
 
 /** Defines a validator function */
-export type BaseValidator<T, Parent, Args, Return, ArrParent> = (input: ValidatorParams<T, Parent, Args, ArrParent>) => Return
+export type BaseValidator<T, Parent, Args, Return, Ancestors> = (input: ValidatorParams<T, Parent, Args, Ancestors>) => Return
 
 /** Defines a validator which always runs synchronously */
 export type SyncValidator<
@@ -183,13 +180,13 @@ export type SyncValidator<
 	Parent = unknown,
 	Args = unknown,
 	Return = unknown,
-	ArrParent = unknown
+	Ancestors = unknown
 > = BaseValidator<
 	T,
 	Parent,
 	Args,
-	BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined,
-	ArrParent
+	BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,Ancestors>> | undefined,
+	Ancestors
 >
 
 /** Defines a validator which returns a promise */
@@ -198,13 +195,13 @@ export type AsyncValidator<
 	Parent = unknown,
 	Args = unknown,
 	Return = unknown,
-	ArrParent = unknown
+	Ancestors = unknown
 > = BaseValidator<
 	T,
 	Parent,
 	Args,
-	Promise<BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,ArrParent>> | undefined>,
-	ArrParent
+	Promise<BaseValidationReturn<Return> | Array<Validator<T,Parent,Args,Return,Ancestors>> | undefined>,
+	Ancestors
 >
 
 /** Defines the return value of validators */
@@ -244,14 +241,14 @@ export type Validation<
 	Args = unknown,
 	Return = unknown,
 	KParent = T,
-	ArrParent = unknown,
+	Ancestors = unknown,
 	NLevel extends number = 0
 > =
 	// Arrays are objects, so we have to check those first
-	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidation<U, T, KParent, Args, Return, ArrParent, NLevel>:
+	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidation<U, T, KParent, Args, Return, Ancestors, NLevel>:
 	// Use recursion to specify validation for nested properties
-	[NonNullable<T>] extends [IndexableRecord] ? RecursiveValidation<T, KParent, Args, Return, ArrParent, NLevel>:
-	[NonNullable<T>] extends [Primitive] ? BaseValidation<T, KParent, Args, Return, ArrParent>:
+	[NonNullable<T>] extends [IndexableRecord] ? RecursiveValidation<T, KParent, Args, Return, Ancestors, NLevel>:
+	[NonNullable<T>] extends [Primitive] ? BaseValidation<T, KParent, Args, Return, Ancestors>:
 	never;
 
 /** Defines the configuration for the {@link useValidation | useValidation() } composable */
@@ -286,7 +283,7 @@ export type ValidatorParams<
 	T = unknown,
 	KParent = unknown,
 	Args = unknown,
-	ArrParent = unknown
+	Ancestors = unknown
 > = {
 	/** The current value of the property */
 	value: T,
@@ -301,7 +298,7 @@ export type ValidatorParams<
 	 * 
 	 * Useful for inter-property dependence when validating arrays of complex objects.
 	 */
-	arrayAncestors: ArrParent
+	arrayAncestors: Ancestors
 }
 
 /** Increments a provided integer. Only works for 0 through 19, inclusive. */
