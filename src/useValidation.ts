@@ -1,4 +1,4 @@
-import type { ValidationConfig, ValidationState } from './publicTypes.ts';
+import type { DefaultValidationArgs, DefaultValidationReturn, ValidationConfig, ValidationState } from './publicTypes.ts';
 import { ref, computed, watch, reactive, type Ref, type ComputedRef, type Reactive } from 'vue';
 import type { GenericValidation, PropertyValidationConfig } from './privateTypes.ts';
 import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
@@ -28,8 +28,8 @@ type UseValidationReturn<T, Return> = {
  */
 export function useValidation<
 	T,
-	Args = undefined, // setting these default types to undefined creates problems with the must() validator that I don't fully understand.
-	Return = undefined
+	Args = DefaultValidationArgs, // setting these default types to undefined creates problems with the must() validator that I don't fully understand.
+	Return = DefaultValidationReturn
 >(
 	validationConfig: ValidationConfig<T, Args, Return>
 ): Reactive<UseValidationReturn<T, Return>> {
