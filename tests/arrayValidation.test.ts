@@ -12,12 +12,13 @@ Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 });
 
 const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
+	const PassingValue = "Test";
 	const model: Ref<string[]> = ref([]);
 	const reactiveValidationCount = ref(0);
 	const isReactiveElementValidationPerformed = ref(false);
 	const isLazyElementValidationPerformed = ref(false);
 	const arrayValidationCount = ref(0);
-	const v$ = useValidation({
+	let v$ = useValidation({
 		model: model,
 		validation: {
 			$each: {
@@ -26,7 +27,7 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 						isReactiveElementValidationPerformed.value = true;
 						arrayValidationCount.value++;
 						return {
-							isValid: params.value === "Test",
+							isValid: params.value === PassingValue,
 						};
 					},
 				],
@@ -53,9 +54,9 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 		args: ""
 	});
 	model.value = [
-		"Test",
-		"Test2",
-		"Test3"
+		PassingValue,
+		PassingValue + "1",
+		PassingValue + "2"
 	];
 	await pause();
 	// Perform the same tests that are done on object arrays, to make sure primitive arrays are not handled differently
@@ -69,12 +70,42 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 	assert(arrayValidationCount.value === model.value.length, `Validation of array elements happened ${arrayValidationCount.value} times, but should have happened ${model.value.length} times`);
 
 	// now that reactive validation is no longer delayed...
+	// test that reactive validation happens.
 	reactiveValidationCount.value = 0; // reset the count
 	model.value = [
-		"Test",
-		"Test2"
+		PassingValue, // should pass
+		PassingValue + "1" // should error
 	];
+	await pause();
 	assert(reactiveValidationCount.value > 0, `Array validation did not happen reactively after assignment.`);
+	assert(v$.isValid === false, `Array validation passed when it should have failed because the element validator only passes "${PassingValue}".`);
+	// Make sure array state matches the length of the array and correctly validates each element.
+	assert(v$.state.$arrayState.length === model.value.length, `Array state was not the same length of the model (${v$.state.$arrayState.length} instead of ${model.value.length}).`);
+	assert(v$.state.$arrayState[0].$state?.isValid == true, `Array state 0 was not valid even though it should have been.`);
+	assert(v$.state.$arrayState[1].$state?.isValid === false, `Array state 1 was valid even though it should NOT have been.`);
+
+	v$ = useValidation({
+		model: model,
+		validation: {
+			$each: {
+				$lazy: [
+					(params) => {
+						return {
+							isValid: params.value === PassingValue
+						};
+					}
+				]
+			}
+		}
+	});
+	await v$.validate();
+	// Tests to make sure the behavior of primitive arrays is as expected:
+	// Validation state does not accurately move with the elements of the array.
+	assert(v$.state.$arrayState[0].$state?.isValid === true, `Array state 0 was invalid when it should have been valid (lazy validation).`);
+	assert(v$.state.$arrayState[1].$state?.isValid === false, `Array state 1 was valid when it should have bee invalid (lazy validation).`);
+	model.value.reverse();
+	assert(v$.state.$arrayState[0].$state?.isValid === true, `Array state 0 was invalid when it should have stayed true. Shuffling an array of primitives does not reliably move validation state.`);
+	assert(v$.state.$arrayState[1].$state?.isValid === false, `Array state 1 was valid when it should have stayed false. Shuffling an array of primitives does not reliably move validation state.`);
 };
 
 /** For testing if basic object array validation works */
@@ -84,6 +115,7 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 		age: number;
 		isEmployed: boolean;
 	}
+	const PassingValue = "Test";
 	const model: Ref<TestObject[]> = ref([]);
 	const isElementReactiveValidationPerformed = ref(false);
 	const isElementLazyValidationPerformed = ref(false);
@@ -93,8 +125,14 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 		validation: {
 			$each: {
 				$lazy: [
-					() => {
+					(params) => {
 						isElementLazyValidationPerformed.value = true;
+						return {
+							isValid: params.value.name === PassingValue
+						};
+					},
+					(params) => {
+						assert(model.value.includes(params.value), "The value provided to a lazy object validator was not in the model array.");
 						return {
 							isValid: true
 						};
@@ -115,12 +153,12 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 	});
 	model.value = [
 		{
-			name: "Test",
+			name: PassingValue,
 			age: 5,
 			isEmployed: true
 		},
 		{
-			name: "Test2",
+			name: PassingValue + "2",
 			age: 10,
 			isEmployed: false
 		}
@@ -133,6 +171,15 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 	assert(isElementLazyValidationPerformed.value === true, "Lazy element validation was not performed even though validate() was invoked.");
 	assert(isElementReactiveValidationPerformed.value === true, "Reactive element validation was not performed even though validate() was invoked.");
 	assert(arrayValidationCount.value === model.value.length, `Element validation happened ${arrayValidationCount.value} times when it should have happened ${model.value} times.`);
+	// Make sure array state matches the length of the array and correctly validates each element.
+	assert(v$.state.$arrayState.length === model.value.length, `Array state was not the same length of the model (${v$.state.$arrayState.length} instead of ${model.value.length}).`);
+	assert(v$.state.$arrayState[0].$state?.isValid == true, `Array state 0 was not valid even though it should have been.`);
+	assert(v$.state.$arrayState[1].$state?.isValid === false, `Array state 1 was valid even though it should NOT have been.`);
+	model.value.reverse();
+	assert(v$.state.$arrayState[0].$state?.isValid === false, `Array state 0 was valid after a reversal when it should have been invalid (lazy validation state did not follow array elements)`);
+	assert(v$.state.$arrayState[1].$state?.isValid === true, `Array state 1 was invalid after a reversal when it should have been valid (lazy validation state did not follow array elements)`);
+	model.value[1].name = PassingValue + "3";
+	assert(v$.state.$arrayState[1].$state?.isValid === true, `Array state 1 was invalid after changing it to a non-valid value. The validation should be lazy, and not update reactively.`);
 };
 
 const testArrayParentParameter = async (test: Deno.TestContext) => {
