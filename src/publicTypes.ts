@@ -144,13 +144,13 @@ export type ArrayValidation<
 		Return,
 		KParent,
 		Ancestors extends undefined
-			? { [key in NLevel]: ArrayAncestorParameter<U, T> }
-			: Ancestors & { [key in NLevel]: ArrayAncestorParameter<U, T> },
+			? { [key in NLevel]: ArrayAncestor<U, T> }
+			: Ancestors & { [key in NLevel]: ArrayAncestor<U, T> },
 		Increment<NLevel>
 	>;
 }
 
-export type ArrayAncestorParameter<
+export type ArrayAncestor<
 	U, // the type of T's elements
 	T, // the array of U
 > = Readonly<{
