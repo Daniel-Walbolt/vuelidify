@@ -423,7 +423,6 @@ export function invokeValidatorConfigs(
 			for (const key in validationConfig.arrayConfigMap) {
 				elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
 			}
-			console.log("Invoking array validation", elementValidationConfigs.length);
 			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
 		}
 	}
