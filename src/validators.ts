@@ -13,7 +13,7 @@ export function required(): SyncValidator {
 }
 
 /**
- * Validates a string or number has a length >= to the provided length.
+ * Validates a string or number has a length >= to the provided length. Undefined and null are 0 length.
  * @param minLength
  */
 export function minLength<T extends string | number | undefined | null>(
@@ -29,7 +29,7 @@ export function minLength<T extends string | number | undefined | null>(
 }
 
 /**
- * Validates a string or number's length. Undefined is treated as 0 length.
+ * Validates a string or number's length. Undefined and null are 0 length.
  * @param maxLength the maximum length of the string or number
  */
 export function maxLength<T extends string | number | undefined | null>(
@@ -58,7 +58,7 @@ export function minNumber<T extends number | undefined | null>(
 }
 
 /**
- * Validates a number is undefined and is at most some value.
+ * Validates a number is defined and is at most some value.
  * @param maxNumber the maximum number the value can be
  */
 export function maxNumber<T extends number | undefined | null>(
