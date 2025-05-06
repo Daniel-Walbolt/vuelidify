@@ -14,6 +14,8 @@ Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 	const model: Ref<string[]> = ref([]);
 	const reactiveValidationCount = ref(0);
+	const isReactiveElementValidationPerformed = ref(false);
+	const isLazyElementValidationPerformed = ref(false);
 	const arrayValidationCount = ref(0);
 	const v$ = useValidation({
 		model: model,
@@ -21,11 +23,20 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 			$each: {
 				$reactive: [
 					(params) => {
+						isReactiveElementValidationPerformed.value = true;
 						arrayValidationCount.value++;
 						return {
 							isValid: params.value === "Test",
 						};
 					},
+				],
+				$lazy: [
+					() => {
+						isLazyElementValidationPerformed.value = true;
+						return {
+							isValid: true
+						};
+					}
 				]
 			},
 			$reactive: [
@@ -38,7 +49,7 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 				}
 			]
 		},
-		delayReactiveValidation: false,
+		delayReactiveValidation: true,
 		args: ""
 	});
 	model.value = [
@@ -47,10 +58,23 @@ const testPrimitiveArrayValidation = async (test: Deno.TestContext) => {
 		"Test3"
 	];
 	await pause();
-	assert(reactiveValidationCount.value > 0, `Array validation did not happen reactively after assignment.`);
+	// Perform the same tests that are done on object arrays, to make sure primitive arrays are not handled differently
+	assert(isReactiveElementValidationPerformed.value === false, "Reactive array validation happened even though it was delayed and validate() was not invoked.");
+	assert(isLazyElementValidationPerformed.value === false, "Lazy validation happened even though validate() was not invoked.");
+	await v$.validate();
+	assert(isReactiveElementValidationPerformed.value === true, "Reactive element validation was not performed even though validate() was invoked.");
+	assert(isLazyElementValidationPerformed.value === true, "Lazy element validation was not performed even though validate() was invoked.");
 	assert(reactiveValidationCount.value === 1, `Reactive Array validation happened ${reactiveValidationCount.value} times, but should have happened once.`);
 	assert(arrayValidationCount.value != 0, "Array element validation was not performed when it should have been. This is likely because the $arrayState computed function is not executed.");
 	assert(arrayValidationCount.value === model.value.length, `Validation of array elements happened ${arrayValidationCount.value} times, but should have happened ${model.value.length} times`);
+
+	// now that reactive validation is no longer delayed...
+	reactiveValidationCount.value = 0; // reset the count
+	model.value = [
+		"Test",
+		"Test2"
+	];
+	assert(reactiveValidationCount.value > 0, `Array validation did not happen reactively after assignment.`);
 };
 
 /** For testing if basic object array validation works */
@@ -102,6 +126,7 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 		}
 	];
 	await pause();
+	// Perform the same tests that are done on primitive arrays, to make sure object arrays are not handled differently
 	assert(isElementReactiveValidationPerformed.value === false, "Reactive array validation happened even though it was delayed and validate() was not invoked.");
 	assert(isElementLazyValidationPerformed.value === false, "Lazy validation happened even though validate() was not invoked.");
 	await v$.validate();
