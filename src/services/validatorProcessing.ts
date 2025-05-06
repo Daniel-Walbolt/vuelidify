@@ -230,10 +230,10 @@ export function setupNestedPropertiesForValidation(
 	function recursiveSetup(
 		rObject: MaybeRefOrGetter<unknown>,
 		rValidation: GenericValidation,
-		rState: IndexableGenericValidationState
+		rState: GenericValidationState
 	) {
 		// Early return
-		if (isGenericEnumerableObject<IndexableGenericValidation>(rValidation) === false) {
+		if (isGenericRecord<IndexableGenericValidation>(rValidation) === false) {
 			return;
 		}
 
@@ -249,7 +249,7 @@ export function setupNestedPropertiesForValidation(
 			 */
 			const target = computed(() => {
 				const obj = toValue(rObject);
-				if (isGenericEnumerableObject<IndexableObject>(obj)) {
+				if (isGenericRecord<IndexableObject>(obj)) {
 					return obj[key];
 				} else {
 					console.error(`Vuelidify Error: validation could not be setup correctly on ${obj} because ${rObject} is not enumerable.`);
@@ -264,9 +264,9 @@ export function setupNestedPropertiesForValidation(
 				rState[key] = setup.validationState;
 			}
 
-			if (isGenericEnumerableObject(maybeNestedValidation)) {
+			if (isGenericRecord(maybeNestedValidation)) {
 				// This property is an object that may have nested properties
-				const nestedState: GenericValidationState = rState[key] ?? {};
+				const nestedState = rState[key] ?? {};
 				rState[key] = nestedState;
 				recursiveSetup(
 					target,
@@ -292,7 +292,8 @@ export function isValidation(maybeValidation: AnyGenericValidationType | undefin
 		(maybeValidation as GenericArrayValidation)?.$each !== undefined;
 }
 
-export function isGenericEnumerableObject<T>(object: unknown): object is T {
+/** Checks if an object is of the type Record<>. */
+export function isGenericRecord<T>(object: unknown): object is T {
 	return typeof object === 'object' && object !== null && !Array.isArray(object);
 }
 
