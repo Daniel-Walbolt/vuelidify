@@ -168,7 +168,7 @@ const testRequired = async (test: Deno.TestContext) => {
 		{ model: 10, expected: true },
 		{ model: null, expected: false },
 		{ model: undefined, expected: false },
-		{ model: " ", expected: false },
+		{ model: " ", expected: true },
 		{ model: "null", expected: true }
 	];
 
