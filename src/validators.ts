@@ -75,10 +75,10 @@ export function maxNumber<T extends number | undefined | null>(
  * @param fn predicate that returns true if the value is valid.
  * @param errorMessage the message to display when the values are not equal.
  */
-export function must<T>(
-	fn: (params: ValidatorParams<T>) => boolean,
+export function must<T, K, V, R, A>(
+	fn: (params: ValidatorParams<T, K, V, A>) => boolean,
 	errorMessage: string
-): SyncValidator<T> {
+): SyncValidator<T, K, V, R, A> {
 	return (params) => ({
 		isValid: fn(params),
 		message: errorMessage
