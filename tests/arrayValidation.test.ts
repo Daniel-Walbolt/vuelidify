@@ -1,7 +1,8 @@
 import { Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { pause } from "./main.ts";
+import { pause, Person, randomPerson } from "./main.ts";
+import { ArrayValidation } from "../src/publicTypes.ts";
 
 Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 	await test.step("Primitive Array Validation", testPrimitiveArrayValidation);
@@ -182,9 +183,141 @@ const testObjectArrayValidation = async (test: Deno.TestContext) => {
 };
 
 const testArrayParentParameter = async (test: Deno.TestContext) => {
-	
+	const model: Ref<Person> = ref(randomPerson({
+		genBestFriend: true,
+		genNeighbors: true,
+		nestedNeighbors: 1,
+		maxNeighbors: 4
+	}));
+	const ranReactiveNeighborValidation = ref(false);
+	const isPostShuffle = ref(false);
+
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			neighbors: {
+				$each: {
+					$lazy: [
+						(params) => {
+							ranReactiveNeighborValidation.value = true;
+							assert(
+								model.value.neighbors === params.arrayAncestors[0].array,
+								`Ancestor 0's array did not match the model's neighbor array ${isPostShuffle.value ? "(Post Shuffle)" : ""}.`
+							);
+							const calculatedIndex = model.value.neighbors.findIndex(x => x === params.arrayAncestors[0].ancestor);
+							assert(
+								calculatedIndex === params.arrayAncestors[0].index,
+								`Ancestor 0's array index (${params.arrayAncestors[0].index}) did not match the manually found index in the array (${calculatedIndex}) ${isPostShuffle.value ? "(Post Shuffle)" : ""}.`
+							);
+							return {
+								isValid: true
+							};
+						}
+					]
+				}
+			}
+		},
+	});
+	await v$.validate();
+	assert(ranReactiveNeighborValidation.value === true, "Test did not run reactive neighbor validation when it should have.");
+	model.value.neighbors.reverse();
+	isPostShuffle.value = true;
+	await v$.validate();
 };
 
+/** Thoroughly checks that array ancestors parameter works for unrealistically large nested arrays. */
 const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
+	const model: Ref<Person> = ref(randomPerson({
+		genNeighbors: true,
+		genChildren: false,
+		maxNeighbors: 2,
+		nestedNeighbors: 17
+	}));
+	
+	const deepestObjectValidated = ref(0);
 
+	const personId = (person: Person): string => `${person.name}(${person.age})`;
+	// Turn on some useful console logs for debugging when this test doesn't pass.
+	const DEBUG = true;
+	const uniquePaths = getAllNeighborPaths(model.value);
+	if (DEBUG) {
+		console.log(`There are ${uniquePaths.length} unique paths`);
+		// console.log(JSON.stringify(model.value, null, "   "));
+	}
+
+	// #region Helper functions for algorithmically getting all possible permutations of ancestor paths
+	function getAllNeighborPaths(
+		root: Person
+	): Person[][] {
+		const paths: Person[][] = [];
+	
+		for (const neighbor of root.neighbors) {
+			const neighborPaths = collectPathsFrom(neighbor, new Set([root]));
+			paths.push(...neighborPaths);
+		}
+	
+		return paths;
+	}
+	
+	function collectPathsFrom(
+		current: Person,
+		visited: Set<Person>
+	): Person[][] {
+		if (visited.has(current)) return [];
+	
+		visited.add(current);
+	
+		const subPaths: Person[][] = [];
+	
+		// Add the current node as a path by itself (even if it's not a leaf)
+		subPaths.push([current]);
+	
+		for (const neighbor of current.neighbors) {
+			const deeperPaths = collectPathsFrom(neighbor, new Set(visited));
+			for (const path of deeperPaths) {
+				subPaths.push([current, ...path]);
+			}
+		}
+	
+		return subPaths;
+	}
+	// #endregion
+	
+	const repeatableValidation = (times: number): ArrayValidation<Person, Person[]> | undefined => {
+		if (times === 0) {
+			return undefined;
+		}
+		return {
+			$each: {
+				neighbors: repeatableValidation(times-1),
+				$lazy: [
+					(params) => {
+						const ancestorPath = Object.values(params.arrayAncestors).map(x => x.ancestor);
+						const displayPath = ancestorPath.map(personId);
+						if (DEBUG) {
+							// print array of [Daniel(10),...]
+							// console.log(maxAncestor, params.value.name + `(${params.value.age})`, displayPath);
+						}
+						const isValidPath = uniquePaths.some(
+							path => path.length === ancestorPath.length 
+							&& path.every(
+								(person, index) => person === ancestorPath[index])
+							);
+						assert(isValidPath, `Array path: ${displayPath} does not exist in the calculated possible ancestor paths.`);
+						return {
+							isValid: true
+						};
+					}
+				]
+			}
+		};
+	};
+
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			neighbors: repeatableValidation(17)
+		}
+	});
+	await v$.validate();
 };
