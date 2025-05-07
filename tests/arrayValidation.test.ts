@@ -234,8 +234,6 @@ const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
 		nestedNeighbors: 17
 	}));
 	
-	const deepestObjectValidated = ref(0);
-
 	const personId = (person: Person): string => `${person.name}(${person.age})`;
 	// Turn on some useful console logs for debugging when this test doesn't pass.
 	const DEBUG = true;
