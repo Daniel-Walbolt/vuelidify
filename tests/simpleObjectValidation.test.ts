@@ -28,7 +28,7 @@ const testMustEqualValidator = async (test: Deno.TestContext) => {
 		validation: {
 			password: {
 				$reactive: [
-					must(p => p.value === p.parent.relatedEntity?.confirmPassword, "Passwords do not match")
+					must(p => p.value === p.model.relatedEntity?.confirmPassword, "Passwords do not match")
 				]
 			},
 		},
