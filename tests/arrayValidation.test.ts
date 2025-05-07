@@ -258,7 +258,7 @@ const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
 	
 		return paths;
 	}
-	
+
 	function collectPathsFrom(
 		current: Person,
 		visited: Set<Person>
@@ -282,7 +282,7 @@ const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
 		return subPaths;
 	}
 	// #endregion
-	
+
 	const repeatableValidation = (times: number): ArrayValidation<Person, Person[]> | undefined => {
 		if (times === 0) {
 			return undefined;
@@ -298,12 +298,13 @@ const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
 							// print array of [Daniel(10),...]
 							// console.log(maxAncestor, params.value.name + `(${params.value.age})`, displayPath);
 						}
-						const isValidPath = uniquePaths.some(
+						const validPathIndex = uniquePaths.findIndex(
 							path => path.length === ancestorPath.length 
 							&& path.every(
 								(person, index) => person === ancestorPath[index])
 							);
-						assert(isValidPath, `Array path: ${displayPath} does not exist in the calculated possible ancestor paths.`);
+						uniquePaths.splice(validPathIndex, 1);
+						assert(validPathIndex >= 0, `Array path: ${displayPath} does not exist in the calculated possible ancestor paths.`);
 						return {
 							isValid: true
 						};
@@ -316,8 +317,9 @@ const testDeeplyNestedArrayValidation = async (test: Deno.TestContext) => {
 	const v$ = useValidation({
 		model: model,
 		validation: {
-			neighbors: repeatableValidation(17)
+			neighbors: repeatableValidation(18)
 		}
 	});
 	await v$.validate();
+	assert(uniquePaths.length === 0, "There were remaining unique ancestor paths in the generated data when there should have been zero. This means that validation was not exhaustive, and may not have the same depth as the data generated.");
 };
