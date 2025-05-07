@@ -53,7 +53,7 @@ Here is a breakdown of the configuration object the composable expects.
 {
   model: T, // The ref, computed, or reactive object you want to validate.
   validation: Validation<T>, // Describes how to validate your object.
-  args: A = undefined, // Can be anything! Will be passed into every validator.
+  args: A = undefined, // Can be anything and will be passed into every validator.
   delayReactiveValidation: boolean, // Should reactive validation be active immediately or only after calling validate()?
 }
 ```
@@ -61,8 +61,8 @@ That's it, super simple!
 
 Just kidding, ```validation: Validation<T>``` isn't the full picture. The type here is quite complicated, but easy to use. Here's what you need to know:
 
-1. ```Validation<T>``` will copy the type of your object, down to the names of properties. Nested objects will also be copied, and their inner types as well. This type is recursive!
-2. Objects which can be validated will have some unique properties available.
+1. ```Validation<T>``` will copy the layout of T's properties. Nested objects will also be copied. This type is recursive!
+2. Types which can be validated will have some unique properties available:
 ```ts
 
 // foo is a string
@@ -76,45 +76,59 @@ bar: {
 	$lazy?: []
 	$each?: {},
 }
-// zaa is an object
+// zaa is an object containing { foo: string, bar: array }
 {
-	// These properties are added by Vuelidify
 	$reactive?: [],
 	$lazy?: [],
-	// your properties here...
+	bar: {
+		$reactive?: [],
+		$lazy?: []
+		$each?: {},
+	},
+	foo: {
+		$reactive?: [],
+		$lazy?: []
+	}
 }
 
 ```
 3. ```$each``` is the same type as ```Validation<U>``` where ```U``` is the type of each object in the array you are validating.
-4. ```$reactive``` is an array of validators that should be performed reactively. See technical details for more information.
-5. ```$lazy``` is an array of validators that should be performed on that property whenever ```validate()``` is called. This allows you to control when expensive validators are invoked.
+4. ```$reactive``` is an array of validators that should be performed reactively on that property. [See technical details](#technical-details) for more information.
+5. ```$lazy``` is an array of validators that should be performed on that property whenever ```validate()``` is called. [See technical details](#technical-details) for more information.
 
 Here is the breakdown of the composable's return type
 ```ts
 {
+	// true after validate() is invoked once
 	hasValidated: boolean,
-	// True if your object has changed from the reference.
-	// Useful for enabling save buttons after changes have been made
-	isDirty: boolean,
-	// true only if every validator has passed
-	isValid: boolean,
+	// invokes every validator defined in the validation rules.
+	// returns whether or not they all passed
+	validate: () => Promise<boolean>
 	isValidating: boolean,
-	// Access the results of validation. This also copies the properties of your object.
+	// Access the results of validation.
 	// This type is explained below.
 	state: ValidationState<T>,
+	// true only if every validator passed
+	isValid: boolean,
+	// true if any validator failed
+	isErrored: boolean,
 	// Set the comparison object for determining dirty state.
 	// If your object must load in asynchronously,
 	// use this function to set the reference once it has loaded.
 	setReference: (reference: T) => void,
-	validate: () => Promise<boolean>
+	// True if your object has changed from the reference.
+	// Useful for enabling save buttons after changes have been made
+	isDirty: boolean,
 }
 ```
-Validation state also copies the layout of the model you passed in. However, instead of providing validators, you now get access to `$state` and `$arrayState`
+Validation state also copies the layout of the model you provide. However, instead of providing validators, you now get access to `$state` and `$arrayState`. `$arrayState` is just an array of state objects created by validating an array object.
+
+Here is the breakdown of `$state`
 ```ts
 {
 	// The collected error messages returned from all the validators
 	errorMessages: string[],
-	// True if any validators returned false.
+	// True if any validators failed.
 	// Not equivalent to !isValid, because !isValid is true even
 	// when validation has not been ran yet.
 	// Can be false when there are lazy validators that still need executed.
@@ -123,22 +137,24 @@ Validation state also copies the layout of the model you passed in. However, ins
 	isValid: boolean,
 	isValidating: boolean,
 	// A map for easily accessing named validation results.
-	// This is the one spot without type support
+	// This is the one spot without good type support.
 	results: { [key: string]: BaseValidationReturn<F> }
-	// A 2D array of the validation results
+	// A collection of validator responses.
 	resultsArray: Array<BaseValidationReturn<F>>
 }
 ```
-Here is the breakdown of the return type from validators.
+Validators must return one of the following:
 ```ts
-// Validators must either return a BaseValidationReturn<F> object, undefined,
-// or an array of validators which will be invoked immediately.
-{
+BaseValidationReturn<F> | Validator[] | undefined
+```
+Here is the breakdown of the `BaseValidationReturn<F>`
+```ts
+type BaseValidationReturn<F> = {
 	// Name the result of this validator. This will put the validation result
 	// into the results map in the validation state of this property.
 	// Make sure your names are unique between your validators.
 	name?: string,
-	// the unique identifier for this validation result. Assigned interally.
+	// the unique identifier for this validation result. Assigned internally.
 	// you can use this ID to identify your DOM elements that display error messages.
 	id? string,
 	// required for determining whether or not this validator passed
@@ -152,21 +168,18 @@ Here is the breakdown of the return type from validators.
 ```
 Here is the breakdown of the parameters that are passed into validators
 ```ts
-{
+type ValidatorParams<T,P,V,A> = {
 	// The value of the property being validated
 	value: T,
 	// The top-most ancestor being validated. The object that was passed to the composable.
 	parent: P,
 	// The args that were specified in the composable configuration.
-	// This type will only appear for you when args is NOT undefined.
 	args: V,
-	// Will only appear on state nested in some array.
 	// The type will be an ordered array of strongly typed objects.
-	// Each index is an ancestor to the what you're validating.
-	// Index 0 will be appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
-	// The limit of nested arrays is currently 20, and we don't think you'll need more than that.
+	// Each index is an ancestor to what you're validating.
+	// Index 0 will appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
 	// Extremely useful for complex validation.
-	arrayParents: A
+	arrayAncestors: A
 }
 ```
 
@@ -179,7 +192,7 @@ Here is the breakdown of the parameters that are passed into validators
 	
 	const string = ref("");
 	const v$ = useValidation({
-		form: string,
+		model: string,
 		validation: {
 			$reactive: [minLength(10)] // Put as many validators as you want here
 		}
@@ -189,19 +202,32 @@ Here is the breakdown of the parameters that are passed into validators
 #### Simple Objects
 ```ts
 <script setup lang="ts">
-	import { ref } from 'vue';
+	import { ref, type Ref } from 'vue';
 	import { minLength, useValidation, minNumber } from "vuelidify";
 
-	const obj = ref({
+	// Note this format may not have correctly typed validation when using strict TypeScript.
+	// const obj = ref({
+	// 	foo: "string",
+	// 	bar: true,
+	// 	zaa: 1
+	// });
+
+	type SimpleObject = {
+		foo: name;
+		bar: boolean;
+		zaa: number;
+	}
+	const obj: Ref<SimpleObject> = ref({
 		foo: "string",
 		bar: true,
 		zaa: 1
-	});
+	})
+
 	const v$ = useValidation({
-		form: obj,
+		model: obj,
 		validation: {
 			foo: {
-				// Validate foo when v$.validate is called.
+				// Validate foo when v$.validate() is invoked.
 				$lazy: [minLength(10)]
 			},
 			bar: {
@@ -213,7 +239,7 @@ Here is the breakdown of the parameters that are passed into validators
 				}]
 			},
 			zaa: {
-				// Validate zaa reactively and when v$.validate is called.
+				// Validate zaa reactively and when v$.validate() is invoked.
 				// Notice how validation can depend on other properties in the parent.
 				$reactive: [minNumber(10)],
 				$lazy: [
