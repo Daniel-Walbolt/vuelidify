@@ -205,7 +205,7 @@ export type AsyncValidator<
 >
 
 /** Defines the return value of validators */
-export type BaseValidationReturn<F = never> = {
+export type BaseValidationReturn<F = unknown> = {
 	/** 
 	 * The validation result's name.
 	 * The result will be added to a record using the name as the key
