@@ -6,7 +6,7 @@ import { setupValidation } from './services/validatorProcessing.ts';
 
 export type UseValidationReturn<
 	T = unknown,
-	Return = unknown
+	Return = any
 > = {
 	hasValidated: Ref<boolean>,
 	validate: () => Promise<boolean>,
@@ -35,7 +35,7 @@ export type UseValidationReturn<
 export function useValidation<
 	T,
 	Args = unknown,
-	Return = Record<string, unknown>
+	Return = any
 >(
 	validationConfig: ValidationConfig<T, Args, Return>
 ): Reactive<UseValidationReturn<T, Return>> {

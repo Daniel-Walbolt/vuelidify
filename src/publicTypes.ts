@@ -19,7 +19,7 @@ export type Primitive = string | number | boolean;
 /** Defines the layout of validation results. Copies the format of the object being validated. */
 export type ValidationState<
 	T,
-	Return = unknown
+	Return = any
 > = T extends Array<infer U> ? ArrayValidationState<U, Return>:
 	T extends IndexableRecord ? RecursiveValidationState<T, Return>:
 	T extends Primitive ? PrimitiveValidationState<Return>:
@@ -28,7 +28,7 @@ export type ValidationState<
 /** Determines the validation state available to objects. */
 export type RecursiveValidationState<
 	T extends IndexableRecord,
-	Return = unknown
+	Return = any
 > = BaseValidationState<Return> & {
 	// If the type of the property on the object is not a primitive, then it requires another state object.
 	[key in keyof T]?: ValidationState<T[key], Return>;
@@ -36,7 +36,7 @@ export type RecursiveValidationState<
 
 /** Describes the Vuelidify validation state. */
 export type BaseValidationState<
-	Return = unknown
+	Return = any
 > = {
 	/** 
 	 * The validation state for this object.
@@ -69,13 +69,13 @@ export type BaseValidationState<
 
 /** Defines the validation state for a primitive value. */
 export type PrimitiveValidationState<
-	Return = unknown
+	Return = any
 > = BaseValidationState<Return>;
 
 /** Defines the validation state for an array. */
 export type ArrayValidationState<
 	U,
-	Return = unknown
+	Return = any
 > = BaseValidationState<Return> & {
 	/**
 	 * Contains the validation state for each element in the array.
@@ -103,7 +103,7 @@ export type ObjectValidationTypes<
 	T = unknown,
 	KParent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown
 > = BaseValidation<T, KParent, Args, Return, Ancestors>;
 
@@ -114,7 +114,7 @@ export type BaseValidation<
 	T = unknown,
 	KParent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown
 > = {
 	/** Validators invoked whenever the model is changed. */
@@ -129,7 +129,7 @@ export type ArrayValidation<
 	T = U[],
 	KParent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown,
 	NLevel extends number = number
 > = BaseValidation<T, KParent, Args, Return, Ancestors> & {
@@ -167,7 +167,7 @@ export type Validator<
 	T = unknown,
 	KParent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown
 > = (SyncValidator<T, KParent, Args, Return, Ancestors> | AsyncValidator<T, KParent, Args, Return, Ancestors>);
 
@@ -179,7 +179,7 @@ export type SyncValidator<
 	T = unknown,
 	Parent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown
 > = BaseValidator<
 	T,
@@ -194,7 +194,7 @@ export type AsyncValidator<
 	T = unknown,
 	Parent = unknown,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	Ancestors = unknown
 > = BaseValidator<
 	T,
@@ -239,7 +239,7 @@ export type BaseValidationReturn<F = unknown> = {
 export type Validation<
 	T,
 	Args = unknown,
-	Return = unknown,
+	Return = any,
 	KParent = T,
 	Ancestors = unknown,
 	NLevel extends number = 0
@@ -255,7 +255,7 @@ export type Validation<
 export type ValidationConfig<
 	T = unknown,
 	Args = unknown,
-	Return = unknown
+	Return = any
 > = {
 	/** The object to validate */
 	model: Ref<T>;
