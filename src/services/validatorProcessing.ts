@@ -143,8 +143,10 @@ export function createValidationConfig(
 
 				// Setup validation
 				const target = computed(() => arr[i]);
+				// Create a new array containing the current ancestors to pass into descendant validation configs.
+				const ancestors = [...validationConfig.arrayAncestors];
 				if (isObject) {
-					validationConfig.arrayAncestors.push({
+					ancestors.push({
 						ancestor: target,
 						array: arr,
 						index: i
@@ -153,7 +155,7 @@ export function createValidationConfig(
 				const elValidationSetup = setupNestedPropertiesForValidation(
 					target,
 					elValidation,
-					validationConfig.arrayAncestors
+					ancestors
 				);
 				validationMap[tempId] = {
 					validationConfigs: elValidationSetup.validationConfigs,
