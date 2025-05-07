@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { type UseValidationReturn, useValidation } from './useValidation';
+import { type UseValidationReturn, useValidation } from './useValidation.ts';
 
 // I'm not sure where to put this comment, but here's the explanation of why this library uses unknown instead of undefined in many places.
 // In TypeScript, and especially `strict` typescript, undefined is not assignable to anything but undefined.
@@ -100,22 +100,22 @@ export type RecursiveValidation<
 
 /** Defines the validation rules for records */
 export type ObjectValidationTypes<
-	T,
-	KParent,
-	Args,
-	Return,
-	Ancestors
+	T = unknown,
+	KParent = unknown,
+	Args = unknown,
+	Return = unknown,
+	Ancestors = unknown
 > = BaseValidation<T, KParent, Args, Return, Ancestors>;
 
 type IndexableRecord = Record<string, unknown>;
 
 /** Defines the validation rules for all supported objects. */
 export type BaseValidation<
-	T,
-	KParent,
-	Args,
-	Return,
-	Ancestors
+	T = unknown,
+	KParent = unknown,
+	Args = unknown,
+	Return = unknown,
+	Ancestors = unknown
 > = {
 	/** Validators invoked whenever the model is changed. */
 	$reactive?: Validator<T, KParent, Args, Return, Ancestors>[];
@@ -126,12 +126,12 @@ export type BaseValidation<
 /** Defines the validation rules for an array. */
 export type ArrayValidation<
 	U,
-	T,
-	KParent,
-	Args,
-	Return,
-	Ancestors,
-	NLevel extends number
+	T = U[],
+	KParent = unknown,
+	Args = unknown,
+	Return = unknown,
+	Ancestors = unknown,
+	NLevel extends number = number
 > = BaseValidation<T, KParent, Args, Return, Ancestors> & {
 	/**
 	 * Defines the validation rules for each element of an array.
@@ -151,8 +151,8 @@ export type ArrayValidation<
 }
 
 export type ArrayAncestor<
-	U, // the type of T's elements
-	T, // the array of U
+	U = unknown, // the type of T's elements
+	T = unknown, // the array of U
 > = Readonly<{
 	/** The index this ancestor is at in `array` */
 	index: number,
