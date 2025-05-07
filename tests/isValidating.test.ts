@@ -44,6 +44,7 @@ Deno.test("Test isValidating state", async (test: Deno.TestContext) => {
 	await pause(PromiseTimeMs/3);
 	model.value.age *= 2;
 	await promise;
+	assert(v$.hasValidated === true, "Global hasValidated was false after full validation happened once.");
 	// the first validation is finished, but the reactive validation we triggered should still be active
 	assert(v$.isValidating === true, "Global isValidating was false when reactive validation should still be happening. Validation is modifying state even though it's not the latest iteration.");
 	assert(v$.state.age?.$state?.isValidating === true, "Property state's isValidating was false when reactive validation should still be happening. Validation is modifying state even though it's not the latest iteration.");
