@@ -35,7 +35,7 @@ export type UseValidationReturn<
 export function useValidation<
 	T,
 	Args = unknown,
-	Return = unknown
+	Return = Record<string, unknown>
 >(
 	validationConfig: ValidationConfig<T, Args, Return>
 ): Reactive<UseValidationReturn<T, Return>> {
