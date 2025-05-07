@@ -13,7 +13,10 @@ export type UseValidationReturn<
 	isValidating: ComputedRef<boolean>,
 	/** Stores the results of validation */
 	state: ComputedRef<ValidationState<T, Return>>,
+	/** True only if all validators passed. */
 	isValid: ComputedRef<boolean>,
+	/** True if any of the validators failed. */
+	isErrored: ComputedRef<boolean>,
 	/** Sets the internal reference object for determining {@link isDirty} */
 	setReference: (reference: T) => void,
 	/**
@@ -41,7 +44,8 @@ export function useValidation<
 
 	/** Only true after {@link validate()} finished successfully. */
 	const hasValidated = ref(false);
-	const isValidating = computed(() => validationConfigs.some(x => x.isValidatingLazy || x.isValidatingReactive));
+	const isValidating = computed(() => validationConfigs.some(x => x.isValidatingLazy.value || x.isValidatingReactive.value));
+	const isErrored = computed(() => validationConfigs.some(x => x.validationResults.value.some(x => x.isValid === false)));
 	const isValid = computed(() => {
 		const allValidatorsValid = validationConfigs.every(x => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
@@ -95,6 +99,7 @@ export function useValidation<
 		isValidating,
 		state: computed(() => validationState),
 		isValid,
+		isErrored,
 		setReference,
 		isDirty
 	});
