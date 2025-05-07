@@ -17,8 +17,8 @@ const ThrottleDurationMs = 250;
 /**
  * Handles invoking and optimization of the provided list of validators.
  * @param propertyConfig the config we're validating for
- * @param parent the parent object to pass to validators
- * @param args the additonal arguments to pass to validators
+ * @param model the entire model given to the composable
+ * @param args the additional arguments to pass to validators
  * @param iterationId this iteration's ID
  * @param currentIterationId getter for the active iteration ID to compare against
  * @param validators the list of validators to invoke and optimize
@@ -26,7 +26,7 @@ const ThrottleDurationMs = 250;
  */
 export async function invokeAndOptimizeValidators(
 	propertyConfig: PropertyValidationConfig,
-	parent: unknown,
+	model: unknown,
 	args: unknown,
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number,
@@ -71,7 +71,7 @@ export async function invokeAndOptimizeValidators(
 
 	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators} = recursiveInvokeAndOptimizeValidators(
 		propertyConfig,
-		parent,
+		model,
 		args,
 		iterationId,
 		validators,
@@ -100,8 +100,8 @@ export async function invokeAndOptimizeValidators(
 /**
  * Private function that has extra parameters for recursive calls
  * @param propertyConfig the config we're validating for
- * @param parent the parent object to pass to validators
- * @param args the additonal arguments to pass to validators
+ * @param model the entire model given to the composable
+ * @param args the additional arguments to pass to validators
  * @param iterationId this iteration's ID
  * @param validators the list of validators to invoke and optimize
  * @param processValidatorResult callback which processes the return values of validators
@@ -110,7 +110,7 @@ export async function invokeAndOptimizeValidators(
  */
 function recursiveInvokeAndOptimizeValidators(
 	propertyConfig: PropertyValidationConfig,
-	parent: unknown,
+	model: unknown,
 	args: unknown,
 	iterationId: number,
 	validators: ProcessedValidator[],
@@ -139,7 +139,7 @@ function recursiveInvokeAndOptimizeValidators(
 			// This will require a cast to the type the validator expects in order to avoid type errors.
 			const params: GenericValidatorParams = {
 				value: property,
-				parent: parent,
+				model: model,
 				args: args,
 				arrayAncestors: propertyConfig.arrayAncestors
 			};
@@ -185,7 +185,7 @@ function recursiveInvokeAndOptimizeValidators(
 					if (Array.isArray(ret)) {
 						const { asyncPromises, syncResults } = handleReturnedValidators(
 							propertyConfig,
-							parent,
+							model,
 							args,
 							iterationId,
 							processValidatorResult,
@@ -210,7 +210,7 @@ function recursiveInvokeAndOptimizeValidators(
 			// It's impossible to know which validator is a previously ran validator because there's no ID attached to the function.
 			const { asyncPromises, syncResults } = handleReturnedValidators(
 				propertyConfig,
-				parent,
+				model,
 				args,
 				iterationId,
 				processValidatorResult,
@@ -231,7 +231,7 @@ function recursiveInvokeAndOptimizeValidators(
 					processedValidator.computedValidator = computed<ReturnType<typeof typedValidator>>(() => {
 						const params: GenericValidatorParams = {
 							value: propertyConfig.target.value, // Setup a reactive dependency on the property value
-							parent: parent,
+							model: model,
 							args: args,
 							arrayAncestors: propertyConfig.arrayAncestors
 						};
@@ -257,8 +257,8 @@ function recursiveInvokeAndOptimizeValidators(
 /**
  * Takes the array of validators returned from a validator and adds them to the normal validation process.
  * @param propertyConfig the config we're validating for
- * @param parent the parent object to pass to validators
- * @param args the additonal arguments to pass to validators
+ * @param model the entire model given to the composable
+ * @param args the additional arguments to pass to validators
  * @param iterationId this iteration's ID
  * @param validators the list of validators to invoke and optimize
  * @param processValidatorResult callback which processes the return values of validators
@@ -268,7 +268,7 @@ function recursiveInvokeAndOptimizeValidators(
  */
 function handleReturnedValidators(
 	propertyConfig: PropertyValidationConfig,
-	parent: unknown,
+	model: unknown,
 	args: unknown,
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number,
@@ -284,7 +284,7 @@ function handleReturnedValidators(
 	);
 	const response = recursiveInvokeAndOptimizeValidators(
 		propertyConfig,
-		parent,
+		model,
 		args,
 		iterationId,
 		processedRetValidators,
@@ -306,14 +306,14 @@ function handleReturnedValidators(
 /**
  * Invokes all reactive validators for a property and returns whether or not they all passed.
  * @param propertyConfig the property config we're validating for
- * @param parent the parent object to pass to validators
+ * @param model the entire model given to the composable
  * @param args the additional arguments to pass to validators
  * @param iterationId this iteration id
  * @param currentIterationId getter for the latest iteration id
  */
 export async function invokeReactivePropertyValidators(
 	propertyConfig: PropertyValidationConfig,
-	parent: unknown,
+	model: unknown,
 	args: unknown,
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number,
@@ -324,7 +324,7 @@ export async function invokeReactivePropertyValidators(
 	// Get the specified reactive validators and run them.
 	const isAllValid = await invokeAndOptimizeValidators(
 		propertyConfig,
-		parent,
+		model,
 		args,
 		iterationId,
 		currentIterationId,
@@ -343,14 +343,14 @@ export async function invokeReactivePropertyValidators(
 /**
  * Invokes all lazy validators for a property and returns whether or not they all passed.
  * @param propertyConfig the property config we're validating for
- * @param parent the parent object to pass to validators
+ * @param model the entire model given to the composable
  * @param args the additional arguments to pass to validators
  * @param iterationId this iteration id
  * @param currentIterationId getter for the latest iteration id
  */
 export async function invokeLazyPropertyValidators(
 	propertyConfig: PropertyValidationConfig,
-	parent: unknown,
+	model: unknown,
 	args: unknown,
 	/** Must match latest iteration ID on property config before updating any state. */
 	iterationId: number,
@@ -361,7 +361,7 @@ export async function invokeLazyPropertyValidators(
 	// Get the specified lazy validators and run them.
 	const isAllValid = await invokeAndOptimizeValidators(
 		propertyConfig,
-		parent,
+		model,
 		args,
 		iterationId,
 		currentIterationId,
@@ -382,14 +382,14 @@ export async function invokeLazyPropertyValidators(
  * 
  * Invoke either or both types of validators from the validation configs provided.
  * @param validationConfigs the validation configs to invoke validators from
- * @param parent the object to be passed into the "parent" parameter of the validators.
+ * @param model the entire model given to the composable
  * @param args the argument object to be passed into the "args" parameter of the validators.
  * @param reactive invoke reactive validators
  * @param lazy invoke lazy validators
  */
 export function invokeValidatorConfigs(
 	validationConfigs: PropertyValidationConfig[],
-	parent: Ref<unknown>,
+	model: Ref<unknown>,
 	args: unknown,
 	reactive: boolean,
 	lazy: boolean
@@ -399,7 +399,7 @@ export function invokeValidatorConfigs(
 		if (reactive && validationConfig.reactiveProcessedValidators.length > 0) {
 			validatorPromises.push(invokeReactivePropertyValidators(
 				validationConfig,
-				parent.value,
+				model.value,
 				args,
 				++validationConfig.reactiveIterationId,
 				() => validationConfig.reactiveIterationId
@@ -409,7 +409,7 @@ export function invokeValidatorConfigs(
 		if (lazy && validationConfig.lazyProcessedValidators.length > 0) {
 			validatorPromises.push(invokeLazyPropertyValidators(
 				validationConfig,
-				parent.value,
+				model.value,
 				args,
 				++validationConfig.lazyIterationId,
 				() => validationConfig.lazyIterationId
@@ -423,7 +423,7 @@ export function invokeValidatorConfigs(
 			for (const key in validationConfig.arrayConfigMap) {
 				elementValidationConfigs.push(...validationConfig.arrayConfigMap[key].validationConfigs);
 			}
-			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, parent, args, reactive, lazy));
+			validatorPromises.push(invokeValidatorConfigs(elementValidationConfigs, model, args, reactive, lazy));
 		}
 	}
 	// Return true if all promises returned true, otherwise false.

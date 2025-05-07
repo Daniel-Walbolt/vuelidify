@@ -88,51 +88,51 @@ export type ArrayValidationState<
 /** Defines validation rules for records. */
 export type RecursiveValidation<
 	T,
-	KParent,
+	KModel,
 	ValidationArgs,
 	Return,
 	Ancestors,
 	NLevel extends number
-> = ObjectValidationTypes<T, KParent, ValidationArgs, Return, Ancestors> & {
+> = ObjectValidationTypes<T, KModel, ValidationArgs, Return, Ancestors> & {
 	// Recursively define validation on the contents of the object
-	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KParent, Ancestors, NLevel>;
+	[key in keyof Partial<T>]: Validation<T[key], ValidationArgs, Return, KModel, Ancestors, NLevel>;
 }
 
 /** Defines the validation rules for records */
 export type ObjectValidationTypes<
 	T = unknown,
-	KParent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown
-> = BaseValidation<T, KParent, Args, Return, Ancestors>;
+> = BaseValidation<T, KModel, Args, Return, Ancestors>;
 
 type IndexableRecord = Record<string, unknown>;
 
 /** Defines the validation rules for all supported objects. */
 export type BaseValidation<
 	T = unknown,
-	KParent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown
 > = {
 	/** Validators invoked whenever the model is changed. */
-	$reactive?: Validator<T, KParent, Args, Return, Ancestors>[];
+	$reactive?: Validator<T, KModel, Args, Return, Ancestors>[];
 	/** Validators invoked only after {@link UseValidationReturn.validate | validate()} is invoked. */
-	$lazy?: Validator<T, KParent, Args, Return, Ancestors>[];
+	$lazy?: Validator<T, KModel, Args, Return, Ancestors>[];
 }
 
 /** Defines the validation rules for an array. */
 export type ArrayValidation<
 	U,
 	T = U[],
-	KParent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown,
 	NLevel extends number = number
-> = BaseValidation<T, KParent, Args, Return, Ancestors> & {
+> = BaseValidation<T, KModel, Args, Return, Ancestors> & {
 	/**
 	 * Defines the validation rules for each element of an array.
 	 * 
@@ -142,7 +142,7 @@ export type ArrayValidation<
 		U,
 		Args,
 		Return,
-		KParent,
+		KModel,
 		Ancestors extends undefined
 			? { [key in NLevel]: ArrayAncestor<U, T> }
 			: Ancestors & { [key in NLevel]: ArrayAncestor<U, T> },
@@ -165,11 +165,11 @@ export type ArrayAncestor<
 /** A synchronous or asynchronous validator. */
 export type Validator<
 	T = unknown,
-	KParent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown
-> = (SyncValidator<T, KParent, Args, Return, Ancestors> | AsyncValidator<T, KParent, Args, Return, Ancestors>);
+> = (SyncValidator<T, KModel, Args, Return, Ancestors> | AsyncValidator<T, KModel, Args, Return, Ancestors>);
 
 /** Defines a validator function */
 export type BaseValidator<T, Parent, Args, Return, Ancestors> = (input: ValidatorParams<T, Parent, Args, Ancestors>) => Return
@@ -240,15 +240,15 @@ export type Validation<
 	T,
 	Args = unknown,
 	Return = any,
-	KParent = T,
+	KModel = T,
 	Ancestors = unknown,
 	NLevel extends number = 0
 > =
 	// Arrays are objects, so we have to check those first
-	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidation<U, T, KParent, Args, Return, Ancestors, NLevel>:
+	[NonNullable<T>] extends [Array<infer U>] ? ArrayValidation<U, T, KModel, Args, Return, Ancestors, NLevel>:
 	// Use recursion to specify validation for nested properties
-	[NonNullable<T>] extends [IndexableRecord] ? RecursiveValidation<T, KParent, Args, Return, Ancestors, NLevel>:
-	[NonNullable<T>] extends [Primitive] ? BaseValidation<T, KParent, Args, Return, Ancestors>:
+	[NonNullable<T>] extends [IndexableRecord] ? RecursiveValidation<T, KModel, Args, Return, Ancestors, NLevel>:
+	[NonNullable<T>] extends [Primitive] ? BaseValidation<T, KModel, Args, Return, Ancestors>:
 	never;
 
 /** Defines the configuration for the {@link useValidation | useValidation() } composable */
@@ -281,14 +281,14 @@ export type ValidationConfig<
 /** Defines the parameters passed into every validator */
 export type ValidatorParams<
 	T = unknown,
-	KParent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Ancestors = unknown
 > = {
 	/** The current value of the property */
 	value: T,
 	/** The entire object that was passed into the useValidation() composable to be validated. */
-	parent: KParent
+	model: KModel
 	/** The args passed in to the useValidation() composable configuration. */
 	args: Args
 	/**
