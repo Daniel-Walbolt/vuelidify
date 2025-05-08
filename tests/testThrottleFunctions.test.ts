@@ -2,10 +2,10 @@ import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.t
 import { bufferAsync, throttleAsync } from "../src/index.ts";
 import { pause } from "./main.ts";
 
-Deno.test("Test Throttle Functions", async (test: Deno.TestContext) =>  {
+Deno.test("Test Throttle Functions", async (test: Deno.TestContext) => {
 	await test.step("Test throttleAsync (400ms every 75ms)", parameterizedThrottleTest(400, 75)),
-	await test.step("Test throttleAsync (100ms every 20ms)", parameterizedThrottleTest(100, 20)),
-	await test.step("Test throttleAsync (1000ms every 100ms)", parameterizedThrottleTest(1000, 100, 50));
+		await test.step("Test throttleAsync (100ms every 20ms)", parameterizedThrottleTest(100, 20)),
+		await test.step("Test throttleAsync (1000ms every 100ms)", parameterizedThrottleTest(1000, 100, 50));
 	await test.step("Test bufferAsync", testBufferAsync);
 });
 
@@ -61,7 +61,7 @@ const testBufferAsync = async (test: Deno.TestContext) => {
 	const bufferedCalls = [
 		buffered(2),
 		buffered(3),
-		buffered(4)
+		buffered(4),
 	];
 
 	// Let the original call finish
@@ -73,6 +73,6 @@ const testBufferAsync = async (test: Deno.TestContext) => {
 	assertEquals(
 		callArgs,
 		[1, 4],
-		"Only the first and the most recent buffered call should have executed"
+		"Only the first and the most recent buffered call should have executed",
 	);
 };
