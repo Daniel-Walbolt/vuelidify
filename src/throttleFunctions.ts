@@ -1,4 +1,4 @@
-/** 
+/**
  * Returns a function that will execute the provided function
  * with the latest params only if a previously created promise does not exist.
  * ```ts
@@ -21,14 +21,16 @@ export function bufferAsync<F extends (...args: any[]) => any, K>(
 		queuedFunc = queuedFunc?.then(() => {
 			// Ignore this promise if another one is queued.
 			if (id === currentId) {
-				queuedFunc = new Promise<K>(resolve => resolve(func(...params))).then((response) => {
-					queuedFunc = undefined; // Reset the buffer
-					return response;
-				});
+				queuedFunc = new Promise<K>((resolve) => resolve(func(...params))).then(
+					(response) => {
+						queuedFunc = undefined; // Reset the buffer
+						return response;
+					},
+				);
 				return queuedFunc; // Always return the last promise in the buffer
 			}
 			return undefined; // Return undefined for all intermediate promises.
-		}) ?? new Promise<K>(resolve => resolve(func(...params))).then((response) => { // Init the buffer
+		}) ?? new Promise<K>((resolve) => resolve(func(...params))).then((response) => { // Init the buffer
 			queuedFunc = undefined; // Reset the buffer
 			return response; // Always return the first promise in the buffer
 		});
@@ -38,11 +40,11 @@ export function bufferAsync<F extends (...args: any[]) => any, K>(
 
 /**
  * Guarantees delay between invocations of the given function.
- * 
+ *
  * Invocations of the throttled function after the given interval has passed will execute instantly.
- * 
+ *
  * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
- * 
+ *
  * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
  * ```ts
  * async function test(): Promise<boolean> {}
@@ -54,40 +56,40 @@ export function bufferAsync<F extends (...args: any[]) => any, K>(
  * ```
  * @param func the function to throttle
  * @param delay milliseconds required between invocations of the function.
- *
  */
 export function throttleQueueAsync<F extends (...args: any[]) => any, K>(
 	func: (...params: Parameters<F>) => K | Promise<K>,
-	delay: number
+	delay: number,
 ): (...params: Parameters<typeof func>) => Promise<K | undefined> {
 	let id: number = 0;
 	let previousExecTime: number | undefined = undefined;
-	return (...params: Parameters<typeof func>) => new Promise<K | undefined>(resolve => {
-		const currentId = ++id;
-		const nowTime = new Date().getTime(); // Get the time of this invocation
-		previousExecTime ??= nowTime - delay; // Set initial value if needed
-		const remaining = nowTime - previousExecTime - delay; // Calculate time until next interval (negative means time to wait)
-		if (remaining < 0) {
-			new Promise(resolve => setTimeout(resolve, -1 * remaining))
-				.then(() => {
-					previousExecTime = new Date().getTime();
-					if (currentId === id) {
-						resolve(func(...params));
-					}
-					resolve(undefined);
-				});
-		} else {
-			previousExecTime = nowTime;
-			resolve(func(...params));
-		}
-	});
+	return (...params: Parameters<typeof func>) =>
+		new Promise<K | undefined>((resolve) => {
+			const currentId = ++id;
+			const nowTime = new Date().getTime(); // Get the time of this invocation
+			previousExecTime ??= nowTime - delay; // Set initial value if needed
+			const remaining = nowTime - previousExecTime - delay; // Calculate time until next interval (negative means time to wait)
+			if (remaining < 0) {
+				new Promise((resolve) => setTimeout(resolve, -1 * remaining))
+					.then(() => {
+						previousExecTime = new Date().getTime();
+						if (currentId === id) {
+							resolve(func(...params));
+						}
+						resolve(undefined);
+					});
+			} else {
+				previousExecTime = nowTime;
+				resolve(func(...params));
+			}
+		});
 }
 
-/** 
+/**
  * Accepts an array and uses the provided getter to get any value from each index ignoring any undefined values.
- * 
+ *
  * The default getter returns each array element (a map without the possible undefined values).
- * 
+ *
  * ```ts
  * const array = [{ id: 123, name: "Foo"}, { id: 456, name: undefined }]
  * const validNames = reduceUndefined(array, v => v.name) // ["Foo"]
@@ -97,8 +99,8 @@ export function throttleQueueAsync<F extends (...args: any[]) => any, K>(
  * @returns an array of the getter's return value invoked with each source element, with undefined values omitted.
  */
 export function reduceUndefined<T, K = T>(
-	array: T[], 
-	getter: (value: T) => K | undefined = (val) => val as unknown as K | undefined
+	array: T[],
+	getter: (value: T) => K | undefined = (val) => val as unknown as K | undefined,
 ) {
 	return array.reduce((results: K[], item) => {
 		if (item !== undefined) {

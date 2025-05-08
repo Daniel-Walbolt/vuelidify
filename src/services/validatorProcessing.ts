@@ -1,6 +1,20 @@
-import { computed, type MaybeRefOrGetter, reactive, type Ref, ref, toValue } from 'vue';
-import type { AnyGenericValidationType, GenericValidation, GenericValidationState, IndexableObject, GenericObjectValidation, ProcessedValidator, PropertyValidationConfig, GenericArrayValidation, IndexableGenericValidation, GenericValidator, IndexableGenericValidationState, AnyGenericValidationState, GenericArrayValidationState } from '../privateTypes.ts';
-import { reduceUndefined } from '../throttleFunctions.ts';
+import { computed, type MaybeRefOrGetter, reactive, type Ref, ref, toValue } from "vue";
+import type {
+	AnyGenericValidationState,
+	AnyGenericValidationType,
+	GenericArrayValidation,
+	GenericArrayValidationState,
+	GenericObjectValidation,
+	GenericValidation,
+	GenericValidationState,
+	GenericValidator,
+	IndexableGenericValidation,
+	IndexableGenericValidationState,
+	IndexableObject,
+	ProcessedValidator,
+	PropertyValidationConfig,
+} from "../privateTypes.ts";
+import { reduceUndefined } from "../throttleFunctions.ts";
 
 function uniqueId() {
 	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -8,9 +22,12 @@ function uniqueId() {
 
 export function setupValidation(
 	object: Ref<unknown>,
-	validation: GenericValidation
+	validation: GenericValidation,
 ) {
-	const validationSetup = setupNestedPropertiesForValidation(object, validation);
+	const validationSetup = setupNestedPropertiesForValidation(
+		object,
+		validation,
+	);
 	return validationSetup;
 }
 
@@ -25,14 +42,14 @@ export function processValidators(
 	/** Mark the processed validators as reactive or lazy */
 	markReactive: boolean,
 	/** Change how the ID is assigned. Will use the provided ID and simply attach the validator's index to it. */
-	useExistingIdWithIndex?: string
+	useExistingIdWithIndex?: string,
 ): ProcessedValidator[] {
 	const processedValidators: ProcessedValidator[] = [];
-	let getId: (index?: number) => string = () => `${markReactive ? 'reactive' : 'lazy'}-${uniqueId()}`;
+	let getId: (index?: number) => string = () => `${markReactive ? "reactive" : "lazy"}-${uniqueId()}`;
 	if (useExistingIdWithIndex != undefined) {
 		getId = (index?: number) => `${useExistingIdWithIndex}-${index}`;
 	}
-	for (const [index,validator] of validators.entries()) {
+	for (const [index, validator] of validators.entries()) {
 		processedValidators.push({
 			validatorId: getId(index),
 			validator: validator,
@@ -40,7 +57,7 @@ export function processValidators(
 			isReactive: markReactive,
 			previouslyReturnedValidators: false,
 			previouslySpawnedValidators: {},
-			spawnedValidators: {}
+			spawnedValidators: {},
 		});
 	}
 	return processedValidators;
@@ -53,12 +70,12 @@ export function createValidationConfig(
 	object: Ref<unknown>,
 	validation: AnyGenericValidationType,
 	/** Specify the getters for the array parents that came before this property. */
-	arrayParents: object[] = []
+	arrayParents: object[] = [],
 ) {
 	// Create a reactive object for the validation state just for convenience.
 	// Users don't have to type .value on any of the these properties in
 	// JavaScript or in the Vue templates while still having reactivity.
-	// 
+	//
 	// Type is casted because TypeScript is unable to infer the type in strict mode (I think that's the problem)
 	const validationState: GenericValidationState = reactive({
 		$state: {
@@ -70,10 +87,21 @@ export function createValidationConfig(
 				return isLazyValid && isReactiveValid;
 			}),
 			/** State indicating that validators are currently being called. */
-			isValidating: computed(() => validationConfig.isValidatingReactive.value || validationConfig.isValidatingLazy.value),
-			isErrored: computed(() => validationState.$state?.resultsArray.some(x => x.isValid === false) ?? false),
+			isValidating: computed(() =>
+				validationConfig.isValidatingReactive.value ||
+				validationConfig.isValidatingLazy.value
+			),
+			isErrored: computed(() =>
+				validationState.$state?.resultsArray.some((x) => x.isValid === false) ??
+					false
+			),
 			/** Array of the error messages that come from the {@link validationResults[]} for ease of use. */
-			errorMessages: computed(() => reduceUndefined(validationState.$state?.resultsArray ?? [], val => val.isValid ? undefined : val.message)),
+			errorMessages: computed(() =>
+				reduceUndefined(
+					validationState.$state?.resultsArray ?? [],
+					(val) => val.isValid ? undefined : val.message,
+				)
+			),
 			results: computed(() => validationConfig.namedValidationResults.value),
 			resultsArray: computed(() => validationConfig.validationResults.value),
 		},
@@ -81,7 +109,10 @@ export function createValidationConfig(
 		// So if something depends on a byproduct of this computed function, it may not behave as expected.
 		$arrayState: computed(() => {
 			// Array state should be empty until the value is actually an array.
-			if (Array.isArray(object.value) === false || validationConfig.elementValidation === undefined) {
+			if (
+				Array.isArray(object.value) === false ||
+				validationConfig.elementValidation === undefined
+			) {
 				return [];
 			}
 
@@ -102,7 +133,7 @@ export function createValidationConfig(
 			const elementIds: string[] = [];
 
 			for (let i = 0; i < arr.length; i++) {
-				const isObject = arr[i] !== undefined && typeof arr[i] === 'object';
+				const isObject = arr[i] !== undefined && typeof arr[i] === "object";
 				// Give the object an ID if it doesn't already have one.
 				// This step is crucial in order to know what validation state this object is bound to.
 				if (isObject) {
@@ -111,12 +142,12 @@ export function createValidationConfig(
 						// Concatenates the ID of the array validator with a unique number within the array.
 						Object.defineProperty(
 							arr[i],
-							'$ffId',
+							"$ffId",
 							{
 								value: `${validationConfig.id}-${validationConfig.elementId++}`,
 								writable: false,
 								configurable: false,
-								enumerable: false
+								enumerable: false,
 							},
 						);
 					}
@@ -131,7 +162,7 @@ export function createValidationConfig(
 					// This is because if lazy validation is done on any of the indexes, it won't move with the primitive value within the array.
 					tempId = i;
 				}
-				
+
 				elementIds.push(tempId);
 
 				// Skip setup of validation if this element already has a validation config.
@@ -149,24 +180,24 @@ export function createValidationConfig(
 					ancestors.push({
 						ancestor: target,
 						array: arr,
-						index: i
+						index: i,
 					});
 				}
 				const elValidationSetup = setupNestedPropertiesForValidation(
 					target,
 					elValidation,
-					ancestors
+					ancestors,
 				);
 				validationMap[tempId] = {
 					validationConfigs: elValidationSetup.validationConfigs,
-					validationState: elValidationSetup.state
+					validationState: elValidationSetup.state,
 				};
 				elemValidationState.push(validationMap[tempId].validationState);
 				prunedValidationMap[tempId] = validationMap[tempId];
 			}
 			validationConfig.arrayConfigMap = prunedValidationMap;
 			return elemValidationState;
-		})
+		}),
 	}) as GenericValidationState;
 
 	// If there are no lazy validators, lazy validation is automatically valid (true).
@@ -184,7 +215,7 @@ export function createValidationConfig(
 		initIsLazyValid = false;
 		lazyValidators = processValidators(validation.$lazy, false);
 	}
-	
+
 	const validationConfig: PropertyValidationConfig = {
 		id: uniqueId(),
 		reactiveIterationId: 0,
@@ -212,7 +243,7 @@ export function createValidationConfig(
 export function setupNestedPropertiesForValidation(
 	object: MaybeRefOrGetter<unknown>,
 	validation: GenericValidation | undefined,
-	arrayParents: object[] = []
+	arrayParents: object[] = [],
 ) {
 	/** Validation configs created from the provided validation rules. */
 	const configs: PropertyValidationConfig[] = [];
@@ -222,11 +253,15 @@ export function setupNestedPropertiesForValidation(
 	// Check if the validation object provided has validation
 	if (isValidation(validation)) {
 		const target = computed(() => toValue(object));
-		const validatedPropertyConfig = createValidationConfig(target, validation, arrayParents);
+		const validatedPropertyConfig = createValidationConfig(
+			target,
+			validation,
+			arrayParents,
+		);
 		configs.push(validatedPropertyConfig);
 		state = validatedPropertyConfig.validationState;
 	}
-	
+
 	if (validation != undefined) {
 		// Recursively find nested validation objects
 		recursiveSetup(object, validation, state);
@@ -236,7 +271,7 @@ export function setupNestedPropertiesForValidation(
 	function recursiveSetup(
 		rObject: MaybeRefOrGetter<unknown>,
 		rValidation: GenericValidation,
-		rState: GenericValidationState
+		rState: GenericValidationState,
 	) {
 		// Early return
 		if (isGenericRecord<IndexableGenericValidation>(rValidation) === false) {
@@ -249,7 +284,7 @@ export function setupNestedPropertiesForValidation(
 				continue;
 			}
 
-			/** 
+			/**
 			 * Can return null, undefined, a primitive, array, or custom object.
 			 * Note, this has to be a getter Ref in order to maintain reactivity.
 			 */
@@ -258,14 +293,20 @@ export function setupNestedPropertiesForValidation(
 				if (isGenericRecord<IndexableObject>(obj)) {
 					return obj[key];
 				} else {
-					console.error(`Vuelidify Error: validation could not be setup correctly on ${obj} because ${rObject} is not enumerable.`);
+					console.error(
+						`Vuelidify Error: validation could not be setup correctly on ${obj} because ${rObject} is not enumerable.`,
+					);
 					return null;
 				}
 			});
 			const maybeNestedValidation = rValidation[key];
 
 			if (isValidation(maybeNestedValidation)) {
-				const setup = createValidationConfig(target, maybeNestedValidation, arrayParents);
+				const setup = createValidationConfig(
+					target,
+					maybeNestedValidation,
+					arrayParents,
+				);
 				configs.push(setup);
 				rState[key] = setup.validationState;
 			}
@@ -277,7 +318,7 @@ export function setupNestedPropertiesForValidation(
 				recursiveSetup(
 					target,
 					maybeNestedValidation,
-					nestedState
+					nestedState,
 				);
 			}
 		}
@@ -287,12 +328,14 @@ export function setupNestedPropertiesForValidation(
 		/** All the validation configs from all the validators the user defined */
 		validationConfigs: configs,
 		/** The object that can be used to represent that state of validation for the provided object. */
-		state: state
+		state: state,
 	};
 }
 
 /** Checks if the object provided contains properties specific to validation. */
-export function isValidation(maybeValidation: AnyGenericValidationType | undefined | null): maybeValidation is AnyGenericValidationType {
+export function isValidation(
+	maybeValidation: AnyGenericValidationType | undefined | null,
+): maybeValidation is AnyGenericValidationType {
 	return Array.isArray((maybeValidation as GenericValidation)?.$reactive) ||
 		Array.isArray((maybeValidation as GenericValidation)?.$lazy) ||
 		(maybeValidation as GenericArrayValidation)?.$each !== undefined;
@@ -300,11 +343,14 @@ export function isValidation(maybeValidation: AnyGenericValidationType | undefin
 
 /** Checks if an object is of the type Record<>. */
 export function isGenericRecord<T>(object: unknown): object is T {
-	return typeof object === 'object' && object !== null && !Array.isArray(object);
+	return typeof object === "object" && object !== null &&
+		!Array.isArray(object);
 }
 
 /** Checks if the validation object provided contains properties specific to object validation */
-export function isObjectValidation(validation: AnyGenericValidationType): validation is GenericObjectValidation {
+export function isObjectValidation(
+	validation: AnyGenericValidationType,
+): validation is GenericObjectValidation {
 	return Array.isArray((validation as GenericObjectValidation)?.$reactive) ||
 		Array.isArray((validation as GenericObjectValidation)?.$lazy);
 }

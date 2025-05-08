@@ -7,7 +7,10 @@ import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 Deno.test("Test delayReactiveValidation configuration", async (test: Deno.TestContext) => {
 	// Almost every other test relies on delayReactiveValidation: false.
 	// So, we really only need to test it being true here.
-	await test.step("Test delayReactiveValidation: true", testDelayedReactiveValidation);
+	await test.step(
+		"Test delayReactiveValidation: true",
+		testDelayedReactiveValidation,
+	);
 });
 
 const testDelayedReactiveValidation = async (test: Deno.TestContext) => {
@@ -17,22 +20,36 @@ const testDelayedReactiveValidation = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				minLength(MinLength)
-			]
+				minLength(MinLength),
+			],
 		},
-		delayReactiveValidation: true
+		delayReactiveValidation: true,
 	});
-	
+
 	model.value = "ThisIsLongEnough";
 	await pause();
 	if (v$.state.$state === undefined) {
-		throw new Error("Validation state was undefined when it shouldn't have been.");
+		throw new Error(
+			"Validation state was undefined when it shouldn't have been.",
+		);
 	}
-	assert(v$.isValid === false, "isValid was true when it was expected to be false. Reactive validation should not have executed.");
-	assert(v$.state.$state.resultsArray.length === 0, "Results array of the state was not empty. Reactive validation should not have executed.");
+	assert(
+		v$.isValid === false,
+		"isValid was true when it was expected to be false. Reactive validation should not have executed.",
+	);
+	assert(
+		v$.state.$state.resultsArray.length === 0,
+		"Results array of the state was not empty. Reactive validation should not have executed.",
+	);
 	await v$.validate();
-	assert(v$.state.$state.resultsArray.length > 0, "Results array had zero length after calling validate. Reactive validation should have executed.");
+	assert(
+		v$.state.$state.resultsArray.length > 0,
+		"Results array had zero length after calling validate. Reactive validation should have executed.",
+	);
 	model.value = "This";
 	await pause();
-	assert(v$.isValid === false, "isValid was true when it was expected to be false. Reactive validation should have executed and failed.");
+	assert(
+		v$.isValid === false,
+		"isValid was true when it was expected to be false. Reactive validation should have executed and failed.",
+	);
 };

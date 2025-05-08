@@ -23,10 +23,10 @@ const testMinLength = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				minLength(MinLength)
-			]
+				minLength(MinLength),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
@@ -35,15 +35,18 @@ const testMinLength = async (test: Deno.TestContext) => {
 		{ model: "This", expected: false },
 		{ model: 10000, expected: true },
 		{ model: "      ", expected: true },
-		{ model: "     _____", expected: true }
+		{ model: "     _____", expected: true },
 	];
 
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state?.isValid === testCase.expected, `minLength did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, using a minLength of ${MinLength}.`);
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`minLength did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, using a minLength of ${MinLength}.`,
+		);
 	}
-}; 
+};
 
 const testMaxLength = async (test: Deno.TestContext) => {
 	const MaxLength = 5;
@@ -52,19 +55,25 @@ const testMaxLength = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				maxLength(MaxLength)
-			]
+				maxLength(MaxLength),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	model.value = "Test";
 	await pause();
-	assert(v$.state.$state?.isValid === true, `Max length did not pass even though the length was ${model.value.length}.`);
-	
+	assert(
+		v$.state.$state?.isValid === true,
+		`Max length did not pass even though the length was ${model.value.length}.`,
+	);
+
 	model.value = "This One is Too Long";
 	await pause();
-	assert(v$.state.$state?.isValid === false, `Max length did not make the state invalid when length was ${model.value.length}.`);
+	assert(
+		v$.state.$state?.isValid === false,
+		`Max length did not make the state invalid when length was ${model.value.length}.`,
+	);
 };
 
 const testEmail = async (test: Deno.TestContext) => {
@@ -73,10 +82,10 @@ const testEmail = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				isEmailSync()
-			]
+				isEmailSync(),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
@@ -86,13 +95,16 @@ const testEmail = async (test: Deno.TestContext) => {
 		{ model: "username@.com", expected: false },
 		{ model: "username@domain", expected: false },
 		{ model: "username@example.com", expected: true },
-		{ model: "username@test.", expected: false }
+		{ model: "username@test.", expected: false },
 	];
 
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state?.isValid === testCase.expected, `"${testCase.model}" was expected to be ${testCase.expected ? "valid" : "invalid"}, but was not.`);
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`"${testCase.model}" was expected to be ${testCase.expected ? "valid" : "invalid"}, but was not.`,
+		);
 	}
 };
 
@@ -103,21 +115,24 @@ const testMinNumber = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				minNumber(MinNumber)
-			]
+				minNumber(MinNumber),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 	const tests = [
 		{ model: -1, expected: false },
 		{ model: 0, expected: false },
-		{ model: 10, expected: true }
+		{ model: 10, expected: true },
 	];
 
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state?.isValid == testCase.expected, `minNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`);
+		assert(
+			v$.state.$state?.isValid == testCase.expected,
+			`minNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`,
+		);
 	}
 };
 
@@ -128,10 +143,10 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				maxNumber(MaxNumber)
-			]
+				maxNumber(MaxNumber),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
@@ -140,13 +155,16 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		{ model: -100, expected: true },
 		{ model: 100, expected: true },
 		{ model: 100.0001, expected: false },
-		{ model: 1e6, expected: false }
+		{ model: 1e6, expected: false },
 	];
 
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state?.isValid === testCase.expected, `maxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`);
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`maxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`,
+		);
 	}
 };
 
@@ -156,10 +174,10 @@ const testRequired = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				required()
-			]
+				required(),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
@@ -169,13 +187,16 @@ const testRequired = async (test: Deno.TestContext) => {
 		{ model: null, expected: false },
 		{ model: undefined, expected: false },
 		{ model: " ", expected: true },
-		{ model: "null", expected: true }
+		{ model: "null", expected: true },
 	];
 
 	for (const testCase of tests) {
 		model.value = testCase.model;
 		await pause();
-		assert(v$.state.$state?.isValid === testCase.expected, `required did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`);
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`required did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`,
+		);
 	}
 };
 
@@ -186,15 +207,20 @@ const testLazyValidation = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$lazy: [
-				minLength(MinLength)
-			]
-		}
+				minLength(MinLength),
+			],
+		},
 	});
 
 	const tests = [
-		{ model: "Test", expected: false, callValidate: false, error: "Lazy validation was valid before calling validate()"},
-		{ model: "Test", expected: false, callValidate: true, error: "Lazy validators were expected to fail."},
-		{ model: "ThisIsGood", expected: true, callValidate: true, error: "Lazy validators were expected to pass."},
+		{
+			model: "Test",
+			expected: false,
+			callValidate: false,
+			error: "Lazy validation was valid before calling validate()",
+		},
+		{ model: "Test", expected: false, callValidate: true, error: "Lazy validators were expected to fail." },
+		{ model: "ThisIsGood", expected: true, callValidate: true, error: "Lazy validators were expected to pass." },
 	];
 
 	for (const testCase of tests) {
@@ -214,20 +240,30 @@ const testLazyAndReactiveValidation = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				maxLength(MinLength*3)
+				maxLength(MinLength * 3),
 			],
 			$lazy: [
-				minLength(MinLength)
-			]
+				minLength(MinLength),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
-		{ model: undefined, expected: false, callValidate: true, error: "Validation passed when it should have failed."},
-		{ model: "ThisIsGood", expected: true, callValidate: true, error: "Validation did not pass when it should have."},
-		{ model: "This", expected: true, callValidate: false, error: "Validation did not pass when it should have because lazy validation was not invoked."},
-		{ model: "This", expected: false, callValidate: true, error: "Validation passed when it should have failed after invoking lazy validation."}
+		{ model: undefined, expected: false, callValidate: true, error: "Validation passed when it should have failed." },
+		{ model: "ThisIsGood", expected: true, callValidate: true, error: "Validation did not pass when it should have." },
+		{
+			model: "This",
+			expected: true,
+			callValidate: false,
+			error: "Validation did not pass when it should have because lazy validation was not invoked.",
+		},
+		{
+			model: "This",
+			expected: false,
+			callValidate: true,
+			error: "Validation passed when it should have failed after invoking lazy validation.",
+		},
 	];
 
 	for (const testCase of tests) {
@@ -248,16 +284,28 @@ const testGlobalIsValid = async (test: Deno.TestContext) => {
 		validation: {
 			$reactive: [
 				maxLength(MinLength * 3),
-				minLength(MinLength)
-			]
+				minLength(MinLength),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
-		{ model: undefined, expected: false, error: "isValid was true when it was expected to be false (the model was not changed)" },
-		{ model: "This", expected: false, error: "isValid was true when it was expected to be false (the model should have failed validation)" },
-		{ model: "ThisIsGood", expected: true, error: "isValid was false when it was expected to be true (the model should have passed validation)" }
+		{
+			model: undefined,
+			expected: false,
+			error: "isValid was true when it was expected to be false (the model was not changed)",
+		},
+		{
+			model: "This",
+			expected: false,
+			error: "isValid was true when it was expected to be false (the model should have failed validation)",
+		},
+		{
+			model: "ThisIsGood",
+			expected: true,
+			error: "isValid was false when it was expected to be true (the model should have passed validation)",
+		},
 	];
 
 	for (const testCase of tests) {

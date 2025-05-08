@@ -1,9 +1,9 @@
-export const pause = (length: number = 50) => new Promise(resolve => setTimeout(resolve, length));
+export const pause = (length: number = 50) => new Promise((resolve) => setTimeout(resolve, length));
 
 export type Child = {
 	name: string;
 	age: number;
-}
+};
 
 export type Person = {
 	name: string;
@@ -11,19 +11,38 @@ export type Person = {
 	validateChildren: boolean;
 	validateNeighbors: boolean;
 	countChildren: number;
-	children: Child[],
-	neighbors: Person[],
+	children: Child[];
+	neighbors: Person[];
 	bestFriend?: Person;
-}
+};
 
-const names = ["Alex", "Daniel", "Jacob", "Wendy", "Steve", "Phil", "Mike", "Brandon", "John", "Miranda", "Kyle", "Yoda", "Padame", "Tony", "Bailey", "Haley", "Elvis", "Ty"];
+const names = [
+	"Alex",
+	"Daniel",
+	"Jacob",
+	"Wendy",
+	"Steve",
+	"Phil",
+	"Mike",
+	"Brandon",
+	"John",
+	"Miranda",
+	"Kyle",
+	"Yoda",
+	"Padame",
+	"Tony",
+	"Bailey",
+	"Haley",
+	"Elvis",
+	"Ty",
+];
 export const randomPerson = (params?: {
-	genNeighbors?: boolean,
-	genBestFriend?: boolean,
-	genChildren?: boolean,
-	maxChildren?: number,
-	maxNeighbors?: number,
-	nestedNeighbors?: number
+	genNeighbors?: boolean;
+	genBestFriend?: boolean;
+	genChildren?: boolean;
+	maxChildren?: number;
+	maxNeighbors?: number;
+	nestedNeighbors?: number;
 }): Person => {
 	// Provide default values
 	const {
@@ -32,7 +51,7 @@ export const randomPerson = (params?: {
 		genChildren = true,
 		maxChildren = 5,
 		maxNeighbors = 3,
-		nestedNeighbors = 1
+		nestedNeighbors = 1,
 	} = params ?? {};
 
 	const countChildren = Math.ceil(Math.random() * maxChildren);
@@ -43,13 +62,13 @@ export const randomPerson = (params?: {
 	const countNeighbors = Math.ceil(Math.random() * maxNeighbors);
 	const neighbors: Person[] = [];
 	if (genNeighbors) {
-		for (let i = 0; i < countNeighbors; i++) { 
+		for (let i = 0; i < countNeighbors; i++) {
 			neighbors.push(randomPerson({
 				genNeighbors: nestedNeighbors > 0,
 				genBestFriend: false,
 				genChildren: genChildren,
 				maxNeighbors: maxNeighbors,
-				nestedNeighbors: nestedNeighbors-1
+				nestedNeighbors: nestedNeighbors - 1,
 			}));
 		}
 	}
@@ -61,14 +80,14 @@ export const randomPerson = (params?: {
 		countChildren: countChildren,
 		children: children,
 		neighbors: neighbors,
-		bestFriend: genBestFriend 
+		bestFriend: genBestFriend
 			? randomPerson({
 				genNeighbors: nestedNeighbors > 0,
 				genBestFriend: false,
 				maxChildren: 0,
 				maxNeighbors: 0,
-				nestedNeighbors: nestedNeighbors-1
-			}) 
+				nestedNeighbors: nestedNeighbors - 1,
+			})
 			: undefined,
 	};
 };
@@ -77,5 +96,5 @@ const randomName = () => names[Math.floor(Math.random() * names.length)];
 
 const randomChild = (): Child => ({
 	name: randomName(),
-	age: Math.ceil(Math.random() * 17)
+	age: Math.ceil(Math.random() * 17),
 });

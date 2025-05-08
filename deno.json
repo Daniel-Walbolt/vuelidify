@@ -13,8 +13,15 @@
 	},
 	"fmt": {
 		"include": [
-			"test-ui/"
-		]
+			"tests/",
+			"src/"
+		],
+		"useTabs": true,
+		"bracePosition": "sameLine",
+		"lineWidth": 120,
+		"semiColons": true,
+		"singleQuote": false,
+		"useBraces": "always"
 	},
 	"test": {
 		"include": ["./tests/"]

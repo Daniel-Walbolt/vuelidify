@@ -1,53 +1,57 @@
-import type { ValidationConfig, ValidationState } from './publicTypes.ts';
-import { ref, computed, watch, reactive, type Ref, type ComputedRef, type Reactive } from 'vue';
-import type { GenericValidation, PropertyValidationConfig } from './privateTypes.ts';
-import { invokeValidatorConfigs } from './services/validatorInvocation.ts';
-import { setupValidation } from './services/validatorProcessing.ts';
+import type { ValidationConfig, ValidationState } from "./publicTypes.ts";
+import { computed, type ComputedRef, type Reactive, reactive, type Ref, ref, watch } from "vue";
+import type { GenericValidation, PropertyValidationConfig } from "./privateTypes.ts";
+import { invokeValidatorConfigs } from "./services/validatorInvocation.ts";
+import { setupValidation } from "./services/validatorProcessing.ts";
 
 export type UseValidationReturn<
 	T = unknown,
-	Return = any
+	Return = any,
 > = {
-	hasValidated: Ref<boolean>,
-	validate: () => Promise<boolean>,
-	isValidating: ComputedRef<boolean>,
+	hasValidated: Ref<boolean>;
+	validate: () => Promise<boolean>;
+	isValidating: ComputedRef<boolean>;
 	/** Stores the results of validation */
-	state: ComputedRef<ValidationState<T, Return>>,
+	state: ComputedRef<ValidationState<T, Return>>;
 	/** True only if all validators passed. */
-	isValid: ComputedRef<boolean>,
+	isValid: ComputedRef<boolean>;
 	/** True if any of the validators failed. */
-	isErrored: ComputedRef<boolean>,
+	isErrored: ComputedRef<boolean>;
 	/** Sets the internal reference object for determining {@link isDirty} */
-	setReference: (reference: T) => void,
+	setReference: (reference: T) => void;
 	/**
 	 * Reactively determines if the object being validated has changed from the reference state.
 	 *
 	 * The reference state can be changed using {@link setReference()}.
 	 */
-	isDirty: ComputedRef<boolean>
-}
+	isDirty: ComputedRef<boolean>;
+};
 
-/** 
+/**
  * The starting point for validation with Vuelidify.
- * 
+ *
  * @author Daniel Walbolt
  */
 export function useValidation<
 	T,
 	Args = unknown,
-	Return = any
+	Return = any,
 >(
-	validationConfig: ValidationConfig<T, Args, Return>
+	validationConfig: ValidationConfig<T, Args, Return>,
 ): Reactive<UseValidationReturn<T, Return>> {
 	validationConfig.delayReactiveValidation ??= true; // Default value for delayReactiveValidation
 	const { model: object, validation, delayReactiveValidation, args } = validationConfig;
 
 	/** Only true after {@link validate()} finished successfully. */
 	const hasValidated = ref(false);
-	const isValidating = computed(() => validationConfigs.some(x => x.isValidatingLazy.value || x.isValidatingReactive.value));
-	const isErrored = computed(() => validationConfigs.some(x => x.validationResults.value.some(x => x.isValid === false)));
+	const isValidating = computed(() =>
+		validationConfigs.some((x) => x.isValidatingLazy.value || x.isValidatingReactive.value)
+	);
+	const isErrored = computed(() =>
+		validationConfigs.some((x) => x.validationResults.value.some((x) => x.isValid === false))
+	);
 	const isValid = computed(() => {
-		const allValidatorsValid = validationConfigs.every(x => x.isReactiveValid.value && x.isLazyValid.value);
+		const allValidatorsValid = validationConfigs.every((x) => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
 	});
 	/** List of objects that relates validation to the object's properties. */
@@ -57,11 +61,14 @@ export function useValidation<
 	const dirtyReference = ref(JSON.stringify(validationConfig.model.value));
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
-	const setup = setupValidation(object as Ref<T>, validation as GenericValidation);
+	const setup = setupValidation(
+		object as Ref<T>,
+		validation as GenericValidation,
+	);
 	const validationState = setup.state as ValidationState<T, Return>;
 	validationConfigs = setup.validationConfigs;
 
-	/** 
+	/**
 	 * Watch the object for any changes.
 	 * This is the alternative to watching every property individually.
 	 * This may be more costly on performance, but does allow for property inter-dependence.
@@ -78,12 +85,18 @@ export function useValidation<
 				invokeValidatorConfigs(validationConfigs, object, args, true, false);
 			}
 		},
-		{ deep: true }
+		{ deep: true },
 	);
 
 	/** Invokes all reactive and lazy validators. Returns whether or not all validators passed.*/
 	async function validate() {
-		const isValid = await invokeValidatorConfigs(validationConfigs, object, args, true, true);
+		const isValid = await invokeValidatorConfigs(
+			validationConfigs,
+			object,
+			args,
+			true,
+			true,
+		);
 		hasValidated.value = true;
 		return isValid;
 	}
@@ -101,6 +114,6 @@ export function useValidation<
 		isValid,
 		isErrored,
 		setReference,
-		isDirty
+		isDirty,
 	});
 }

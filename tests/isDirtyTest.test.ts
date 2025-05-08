@@ -17,16 +17,28 @@ const testIsDirtyOnPrimitive = async (test: Deno.TestContext) => {
 		model: model,
 		validation: {
 			$reactive: [
-				maxLength(10)
-			]
+				maxLength(10),
+			],
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 
 	const tests = [
-		{ model: "10", expected: true, error: "isDirty was false after it was just changed" },
-		{ model: String(StartState), expected: true, error: "isDirty was false after it was changed to the string version of the starting state."},
-		{ model: StartState, expected: false, error: "isDirty was true after it was changed back to the starting state."}
+		{
+			model: "10",
+			expected: true,
+			error: "isDirty was false after it was just changed",
+		},
+		{
+			model: String(StartState),
+			expected: true,
+			error: "isDirty was false after it was changed to the string version of the starting state.",
+		},
+		{
+			model: StartState,
+			expected: false,
+			error: "isDirty was true after it was changed back to the starting state.",
+		},
 	];
 
 	for (const testCase of tests) {
@@ -39,26 +51,44 @@ const testIsDirtyOnObject = async (test: Deno.TestContext) => {
 	const model = ref<Person>(randomPerson());
 	const v$ = useValidation({
 		model: model,
-		validation: {}
+		validation: {},
 	});
 	// model is a JSON serializable object here.
-	assert(v$.isDirty === false, "isDirty was true when the object was not changed.");
+	assert(
+		v$.isDirty === false,
+		"isDirty was true when the object was not changed.",
+	);
 	const originalAge = model.value.age;
 	model.value.age = 10;
-	assert(v$.isDirty === true, "isDirty was false when the object after it was modified.");
+	assert(
+		v$.isDirty === true,
+		"isDirty was false when the object after it was modified.",
+	);
 	model.value.age = originalAge;
-	assert(v$.isDirty === false, "isDirty was true when the object was returned to its starting state.");
+	assert(
+		v$.isDirty === false,
+		"isDirty was true when the object was returned to its starting state.",
+	);
 };
 
 const testSetReference = async (test: Deno.TestContext) => {
 	const model = ref<Person | undefined>();
 	const v$ = useValidation({
 		model: model,
-		validation: {}
+		validation: {},
 	});
-	assert(v$.isDirty === false, "isDirty was true when the model does not exist.");
+	assert(
+		v$.isDirty === false,
+		"isDirty was true when the model does not exist.",
+	);
 	model.value = randomPerson();
-	assert(v$.isDirty === true, "isDirty was false when the model was set to something other than its initial state.");
+	assert(
+		v$.isDirty === true,
+		"isDirty was false when the model was set to something other than its initial state.",
+	);
 	v$.setReference(model.value);
-	assert(v$.isDirty === false, "isDirty was true when the reference was set to the random model.");
+	assert(
+		v$.isDirty === false,
+		"isDirty was true when the reference was set to the random model.",
+	);
 };
