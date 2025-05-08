@@ -6,6 +6,26 @@ on:
         types: [created]
 
 jobs:
+    lint_test:
+        name: Lint & Test
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+            
+            - name: Setup Deno
+              uses: denoland/setup-deno@v1
+              with:
+                  deno-version: vx.x.x
+            
+            - name: Check Formatting
+              run: deno fmt --check
+
+            - name: Lint Code
+              run: deno lint
+
+            - name: Run Tests
+              run: deno test --allow-all
     build:
         name: Build
         runs-on: ubuntu-latest
