@@ -240,11 +240,11 @@ type ValidatorParams<T,P,V,A> = {
 			},
 			zaa: {
 				// Validate zaa reactively and when v$.validate() is invoked.
-				// Notice how validation can depend on other properties in the parent.
+				// Notice how you can validate using other properties in the model.
 				$reactive: [minNumber(10)],
 				$lazy: [
 					(params) => {
-						const isBar = params.parent.bar;
+						const isBar = params.model.bar;
 						return {
 							isValid: isBar ? params.value > 100 : true,
 							message: "Must be greater than 100 when bar is true"
@@ -267,9 +267,9 @@ type ValidatorParams<T,P,V,A> = {
 		isActive: boolean;
 	}
 
-	const array = ref<FooBar[]>([]);
+	const array: Ref<FooBar[]> = ref([]);
 	const v$ = useValidation({
-		form: array,
+		model: array,
 		validation: {
 			// Validate each object in the array.
 			$each: {
@@ -278,11 +278,12 @@ type ValidatorParams<T,P,V,A> = {
 					$reactive: [
 						// Validate the length of the name only if the object's isActive property is true.
 						(params) => {
-							if (params.arrayParents[0].isActive !== true) {
-								// Return undefined to ignore this validator when the condition is not true.
-								// This check can even be asynchronous!
+							// arrayAncestors[0] is an object with ancestor, index, and the array it is in.
+							if (params.arrayAncestors[0].ancestor.isActive === false) {
+								// Return undefined to ignore this validator
 								return;
 							}
+							// Return an array of validators which are immediately invoked. Useful for conditional validation.
 							return [minLength(10)]
 						}
 					]
@@ -293,7 +294,7 @@ type ValidatorParams<T,P,V,A> = {
 </script>
 ```
 #### Complex Objects
-Sometimes your objects will contain other objects and arrays.
+Sometimes your objects will contain objects and arrays.
 ```ts
 <script setup lang="ts">
 	import { ref } from 'vue';
@@ -328,7 +329,7 @@ Sometimes your objects will contain other objects and arrays.
 							// Make sure each person in the array is younger than person a
 							(params) => {
 								return {
-									isValid: params.value < params.parent.a.age,
+									isValid: params.value < params.model.a.age,
 									message: "Must be younger than person a."
 								}
 							}
@@ -348,11 +349,13 @@ Sometimes your objects will contain other objects and arrays.
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
 
-- Reactive validation is performed by a deep watcher on the parent object. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running every *reactive* validator in your object every time the user enters a character. However, the problem is mediated by validator optimizations discussed later.
-- Lazy validation is only performed only when the validate() function is called. However, validate() will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the object itself may be valid before ever calling validate() if there were no lazy validators specified, and all reactive validators were true (or again none specified).
-- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return less than 500ms they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
-- ```throttleQueueAsync``` is a custom function exported by this library which solves some of the problems I had with lodash's throttle function. This function throttles a function, can copy it's signature, and returns a promise for the result of the function. Calling this function will instantly execute the function if there is no active throttle. Calling this function with an active throttle will return a promise to call the function as soon as the throttle has expired. Calling the function multiple times during the throttle period will keep overriding the queued promise. Overridden queued promises will return undefined once the throttle expires. This function is very complicated, but extremely useful for returning control back to the caller and guaranteeing that the function gets called with the latest parameters. This are all problems with current implementation of debounce or throttle which use setTimeout() without being wrapped in a promise.
+- Reactive validation is performed by a deep watcher on the provided model. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running *every* reactive validator *every* time the model is changed. However, the problem is mediated by validator optimizations which is discussed later.
+- Lazy validation is only performed only when the `validate()` function is called. However, `validate()` will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the model itself may be valid before ever calling `validate()` if there were no lazy validators provided, and all reactive validators were true (or again none specified).
+- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return in less than 500ms, they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
+- ```throttleQueueAsync``` is a custom function exported by this library which solves the problems with lodash's throttle function. This function throttles a provided function, can copy it's signature, and returns a promise for the result of the function. Calling this function will instantly execute the function if there is no active throttle. Calling this function with an active throttle will return a promise to call the function as soon as the throttle has expired. Calling the function multiple times during the throttle period will keep overriding the queued promise. Overridden queued promises will return undefined once the throttle expires. This function is quite complicated and optimized, but extremely useful for returning control back to the caller and guaranteeing that the function gets called with the latest parameters. This solves the problems with current implementation of debounce or throttle which use setTimeout() without being wrapped in a promise.
 - ```bufferAsync``` is another custom function exported by this library which offers a more aggressive throttling behavior than ```throttleQueueAsync```. Instead, this function creates an "invocation buffer" on the provided function, copies the functions signature, and returns a promise to the result of the function. Essentially, the function provided will only be ran once the previous invocation of the function has returned. This function also uses a queue to guarantee invocation of the desired function after the previous invocation has returned.
+- Returning arrays of validators from within other validators is powerful but complex. Initially, we aimed to optimize these nested validators, but their dynamic nature--varying instances, order, and presence between iterations--made this unreliable. Since their results merge with all other validators, Vuelidify tracks and removes outdated results when the "parent" validator is invoked again and the same results are not returned.
+- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally the default type of `Return` is `any` because it truly *can be* anything. If it was unknown, you would be unable to access it for anything. `Return` is the only part of Vuelidify that is not strongly-typed.
 
 # Create your own validators
 There aren't many validators provided by this library on purpose. Mostly because I didn't want to think of what could be useful, and would rather rely on feedback for useful validators. Feel free to give me feedback on the github repo.
@@ -365,16 +368,13 @@ Here is a breakdown of one of the validators exported by this library (expanded 
 // always provide a header comment to explain what the validator does!
 /**
  * Checks if the string value is a valid looking email using RegEx.
- * 
- * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
- * @returns Synchronous validator
  */
 export function isEmailSync<
 	// The type of the property you want to support validation for.
 	// adding | undefined | null is good practice for writing more robust code
-	// Furthermore, if you just did string here, it wouldn't work with string?
-	T extends string | undefined | null, 
-	// The type for the parent object.
+	// Furthermore, if you just did string here, it wouldn't work with string | undefined
+	T extends string | undefined | null,
+	// The type for the model parameter.
 	// Generally you don't put constraints on this.
 	P,
 	// The type for the args
@@ -406,5 +406,20 @@ export function isEmailSync<
 }
 ```
 
-The type system that makes all this possible is fairly fragile. These problems may well be a limitation of TypeScript rather than of this package.
-I have encountered such problems when trying to build certain generic custom validators. Feel free to post issues you may have with the package on the git repo!
+Because every generic has a default value in `SyncValidator`, we can greatly simplify this validator definition to only what is required for constraints:
+
+```ts
+/**
+ * Validates a string is a valid looking email using RegEx.
+ */
+export function isEmailSync<T extends string | undefined | null>(): SyncValidator<T> {
+	return (params: ValidatorParams<T>) => ({
+		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
+		message: "Invalid email format"
+	});
+}
+```
+
+This validator is effectively: `SyncValidator<string | undefined | null, unknown, unknown, unknown, unknown>`
+
+Feel free to post issues you may have with the package on the git repo! Happy validating!
