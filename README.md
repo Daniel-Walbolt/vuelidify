@@ -3,12 +3,14 @@
 [Installation](#installation)
 [Types](#types)
 [Examples](#examples)
+[Technical Details](#technical-details)
+[Custom Validators](#create-your-own-validators)
 ---
 *Vuelidify is a Vue 3 model-based validation library providing strong TypeScript support and seamless handling of asynchronous validators, making complex form logic easy.*
 
 This library was inspired by Vuelidate and sought to solve some of its biggest problems. This library does NOT support Vue2, and does NOT support commonJS. Technology must move forward.
 
-**✨ Powerful** because it handles complex validation scenarios cleanly and efficiently.
+**✨ Powerful** because it handles complex validation scenarios easily and efficiently.
 
 **🪶 Lightweight** because the .mjs is <9KB (uncompressed), and ~3KB gzipped; no bloat or useless dependencies.
 
@@ -184,7 +186,8 @@ type ValidatorParams<T,P,V,A> = {
 ```
 
 ## Examples
-#### Primitives
+### Validation Rules
+#### Validating Primitives
 ```ts
 <script setup lang="ts">
 	import { ref } from 'vue';
@@ -199,7 +202,7 @@ type ValidatorParams<T,P,V,A> = {
 	});
 </script>
 ```
-#### Simple Objects
+#### Validating Simple Objects
 ```ts
 <script setup lang="ts">
 	import { ref, type Ref } from 'vue';
@@ -256,7 +259,7 @@ type ValidatorParams<T,P,V,A> = {
 	});
 </script>
 ```
-#### Arrays
+#### Validating Arrays
 ```ts
 <script setup lang="ts">
 	import { ref } from 'vue';
@@ -293,26 +296,26 @@ type ValidatorParams<T,P,V,A> = {
 	});
 </script>
 ```
-#### Complex Objects
+#### Validating Complex Objects
 Sometimes your objects will contain objects and arrays.
 ```ts
 <script setup lang="ts">
 	import { ref } from 'vue';
 	import { minLength, minNumber, useValidation } from "vuelidify";
 
-	type Person = {
+	type Example = {
 		a: Person,
 		b: Person[]
 	}
-	
+
 	type Person = {
 		name: string;
 		age: number;
 	}
 
-	const complexObj = ref<Person>();
+	const complexObj: Ref<Example | undefined> = ref();
 	const v$ = useValidation({
-		form: complexObj,
+		model: complexObj,
 		validation: {
 			a: {
 				// Validate person a's age reactively
@@ -329,7 +332,8 @@ Sometimes your objects will contain objects and arrays.
 							// Make sure each person in the array is younger than person a
 							(params) => {
 								return {
-									isValid: params.value < params.model.a.age,
+									isValid: params.model?.a.age != undefined
+										&& params.value < params.model.a.age,
 									message: "Must be younger than person a."
 								}
 							}
@@ -345,6 +349,18 @@ Sometimes your objects will contain objects and arrays.
 	});
 </script>
 ```
+### Validation State
+All of the validation types present their results similarly. Just access `state` to get started! As long as you have TypeScript enabled in your workspace, you should have no problem understanding its layout. Here's a short example on what you can do with the state object.
+```ts
+const v$ = useValidation({ 
+	// ... complex object validation provided earlier ...
+})
+// The error messages present on person a's age
+const aAgeErrors: string[] | undefined = v$.state.a?.age?.$state?.errorMessages;
+// An array of validation state objects on each person of property b.
+const bErrors = v$.state.b?.$arrayState;
+```
+Note, properties may show up in the intellisense, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
 
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
@@ -352,15 +368,15 @@ For those interested in the inner workings of the library without looking at the
 - Reactive validation is performed by a deep watcher on the provided model. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running *every* reactive validator *every* time the model is changed. However, the problem is mediated by validator optimizations which is discussed later.
 - Lazy validation is only performed only when the `validate()` function is called. However, `validate()` will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the model itself may be valid before ever calling `validate()` if there were no lazy validators provided, and all reactive validators were true (or again none specified).
 - Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return in less than 500ms, they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
-- ```throttleQueueAsync``` is a custom function exported by this library which solves the problems with lodash's throttle function. This function throttles a provided function, can copy it's signature, and returns a promise for the result of the function. Calling this function will instantly execute the function if there is no active throttle. Calling this function with an active throttle will return a promise to call the function as soon as the throttle has expired. Calling the function multiple times during the throttle period will keep overriding the queued promise. Overridden queued promises will return undefined once the throttle expires. This function is quite complicated and optimized, but extremely useful for returning control back to the caller and guaranteeing that the function gets called with the latest parameters. This solves the problems with current implementation of debounce or throttle which use setTimeout() without being wrapped in a promise.
-- ```bufferAsync``` is another custom function exported by this library which offers a more aggressive throttling behavior than ```throttleQueueAsync```. Instead, this function creates an "invocation buffer" on the provided function, copies the functions signature, and returns a promise to the result of the function. Essentially, the function provided will only be ran once the previous invocation of the function has returned. This function also uses a queue to guarantee invocation of the desired function after the previous invocation has returned.
+- `throttleAsync` is an async throttler that preserves your function’s signature and always returns a Promise of its result. It executes immediately when idle; if called during the throttle interval, it buffers only the latest call and runs it once the interval elapses—earlier buffered calls resolve to `undefined`. This lets you schedule non-blocking, promise-based throttling without overlapping executions and guarantees you always call your function with the latest arguments. Note, you are unable to distinguish if your function returned `undefined` or `throttleAsync` returned `undefined`.
+- `bufferAsync` is another custom function exported by this library that provides a more aggressive throttling behavior than `throttleAsync`. `bufferAsync` preserves the original function’s signature and returns a promise resolving to its result. It only remembers the latest invocation while the provided function is still executing. Once the current execution completes, only the remembered call will be invoked — all intermediate calls will return `undefined`. This mechanism prevents overlapping executions and reduces redundant work, making it ideal for expensive async operations where only the most recent intent should be executed. Note, you are unable to distinguish if your function returned `undefined` or `bufferAsync` returned `undefined`.
 - Returning arrays of validators from within other validators is powerful but complex. Initially, we aimed to optimize these nested validators, but their dynamic nature--varying instances, order, and presence between iterations--made this unreliable. Since their results merge with all other validators, Vuelidify tracks and removes outdated results when the "parent" validator is invoked again and the same results are not returned.
-- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally the default type of `Return` is `any` because it truly *can be* anything. If it was unknown, you would be unable to access it for anything. `Return` is the only part of Vuelidify that is not strongly-typed.
+- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally, the default type of `Return` is `any` because it truly *can be* anything. If it was unknown, you would be unable to access it for anything. `Return` is the only part of Vuelidify that is not strongly-typed. Be sure to cast it to what you expect before using it.
 
-# Create your own validators
-There aren't many validators provided by this library on purpose. Mostly because I didn't want to think of what could be useful, and would rather rely on feedback for useful validators. Feel free to give me feedback on the github repo.
+# Custom Validators
+There aren't many validators provided by this library on purpose. Mostly because I would rather rely on feedback for useful validators. Feel free to give me feedback on the github repo.
 
-I highly encourage you to understand the types enough to create your own validators. It isn't too difficult, and you should be able to base it off some of the existing ones.
+I highly encourage you to understand the types enough to create your own validators. It isn't too difficult, and you should be able to base your validator off of existing ones.
 
 Here is a breakdown of one of the validators exported by this library (expanded to make comments more readable):
 
@@ -387,8 +403,8 @@ export function isEmailSync<
 	// But you have to accept this generic in order to pass the type forward to not mess up outside types.
 	A
 >(
-// Specify any parameters you need here. They could be Refs, primitives, whatever!
-): SyncValidator<T, P, V, R, A> // Strongly type the type of validator you'll be returning
+// Specify any parameters you need here. This is a function that returns a validator.
+): SyncValidator<T, P, V, R, A> // Explicitly type the validator you'll be returning
 {
 	// Return a validator function
 	return (
