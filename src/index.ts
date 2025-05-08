@@ -1,4 +1,4 @@
-export * from './publicTypes';
-export { bufferAsync, throttleQueueAsync } from './throttleFunctions';
-export * from './validators';
-export { useValidation } from './useValidation';
+export * from "./publicTypes.ts";
+export { bufferAsync, throttleAsync } from "./throttleFunctions.ts";
+export * from "./validators.ts";
+export { useValidation } from "./useValidation.ts";

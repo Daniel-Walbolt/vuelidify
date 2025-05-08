@@ -1,7 +1,10 @@
 {
 	"compilerOptions": {
 		"moduleResolution": "node",
-		"target": "es6",
-		"noEmit": true
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"allowImportingTsExtensions": true,
+		"strictNullChecks": true,
+		"strict": true
 	}
 }

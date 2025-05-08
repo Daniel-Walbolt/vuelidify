@@ -1,8 +1,0 @@
-@import './base.css';
-
-#app {
-  display: flex;
-  flex-grow: 1;
-  font-weight: normal;
-  padding: 1rem;
-}

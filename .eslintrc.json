@@ -16,11 +16,9 @@
   "plugins": ["@typescript-eslint", "vue"],
   "rules": {
     "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
-    "indent": ["error", "tab"],
     "no-var": "error",
-    "linebreak-style": ["error", "windows"],
-    "quotes": ["error", "single"],
     "semi": ["error", "always"],
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "vue/require-v-for-key": "off"
   }
 }

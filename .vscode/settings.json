@@ -1,5 +1,12 @@
 {
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
-  }
+  },
+  "deno.enable": false,
+  "deno.config": "./deno.json",
+  "typescript.tsdk": null,
+  "deno.lint": true,
+  "cSpell.words": [
+    "vuelidify"
+  ],
 }

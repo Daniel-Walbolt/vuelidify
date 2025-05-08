@@ -1,0 +1,38 @@
+{
+	"name": "@vuelidify/core",
+	"version": "2.0.0",
+	"license": "MIT",
+	"exports": "./src/index.ts",
+	"compilerOptions": {
+		"types": [
+			"node"
+		]
+	},
+	"lint": {
+		"include": [
+			"tests/",
+			"src/"
+		],
+		"rules": {
+			"exclude": [
+				"no-unused-vars",
+				"no-explicit-any"
+			]
+		}
+	},
+	"fmt": {
+		"include": [
+			"tests/",
+			"src/"
+		],
+		"useTabs": true,
+		"bracePosition": "sameLine",
+		"lineWidth": 120,
+		"semiColons": true,
+		"singleQuote": false,
+		"useBraces": "always"
+	},
+	"test": {
+		"include": ["./tests/"]
+	}
+}
