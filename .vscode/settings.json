@@ -6,4 +6,7 @@
   "deno.config": "./deno.json",
   "typescript.tsdk": null,
   "deno.lint": true,
+  "cSpell.words": [
+    "vuelidify"
+  ],
 }
