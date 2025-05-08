@@ -1,5 +1,5 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { Ref, ref } from "vue";
+import { type Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { must } from "../src/validators.ts";
 import { pause } from "./main.ts";

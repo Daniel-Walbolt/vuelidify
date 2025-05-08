@@ -1,6 +1,6 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
-import { Ref, ref } from "vue";
+import { type Ref, ref } from "vue";
 import { isEmailSync, maxLength, maxNumber, minLength, minNumber, required } from "../src/validators.ts";
 import { pause } from "./main.ts";
 

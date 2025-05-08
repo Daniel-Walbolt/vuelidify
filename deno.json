@@ -9,7 +9,16 @@
 		]
 	},
 	"lint": {
-		"exclude": ["test-ui/", "tests/", "*"]
+		"include": [
+			"tests/",
+			"src/"
+		],
+		"rules": {
+			"exclude": [
+				"no-unused-vars",
+				"no-explicit-any"
+			]
+		}
 	},
 	"fmt": {
 		"include": [

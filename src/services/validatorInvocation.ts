@@ -1,4 +1,4 @@
-import { computed, MaybeRefOrGetter, type Ref, toValue } from "vue";
+import { computed, type MaybeRefOrGetter, type Ref, toValue } from "vue";
 import { bufferAsync, throttleQueueAsync } from "../throttleFunctions.ts";
 import type {
 	GenericSyncValidator,

@@ -1,8 +1,8 @@
-import { Ref, ref } from "vue";
+import { type Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { pause, Person, randomPerson } from "./main.ts";
-import { ArrayValidation } from "../src/publicTypes.ts";
+import { pause, type Person, randomPerson } from "./main.ts";
+import type { ArrayValidation } from "../src/publicTypes.ts";
 
 Deno.test("Test Array Validation", async (test: Deno.TestContext) => {
 	await test.step("Primitive Array Validation", testPrimitiveArrayValidation);

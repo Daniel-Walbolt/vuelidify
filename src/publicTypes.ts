@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import { useValidation, type UseValidationReturn } from "./useValidation.ts";
+import type { useValidation, UseValidationReturn } from "./useValidation.ts";
 
 // I'm not sure where to put this comment, but here's the explanation of why this library uses unknown instead of undefined in many places.
 // In TypeScript, and especially `strict` typescript, undefined is not assignable to anything but undefined.

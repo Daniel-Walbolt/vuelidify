@@ -2,7 +2,7 @@ import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
 import { ref } from "vue";
 import { maxLength } from "../src/validators.ts";
-import { Person, randomPerson } from "./main.ts";
+import { type Person, randomPerson } from "./main.ts";
 
 Deno.test("Test isDirty", async (test: Deno.TestContext) => {
 	await test.step("Dirty Primitives", testIsDirtyOnPrimitive);
@@ -10,7 +10,7 @@ Deno.test("Test isDirty", async (test: Deno.TestContext) => {
 	await test.step("Test Set Reference", testSetReference);
 });
 
-const testIsDirtyOnPrimitive = async (test: Deno.TestContext) => {
+const testIsDirtyOnPrimitive = (test: Deno.TestContext) => {
 	const StartState: number = 0;
 	const model = ref<string | number>(StartState);
 	const v$ = useValidation<string | number>({
@@ -47,7 +47,7 @@ const testIsDirtyOnPrimitive = async (test: Deno.TestContext) => {
 	}
 };
 
-const testIsDirtyOnObject = async (test: Deno.TestContext) => {
+const testIsDirtyOnObject = (test: Deno.TestContext) => {
 	const model = ref<Person>(randomPerson());
 	const v$ = useValidation({
 		model: model,
@@ -71,7 +71,7 @@ const testIsDirtyOnObject = async (test: Deno.TestContext) => {
 	);
 };
 
-const testSetReference = async (test: Deno.TestContext) => {
+const testSetReference = (test: Deno.TestContext) => {
 	const model = ref<Person | undefined>();
 	const v$ = useValidation({
 		model: model,
