@@ -14,59 +14,59 @@ export function required(): SyncValidator {
 
 /**
  * Validates a string or number has a length >= to the provided length. Undefined and null are 0 length.
- * @param minLength
+ * @param min the minimum length of the string or number
  */
 export function minLength<T extends string | number | undefined | null>(
-	minLength: number,
+	min: number,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => {
 		const val = String(params.value ?? "");
 		return {
-			isValid: val.length >= minLength,
-			message: `Too short (${val.length} / ${minLength})`,
+			isValid: val.length >= min,
+			message: `Too short (${val.length} / ${min})`,
 		};
 	};
 }
 
 /**
  * Validates a string or number's length. Undefined and null are 0 length.
- * @param maxLength the maximum length of the string or number
+ * @param max the maximum length of the string or number
  */
 export function maxLength<T extends string | number | undefined | null>(
-	maxLength: number,
+	max: number,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => {
 		const val = String(params.value ?? "");
 		return {
-			isValid: val.length <= maxLength,
-			message: `Too long (${val.length} / ${maxLength})`,
+			isValid: val.length <= max,
+			message: `Too long (${val.length} / ${max})`,
 		};
 	};
 }
 
 /**
  * Validates a number is defined and is at least some value.
- * @param minNumber the minimum number the value can be
+ * @param min the minimum number the value can be
  */
 export function minNumber<T extends number | undefined | null>(
-	minNumber: number,
+	min: number,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined && params.value >= minNumber,
-		message: `The minimum value is ${minNumber}`,
+		isValid: params.value != undefined && params.value >= min,
+		message: `The minimum value is ${min}`,
 	});
 }
 
 /**
  * Validates a number is defined and is at most some value.
- * @param maxNumber the maximum number the value can be
+ * @param max the maximum number the value can be
  */
 export function maxNumber<T extends number | undefined | null>(
-	maxNumber: number,
+	max: number,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined && params.value <= maxNumber,
-		message: `The maximum value is ${maxNumber}`,
+		isValid: params.value != undefined && params.value <= max,
+		message: `The maximum value is ${max}`,
 	});
 }
 
