@@ -100,10 +100,10 @@ jobs:
           id-token: write # An OIDC ID token is used for authentication with JSR
         needs: build
         steps:
-            - name: Download build artifacts
-              uses: actions/download-artifact@v4.3.0
+            - name: Checkout repository
+              uses: actions/checkout@v4
               with:
-                  name: build-dist
+                  ref: 'main'
 
             - name: Publish to JSR
               run: npx jsr publish
