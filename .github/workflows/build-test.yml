@@ -21,9 +21,10 @@ jobs:
               uses: denoland/setup-deno@v1
               with:
                   deno-version: v2.3.1
+
             - name: Install dependencies
               run: deno install
-            
+
             - name: Check Formatting
               run: deno fmt --check
 
@@ -35,9 +36,6 @@ jobs:
     build:
         name: Build
         runs-on: ubuntu-latest
-        permissions:
-          contents: read
-          id-token: write # An OIDC ID token is used for authentication with JSR
         needs: lint_test
 
         steps:
