@@ -66,14 +66,14 @@ jobs:
                   if-no-files-found: error
                   retention-days: 1
             - name: Upload for JSR
-            uses: actions/upload-artifact@v4.6.2
-            with:
-                name: repo # must match the download step in the jsr publish job
-                path: |
-                  /**
-                  !dist
-                if-no-files-found: error
-                retention-days: 1
+              uses: actions/upload-artifact@v4.6.2
+              with:
+                  name: repo # must match the download step in the jsr publish job
+                  path: |
+                    /**
+                    !dist
+                  if-no-files-found: error
+                  retention-days: 1
     publish_npm:
         name: Publish to NPM
         runs-on: ubuntu-latest
