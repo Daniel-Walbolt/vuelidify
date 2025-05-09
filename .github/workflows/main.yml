@@ -32,9 +32,6 @@ jobs:
     build:
         name: Build
         runs-on: ubuntu-latest
-        permissions:
-          contents: read
-          id-token: write # An OIDC ID token is used for authentication with JSR
         needs: lint_test
 
         steps:
@@ -98,6 +95,9 @@ jobs:
     publish_jsr:
         name: Publish to JSR
         runs-on: ubuntu-latest
+        permissions:
+          contents: read
+          id-token: write # An OIDC ID token is used for authentication with JSR
         needs: build
         steps:
             - name: Download build artifacts
