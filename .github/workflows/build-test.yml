@@ -2,9 +2,6 @@ name: Lint & Test
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
-    push:
-        branches:
-            - main
     pull_request:
         branches:
             - main
@@ -59,3 +56,22 @@ jobs:
 
             - name: Build NPM Package
               run: pnpm build
+
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4.6.2
+              with:
+                  name: build-dist # must match the download steps in the publish jobs
+                  path: dist
+                  if-no-files-found: error
+    receive_build_artifact:
+        name: Receive Build Artifact
+        runs-on: ubuntu-latest
+        needs: build
+        steps: 
+          - name: Download build artifacts
+            uses: actions/download-artifact@v3
+            with:
+                name: build-dist
+                # not specifying path here downloads into current working directory
+          - name: Display build artifacts
+            run: ls -R
