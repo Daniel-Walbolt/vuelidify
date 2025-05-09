@@ -1,4 +1,4 @@
-name: NPM Release
+name: Build & Publish
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
@@ -17,7 +17,10 @@ jobs:
               uses: denoland/setup-deno@v1
               with:
                   deno-version: v2.3.1
-            
+
+            - name: Install dependencies
+              run: deno install
+
             - name: Check Formatting
               run: deno fmt --check
 
