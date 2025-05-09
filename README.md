@@ -4,7 +4,7 @@
 [Types](#types)
 [Examples](#examples)
 [Technical Details](#technical-details)
-[Custom Validators](#create-your-own-validators)
+[Custom Validators](#custom-validators)
 ---
 *Vuelidify is a Vue 3 model-based validation library providing strong TypeScript support and seamless handling of asynchronous validators, making complex form logic easy.*
 
