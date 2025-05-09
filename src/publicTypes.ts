@@ -160,6 +160,10 @@ export type ArrayValidation<
 	>;
 };
 
+/**
+ * Represents an element in {@link ValidatorParams.arrayAncestors | arrayAncestors} which
+ * holds context about the ancestor along with the ancestor itself.
+ */
 export type ArrayAncestor<
 	U = unknown, // the type of T's elements
 	T = unknown, // the array of U
