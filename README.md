@@ -7,9 +7,11 @@ Powerful and typed model-based validation for Vue 3
 
 [Examples](#examples)
 
-[Technical Details](#technical-details)
+[Provided Validators](#provided-validators)
 
 [Custom Validators](#custom-validators)
+
+[Technical Details](#technical-details)
 
 ---
 
@@ -367,23 +369,37 @@ const bErrors = v$.state.b?.$arrayState;
 ```
 Note, properties may show up in the intellisense, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
 
-## Technical Details
-For those interested in the inner workings of the library without looking at the code:
+# Provided Validators
+Here are the validators that Vuelidify provides by default:
 
-- Reactive validation is performed by a deep watcher on the provided model. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running *every* reactive validator *every* time the model is changed. However, the problem is mediated by validator optimizations which is discussed later.
-- Lazy validation is only performed only when the `validate()` function is called. However, `validate()` will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the model itself may be valid before ever calling `validate()` if there were no lazy validators provided, and all reactive validators were true (or again none specified).
-- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return in less than 500ms, they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
-- `throttleAsync` is an async throttler that preserves your function’s signature and always returns a Promise of its result. It executes immediately when idle; if called during the throttle interval, it buffers only the latest call and runs it once the interval elapses—earlier buffered calls resolve to `undefined`. This lets you schedule non-blocking, promise-based throttling without overlapping executions and guarantees you always call your function with the latest arguments. Note, you are unable to distinguish if your function returned `undefined` or `throttleAsync` returned `undefined`.
-- `bufferAsync` is another custom function exported by this library that provides a more aggressive throttling behavior than `throttleAsync`. `bufferAsync` preserves the original function’s signature and returns a promise resolving to its result. It only remembers the latest invocation while the provided function is still executing. Once the current execution completes, only the remembered call will be invoked — all intermediate calls will return `undefined`. This mechanism prevents overlapping executions and reduces redundant work, making it ideal for expensive async operations where only the most recent intent should be executed. Note, you are unable to distinguish if your function returned `undefined` or `bufferAsync` returned `undefined`.
-- Returning arrays of validators from within other validators is powerful but complex. Initially, we aimed to optimize these nested validators, but their dynamic nature--varying instances, order, and presence between iterations--made this unreliable. Since their results merge with all other validators, Vuelidify tracks and removes outdated results when the "parent" validator is invoked again and the same results are not returned.
-- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally, the default type of `Return` is `any` because it truly *can be* anything. If it was unknown, you would be unable to access it for anything. `Return` is the only part of Vuelidify that is not strongly-typed. Be sure to cast it to what you expect before using it.
+- 	```ts
+	required()
+	```
+- 	```ts
+	minLength(min: number)
+	```
+- 	```ts
+	maxLength(max: number)
+	```
+-	```ts
+	minNumber(min: number)
+	```
+-	```ts
+	maxNumber(max: number)
+	```
+-	```ts
+	must(fn: (params) => boolean, errorMessage: string)
+	```
+-	```ts
+	isEmailSync()
+	```
+
+There aren't many validators provided by this library on purpose. If you feel a validator would be useful for everyone to have, give us feedback on our GitHub repository. However, we highly encourage you to understand how to make your own!
 
 # Custom Validators
-There aren't many validators provided by this library on purpose. Mostly because I would rather rely on feedback for useful validators. Feel free to give me feedback on the github repo.
+This section guides you to create your own generic validators. Validators were designed to be easy to create and easier to use.
 
-I highly encourage you to understand the types enough to create your own validators. It isn't too difficult, and you should be able to base your validator off of existing ones.
-
-Here is a breakdown of one of the validators exported by this library (expanded to make comments more readable):
+Here is a breakdown of one of the built-in validators (expanded to make comments more readable):
 
 ```ts
 // always provide a header comment to explain what the validator does!
@@ -403,12 +419,11 @@ export function isEmailSync<
 	V,
 	// The type for the custom return from the validator
 	R,
-	// The type for the arrayParents parameter.
+	// The type for the arrayAncestors parameter.
 	// Generally you don't put constraints on this.
-	// But you have to accept this generic in order to pass the type forward to not mess up outside types.
 	A
 >(
-// Specify any parameters you need here. This is a function that returns a validator.
+// Specify any parameters you need here. This can be configuration (like a max length) or reactive variables.
 ): SyncValidator<T, P, V, R, A> // Explicitly type the validator you'll be returning
 {
 	// Return a validator function
@@ -442,5 +457,24 @@ export function isEmailSync<T extends string | undefined | null>(): SyncValidato
 ```
 
 This validator is effectively: `SyncValidator<string | undefined | null, unknown, unknown, unknown, unknown>`
+
+## Technical Details
+For those interested in the inner workings of the library without looking at the code:
+
+- Reactive validation is performed by a deep watcher on the provided model. This was done because of inter-property dependence. When a validator for one property relies on another property in the object, it needs to be reevaluated. This does come with the technical debt of running *every* reactive validator *every* time the model is changed. However, the problem is mediated by validator optimizations which is discussed later.
+
+- Lazy validation is only performed only when the `validate()` function is called. However, `validate()` will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the model itself may be valid before ever calling `validate()` if there were no lazy validators provided, and all reactive validators were true (or again none specified).
+
+- Validation results are ideally visible as soon as possible. Synchronous validation should not wait for async validation to finish before displaying errors. Vuelidify implements this by running all validators concurrently, and assimilating the validation results as they finish. This is fairly intuitive. However, what happens when you have lazy validation and reactive validation? You can't replace the array every time a new validation cycle happens, because that could lose the results from lazy validation! Each validator is assigned an ID internally. This ID is used for identifying the results from validators. When a result is returned, Vuelidify determines if it already exists in the results array. If it does, then Vuelidify updates all the data in that result to the data from the new result. This feature is particularly useful if you want to do animations on validation errors, because the error won't be leaving and re-entering the array every time validation is done.
+
+- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return in less than 500ms, they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
+
+- `throttleAsync` is an async throttler that preserves your function’s signature and always returns a Promise of its result. It executes immediately when idle; if called during the throttle interval, it buffers only the latest call and runs it once the interval elapses—earlier buffered calls resolve to `undefined`. This lets you schedule non-blocking, promise-based throttling without overlapping executions and guarantees you always call your function with the latest arguments. Note, you are unable to distinguish if your function returned `undefined` or `throttleAsync` returned `undefined`.
+
+- `bufferAsync` is another custom function exported by this library that provides a more aggressive throttling behavior than `throttleAsync`. `bufferAsync` preserves the original function’s signature and returns a promise resolving to its result. It only remembers the latest invocation while the provided function is still executing. Once the current execution completes, only the remembered call will be invoked — all intermediate calls will return `undefined`. This mechanism prevents overlapping executions and reduces redundant work, making it ideal for expensive async operations where only the most recent intent should be executed. Note, you are unable to distinguish if your function returned `undefined` or `bufferAsync` returned `undefined`.
+
+- Returning arrays of validators from within other validators is powerful but complex. Initially, we aimed to optimize these nested validators, but their dynamic nature--varying instances, order, and presence between iterations--made this unreliable. Since their results merge with all other validators, Vuelidify tracks and removes outdated results when the "parent" validator is invoked again and the same results are not returned.
+
+- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally, the default type of `Return` is `any` because it truly *can be* anything; if it was unknown, you would be unable to access it. `Return` is the only part of Vuelidify that is not strongly-typed. Be sure to cast it to what you expect before using it.
 
 Feel free to post issues you may have with the package on the git repo! Happy validating!
