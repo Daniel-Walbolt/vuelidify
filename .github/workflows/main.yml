@@ -58,12 +58,22 @@ jobs:
             - name: Build NPM Package
               run: pnpm build
 
-            - name: Upload build artifact
+            - name: Upload build for NPM
               uses: actions/upload-artifact@v4.6.2
               with:
                   name: build-dist # must match the download steps in the publish jobs
                   path: dist
                   if-no-files-found: error
+                  retention-days: 1
+            - name: Upload for JSR
+            uses: actions/upload-artifact@v4.6.2
+            with:
+                name: repo # must match the download step in the jsr publish job
+                path: |
+                  /**
+                  !dist
+                if-no-files-found: error
+                retention-days: 1
     publish_npm:
         name: Publish to NPM
         runs-on: ubuntu-latest
@@ -100,10 +110,11 @@ jobs:
           id-token: write # An OIDC ID token is used for authentication with JSR
         needs: build
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  ref: 'main'
+          - name: Download build artifacts
+            uses: actions/download-artifact@v4.3.0
+            with:
+                name: repo
+                # not specifying path here downloads into current working directory
 
-            - name: Publish to JSR
-              run: npx jsr publish
+          - name: Publish to JSR
+            run: npx jsr publish
