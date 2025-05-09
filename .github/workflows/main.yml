@@ -1,4 +1,4 @@
-name: NPM Release
+name: Build & Publish
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
