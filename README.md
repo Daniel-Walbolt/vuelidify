@@ -369,7 +369,7 @@ const aAgeErrors: string[] | undefined = v$.state.a?.age?.$state?.errorMessages;
 // An array of validation state objects on each person of property b.
 const bErrors = v$.state.b?.$arrayState;
 ```
-Note, properties may show up in the intellisense, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
+Note, your properties may show up in the intellisense for `state`, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
 
 # Provided Validators
 Here are the validators that Vuelidify provides by default:
@@ -391,6 +391,9 @@ Here are the validators that Vuelidify provides by default:
 	```
 -	```ts
 	must(fn: (params) => boolean, errorMessage: string)
+	```
+-	```ts
+	validateIf(predicate: (params) => boolean | Promise<boolean>, validators: Validator[])
 	```
 -	```ts
 	isEmailSync()
