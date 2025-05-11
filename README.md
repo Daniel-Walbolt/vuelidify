@@ -11,6 +11,8 @@ Powerful and typed model-based validation for Vue 3
 
 [Custom Validators](#custom-validators)
 
+[Throttle Functions](#throttle-functions)
+
 [Technical Details](#technical-details)
 
 ---
@@ -457,6 +459,16 @@ export function isEmailSync<T extends string | undefined | null>(): SyncValidato
 ```
 
 This validator is effectively: `SyncValidator<string | undefined | null, unknown, unknown, unknown, unknown>`
+
+## Throttle Functions
+Vuelidify provides several throttling functions for limiting how often a function can be invoked. Internally, Vuelidify uses some of these internally to optimize async validators, but we figured they could be useful outside of just validation. Functions like `debounce` and `throttle` are common examples exported by lodash. However, lodash's implementations are often hard to use because they don't return control back to the caller (i.e. they don't return a promise). The functions Vuelidify provides strongly type themselves to the function you provide, and always return a promise when it makes sense to. Here is a list of the available throttling functions:
+
+- ```bufferAsync``` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest buffered call will execute the function next, all other calls will resolve to `IGNORE_RESULT` once the current instance returns. Very useful for limiting resource-heavy calls while guaranteeing each call uses the most up-to-date parameters.
+- ```throttleBufferAsync``` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered call will execute the function and all others will return `IGNORE_RESULT`.
+- ```throttleAsync``` ensures a function can only be called once every throttle period. Does not buffer calls. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting users from activating a function (e.g. forgot password form submission). Does not guarantee the latest invocation will be executed because calls during the throttle period return `IGNORE_RESULT`.
+- ```trailingDebounceAsync``` ensures a function will only be called after the a delay has passed since the last invocation. Guarantees the latest parameters will be executed. All invocations prior to the latest will resolve to `IGNORE_RESULT`.
+
+`IGNORE_RESULT` is a constant unique symbol exported by Vuelidify that helps you to identify when invocations were ignored by the throttle function. This was done to make sure this unique state doesn't conflict with possible returns from your own functions.
 
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
