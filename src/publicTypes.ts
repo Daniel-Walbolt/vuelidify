@@ -9,8 +9,8 @@ import type { useValidation, UseValidationReturn } from "./useValidation.ts";
 // To do this, without using `any` for those generics, the generic validators would use unknown to indicate they don't care about that type.
 // This lead to problems because the array holding the validators would expect validators that had undefined Ancestors, or undefined Args, and unknown isn't assignable to it.
 // The one useful feature of using undefined as the default value for Args and Ancestors was that it is detectable in conditional types.
-// As a result, I could completely omit the `args` and `arrayParents` property from the validator parameters if it was undefined in that context.
-// However, because undefined makes the type system unstable, I chose to use unknown instead and just have the `args` and `arrayParents` properties show up as `unknown`.
+// As a result, I could completely omit the `args` and `arrayAncestors` property from the validator parameters if it was undefined in that context.
+// However, because undefined makes the type system unstable, I chose to use unknown instead and just have the `args` and `arrayAncestors` properties show up as `unknown`.
 // TypeScript is hard... hopefully you don't fall down the rabbit hole of trying to make Args undefined by default in the future.
 
 /** Shorthand union of the primitive types */
