@@ -188,23 +188,23 @@ export type Validator<
 	| AsyncValidator<T, KModel, Args, Return, Ancestors>;
 
 /** Defines a validator function */
-export type BaseValidator<T, Parent, Args, Return, Ancestors> = (
-	input: ValidatorParams<T, Parent, Args, Ancestors>,
+export type BaseValidator<T, KModel, Args, Return, Ancestors> = (
+	input: ValidatorParams<T, KModel, Args, Ancestors>,
 ) => Return;
 
 /** Defines a validator which always runs synchronously */
 export type SyncValidator<
 	T = unknown,
-	Parent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown,
 > = BaseValidator<
 	T,
-	Parent,
+	KModel,
 	Args,
 	| BaseValidationReturn<Return>
-	| Array<Validator<T, Parent, Args, Return, Ancestors>>
+	| Array<Validator<T, KModel, Args, Return, Ancestors>>
 	| undefined,
 	Ancestors
 >;
@@ -212,17 +212,17 @@ export type SyncValidator<
 /** Defines a validator which returns a promise */
 export type AsyncValidator<
 	T = unknown,
-	Parent = unknown,
+	KModel = unknown,
 	Args = unknown,
 	Return = any,
 	Ancestors = unknown,
 > = BaseValidator<
 	T,
-	Parent,
+	KModel,
 	Args,
 	Promise<
 		| BaseValidationReturn<Return>
-		| Array<Validator<T, Parent, Args, Return, Ancestors>>
+		| Array<Validator<T, KModel, Args, Return, Ancestors>>
 		| undefined
 	>,
 	Ancestors

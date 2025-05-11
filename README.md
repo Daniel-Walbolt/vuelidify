@@ -179,18 +179,18 @@ type BaseValidationReturn<F> = {
 ```
 Here is the breakdown of the parameters that are passed into validators
 ```ts
-type ValidatorParams<T,P,V,A> = {
+type ValidatorParams<T,KModel,Args,Ancestors> = {
 	// The value of the property being validated
 	value: T,
 	// The top-most ancestor being validated. The object that was passed to the composable.
-	parent: P,
+	model: KModel,
 	// The args that were specified in the composable configuration.
-	args: V,
+	args: Args,
 	// The type will be an ordered array of strongly typed objects.
 	// Each index is an ancestor to what you're validating.
 	// Index 0 will appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
 	// Extremely useful for complex validation.
-	arrayAncestors: A
+	arrayAncestors: Ancestors
 }
 ```
 
@@ -415,7 +415,7 @@ export function isEmailSync<
 	T extends string | undefined | null,
 	// The type for the model parameter.
 	// Generally you don't put constraints on this.
-	P,
+	K,
 	// The type for the args
 	// You may want to put a constraint on this if you need access to a store, or some other external data.
 	V,
@@ -426,12 +426,12 @@ export function isEmailSync<
 	A
 >(
 // Specify any parameters you need here. This can be configuration (like a max length) or reactive variables.
-): SyncValidator<T, P, V, R, A> // Explicitly type the validator you'll be returning
+): SyncValidator<T, K, V, R, A> // Explicitly type the validator you'll be returning
 {
 	// Return a validator function
 	return (
 		// Strongly type the expected params object to have intellisense
-		params: ValidatorParams<T, P, V, A>
+		params: ValidatorParams<T, K, V, A>
 	) => {
 		// you can do whatever you want a normal validator can in here.
 		// Return undefined, an array of validators, or a validation result.
