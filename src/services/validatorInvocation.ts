@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, type Ref, toValue } from "vue";
-import { bufferAsync, throttleAsync } from "../throttleFunctions.ts";
+import { bufferAsync, throttleQueueAsync } from "../throttleFunctions.ts";
 import type {
 	GenericSyncValidator,
 	GenericValidator,
@@ -193,17 +193,11 @@ function recursiveInvokeAndOptimizeValidators(
 						) {
 							// Moderately slow validators will receive a throttle.
 							// Calls will overlap, but it shouldn't overwhelm the server
-							processedValidator.validator = throttleAsync<
-								typeof processedValidator.validator,
-								Awaited<ReturnType<typeof processedValidator.validator>>
-							>(processedValidator.validator, ThrottleDurationMs);
+							processedValidator.validator = throttleQueueAsync(processedValidator.validator, ThrottleDurationMs);
 						} else {
 							// Slow validators will receive a buffer.
 							// Calls will never overlap
-							processedValidator.validator = bufferAsync<
-								typeof processedValidator.validator,
-								Awaited<ReturnType<typeof processedValidator.validator>>
-							>(processedValidator.validator);
+							processedValidator.validator = bufferAsync(processedValidator.validator);
 						}
 					}
 

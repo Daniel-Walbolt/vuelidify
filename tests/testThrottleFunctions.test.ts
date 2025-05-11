@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { bufferAsync, throttleAsync } from "../src/index.ts";
+import { bufferAsync, throttleQueueAsync } from "../src/index.ts";
 import { pause } from "./main.ts";
 
 Deno.test("Test Throttle Functions", async (test: Deno.TestContext) => {
@@ -20,7 +20,7 @@ function parameterizedThrottleTest(timeOfTest: number, throttleTime: number, cal
 			return 10;
 		};
 
-		const throttled = throttleAsync(asyncFunction, throttleTime);
+		const throttled = throttleQueueAsync(asyncFunction, throttleTime);
 
 		// Warmup
 		await throttled();

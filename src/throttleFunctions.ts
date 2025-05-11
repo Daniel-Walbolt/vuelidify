@@ -1,114 +1,168 @@
-/**
- * Returns a function that will execute the provided function
- * with the latest params only if a previously created promise does not exist.
- * ```ts
- * async function test(): Promise<boolean> {}
- * // Call this constant instead of the function to get the buffer benefits
- * const bufferedTest = bufferAsync<
- * 		typeof test, // this type makes the return the same signature as test()
- * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
- * >(test);
- * ```
- */
-export function bufferAsync<F extends (...args: any[]) => any, K>(
-	func: (...params: Parameters<F>) => K | Promise<K>,
-): (...params: Parameters<typeof func>) => Promise<K | undefined> {
-	let id: number = 0;
-	let queuedFunc: Promise<K | undefined> | undefined = undefined;
+import { Ref, ref } from "vue";
 
-	return (...params: Parameters<typeof func>) => {
-		const currentId = ++id;
-		queuedFunc = queuedFunc?.then(() => {
-			// Ignore this promise if another one is queued.
-			if (id === currentId) {
-				queuedFunc = new Promise<K>((resolve) => resolve(func(...params))).then(
-					(response) => {
-						queuedFunc = undefined; // Reset the buffer
-						return response;
-					},
-				);
-				return queuedFunc; // Always return the last promise in the buffer
+/**
+ * Buffers a function such that only the latest invocation will be executed after the previous finishes.
+ * Intermediate calls resolve to undefined.
+ *
+ * @example
+ * const buffered = bufferAsync(someAsyncFn);
+ * buffered('a'); // executes
+ * buffered('b'); // queued but will resolve to undefined
+ * buffered('c'); // queued and will executed after first completes
+ *
+ * @param func The function to apply a buffer to
+ */
+export function bufferAsync<F extends (...args: any[]) => any>(
+	func: F,
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | undefined> {
+	/** Used to identify concurrent iterations of this function. */
+	let callId: number = 0;
+	let pending: Promise<unknown> | undefined;
+
+	return (...params: Parameters<F>) => {
+		const currentId = ++callId;
+
+		const result = (pending ?? Promise.resolve()).then(() => {
+			if (currentId !== callId) {
+				return undefined;
 			}
-			return undefined; // Return undefined for all intermediate promises.
-		}) ?? new Promise<K>((resolve) => resolve(func(...params))).then((response) => { // Init the buffer
-			queuedFunc = undefined; // Reset the buffer
-			return response; // Always return the first promise in the buffer
+			return func(...params);
 		});
-		return queuedFunc;
+
+		pending = result.finally(() => {
+			if (currentId === callId) {
+				pending = undefined;
+			}
+		});
+		return result;
 	};
 }
 
 /**
- * Guarantees delay between invocations of the given function.
+ * Throttles a function such that it is only called once per delay period.
  *
- * Invocations of the throttled function after the given interval has passed will execute instantly.
+ * Calls during the throttle return a promise to execute the function after the throttle.
+ * Only the latest queued call will execute; the rest resolve to undefined.
  *
- * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
+ * Useful when you want to avoid spamming a resource and using the latest parameters is important.
  *
- * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
- * ```ts
- * async function test(): Promise<boolean> {}
- * // Call this constant instead of the function to get the throttle benefits
- * const throttledTest = throttleAsync<
- * 		typeof test, // this type makes the return the same signature as test()
- * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
- * >(test);
- * ```
- * @param func the function to throttle
- * @param delay milliseconds required between invocations of the function.
+ * @example
+ * async function saveInput(input: string) { ... }
+ * const throttledSave = throttleQueueAsync(saveInput, 1000);
+ *
+ * throttledSave("a"); // Executes immediately
+ * throttledSave("b"); // Queued but will resolve to undefined
+ * throttledSave("c"); // Replaces "b", starts after 1s
+ *
+ * // Only "a" and "c" will be processed
+ *
+ * @param func - The function to throttle.
+ * @param delayMs - Time between invocations.
+ * @returns A throttled version of the function.
  */
-export function throttleAsync<F extends (...args: any[]) => any, K>(
-	func: (...params: Parameters<F>) => K | Promise<K>,
-	delay: number,
-): (...params: Parameters<typeof func>) => Promise<K | undefined> {
-	let id: number = 0;
-	let previousExecTime: number | undefined = undefined;
-	return (...params: Parameters<typeof func>) =>
-		new Promise<K | undefined>((resolve) => {
-			const currentId = ++id;
-			const nowTime = new Date().getTime(); // Get the time of this invocation
-			previousExecTime ??= nowTime - delay; // Set initial value if needed
-			const remaining = nowTime - previousExecTime - delay; // Calculate time until next interval (negative means time to wait)
-			if (remaining < 0) {
-				new Promise((resolve) => setTimeout(resolve, -1 * remaining))
-					.then(() => {
-						previousExecTime = new Date().getTime();
-						if (currentId === id) {
-							resolve(func(...params));
-						}
-						resolve(undefined);
-					});
-			} else {
-				previousExecTime = nowTime;
-				resolve(func(...params));
+export function throttleQueueAsync<F extends (...args: any[]) => any>(
+	func: F,
+	delayMs: number,
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | undefined> {
+	/** Used to identify concurrent iterations of this function. */
+	let callId: number = 0;
+	let lastCallTime = 0;
+	return async (...params: Parameters<F>) => {
+		const currentId = ++callId;
+		const now = Date.now();
+		const timeSinceLast = now - lastCallTime;
+
+		if (timeSinceLast < delayMs) {
+			// Wait for the remaining time of the throttle
+			await new Promise((r) => setTimeout(r, delayMs - timeSinceLast));
+			if (currentId !== callId) {
+				// Skip outdated calls
+				return undefined;
 			}
-		});
+		}
+		lastCallTime = Date.now();
+		return func(...params);
+	};
 }
 
 /**
- * Accepts an array and uses the provided getter to get any value from each index ignoring any undefined values.
+ * Adds debounce behavior to a function.
  *
- * The default getter returns each array element (a map without the possible undefined values).
+ * Waits for the specified delay after the last call before executing.
+ * All previous calls during the delay are ignored.
  *
- * ```ts
- * const array = [{ id: 123, name: "Foo"}, { id: 456, name: undefined }]
- * const validNames = reduceUndefined(array, v => v.name) // ["Foo"]
- * ```
- * @param array the array to map values from
- * @param getter the callback for each element which can return any nested value from each element.
- * @returns an array of the getter's return value invoked with each source element, with undefined values omitted.
+ * Useful for handling events like search input or autosave.
+ *
+ * @example
+ * async function fetchResults(query: string) { ... }
+ * const debouncedFetch = debounceAsync(fetchResults, 500);
+ *
+ * debouncedFetch("a");
+ * debouncedFetch("ab");
+ * debouncedFetch("abc"); // Only this call will be executed after 500ms
+ *
+ * @param func - The async function to debounce.
+ * @param delay - Delay in milliseconds after the last call before execution.
+ * @returns A debounced version of the function.
  */
-export function reduceUndefined<T, K = T>(
-	array: T[],
-	getter: (value: T) => K | undefined = (val) => val as unknown as K | undefined,
-) {
-	return array.reduce((results: K[], item) => {
-		if (item !== undefined) {
-			const target = getter(item);
-			if (target !== undefined) {
-				results.push(target);
-			}
+export function debounceAsync<F extends (...args: any) => any>(
+	func: F,
+	delayMs: number,
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | undefined> {
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	/** Used to identify concurrent iterations of this function. */
+	let callId = 0;
+	return async (...params: Parameters<F>) =>
+		new Promise<Awaited<ReturnType<F>> | undefined>(
+			(resolve) => {
+				const currentId = ++callId;
+				if (timeout) {
+					// This is the first attempt at preventing execution of previous calls
+					// While not strictly necessary for safety, clearing timeouts as we don't
+					// need them is a performance consideration.
+					clearTimeout(timeout);
+				}
+				timeout = setTimeout(async () => {
+					// This is the second attempt at preventing execution of previous calls
+					if (currentId == callId) {
+						resolve(await func(...params));
+					} else {
+						resolve(undefined);
+					}
+				}, delayMs);
+			},
+		);
+}
+
+/**
+ * Throttles an async function, ensuring it's only called once per delay period.
+ *
+ * Calls during the delay are ignored. The first call after the delay runs immediately.
+ *
+ * Useful for hard limiting repeated actions (e.g., form submissions or API calls).
+ *
+ * @param func - The async function to throttle.
+ * @param delayMs - Minimum time (in ms) between allowed calls.
+ * @returns A ref indicating throttle state and the throttled function.
+ */
+export function throttleAsync<F extends (...args: any) => any>(
+	func: F,
+	delayMs: number,
+): {
+	isThrottled: Ref<boolean>;
+	throttledFunc: (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | undefined>;
+} {
+	const isThrottled: Ref<boolean> = ref(false);
+	const throttledFunc = async (...params: Parameters<F>) => {
+		if (isThrottled.value) {
+			return undefined;
 		}
-		return results;
-	}, []);
+		isThrottled.value = true;
+		setTimeout(() => isThrottled.value = false, delayMs);
+		return await func(...params);
+	};
+	return {
+		isThrottled,
+		throttledFunc: throttledFunc,
+	};
 }
