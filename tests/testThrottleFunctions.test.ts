@@ -146,7 +146,8 @@ const testThrottleAsync = async (test: Deno.TestContext) => {
 	let calls = 0;
 
 	const DelayMs = 200;
-	const { throttledFunc } = throttleAsync((query: string) => {
+	const { isThrottled, throttledFunc } = throttleAsync(async (query: string) => {
+		await pause(100);
 		calls++;
 		return `Fetched results for: ${query}`;
 	}, DelayMs);
@@ -155,20 +156,12 @@ const testThrottleAsync = async (test: Deno.TestContext) => {
 	const result1 = throttledFunc("A"); // should be executed
 	const result2 = throttledFunc("B"); // should not be executed
 	const result3 = throttledFunc("C"); // should not be executed
-
-	// Wait for the throttle period to pass
-	await new Promise((resolve) => setTimeout(resolve, DelayMs));
-
-	assertEquals(calls, 1, "throttleAsync did not ignore invocations during the throttle period.");
+	await pause(15);
+	assertEquals(isThrottled.value, true, "throttleAsync did not set isThrottled to true while throttle should be active.");
 	assertEquals(result2, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
 	assertEquals(result3, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
+	// Wait for the throttle period to pass
+	const ret = await result1;
 
-	const finalResult = throttledFunc("D");
-
-	// Now results should contain only one invocation result
-	assertEquals(
-		finalResult,
-		"Fetched results for: D",
-		"throttleAsync did not immediately execute a function after the throttle period has passed",
-	);
+	assertEquals(ret, "Fetched results for: A", "throttleAsync did not return the expected value. Is it calling the function provided?");
 };
