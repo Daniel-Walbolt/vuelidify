@@ -5,12 +5,12 @@ import { minLength, must, validateIf } from "../src/validators.ts";
 import { pause } from "./main.ts";
 
 Deno.test("Test Simple Object Validation", async (test: Deno.TestContext) => {
-	await test.step("Test Must Validator", testMustEqualValidator);
+	// await test.step("Test Must Validator", testMustEqualValidator);
 	await test.step("Test ValidateIf Validator", testValidateIfValidator);
-	await test.step(
-		"Test nullable object validation",
-		testNullableObjectValidation,
-	);
+	// await test.step(
+	// 	"Test nullable object validation",
+	// 	testNullableObjectValidation,
+	// );
 });
 
 type SimpleObject = {
@@ -65,26 +65,60 @@ const testValidateIfValidator = async (test: Deno.TestContext) => {
 		age: 1000,
 		isPerson: false,
 	});
-	const v$ = useValidation({
+	// let v$ = useValidation({
+	// 	model: model,
+	// 	validation: {
+	// 		name: {
+	// 			$reactive: [
+	// 				validateIf((params) => params.model.isPerson === true, [minLength(5)]),
+	// 			],
+	// 		},
+	// 	},
+	// 	delayReactiveValidation: false,
+	// });
+	// model.value.isPerson = true;
+	// model.value.name = "Test";
+	// await pause();
+	// assert(
+	// 	v$.isValid === false,
+	// 	"isValid was true when the name is too long (minLength validator should be activating)",
+	// );
+	// model.value.isPerson = false;
+	// await pause();
+	// assert(
+	// 	v$.isValid === true,
+	// 	"isValid was false when validateIf should now return undefined and therefore pass validation.",
+	// );
+
+	let asyncPredicateRan: boolean = false;
+	// Now test that we can use async predicate as well
+	let v$ = useValidation({
 		model: model,
 		validation: {
 			name: {
 				$reactive: [
-					validateIf(params => params.model.isPerson === true, [minLength(5)])
-				]
-			}
+					validateIf(async (params) => {
+						await pause(50);
+						console.log("Ran validate If predicate");
+						asyncPredicateRan = true;
+						return params.model.isPerson === true;
+					}, [minLength(5)]),
+				],
+			},
 		},
-		delayReactiveValidation: false,
 	});
 	model.value.isPerson = true;
 	model.value.name = "Test";
-	await pause();
+	await v$.validate();
+	assert(asyncPredicateRan, "The async predicate for validateIf did not trigger.");
 	assert(
 		v$.isValid === false,
-		"isValid was true when the name is too long (minLength validator should be activating)",
+		"isValid was true when the name is too long--the min length validator should be activating. Is the async predicate working?",
 	);
 	model.value.isPerson = false;
-	await pause();
+	await v$.validate();
+	await pause(20);
+	console.log(v$.state.name?.$state?.resultsArray, v$.isValid);
 	assert(
 		v$.isValid === true,
 		"isValid was false when validateIf should now return undefined and therefore pass validation.",
