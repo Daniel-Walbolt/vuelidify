@@ -1,6 +1,12 @@
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { pause } from "./main.ts";
-import { bufferAsync, IGNORE_RESULT, throttleAsync, throttleBufferAsync, trailingDebounceAsync } from "../src/throttleFunctions.ts";
+import {
+	bufferAsync,
+	IGNORE_RESULT,
+	throttleAsync,
+	throttleBufferAsync,
+	trailingDebounceAsync,
+} from "../src/throttleFunctions.ts";
 
 Deno.test("Test Throttle Functions", async (test: Deno.TestContext) => {
 	await test.step("Test throttleBufferAsync (400ms every 75ms)", parameterizedThrottleTest(400, 75));
@@ -33,7 +39,7 @@ function parameterizedThrottleTest(timeOfTest: number, throttleTime: number, cal
 		const asyncWrapper = async () => {
 			// Add the results to the array.
 			results.push(await throttled());
-		}
+		};
 
 		for (let i = 0; i < callAmount; i++) {
 			asyncWrapper();
@@ -52,13 +58,13 @@ function parameterizedThrottleTest(timeOfTest: number, throttleTime: number, cal
 
 		// Get the results which did not return the expected value to make sure
 		// ignored invocations return a unique symbol.
-		const ignoredResults = results.filter(x => x !== PASSING_VALUE);
+		const ignoredResults = results.filter((x) => x !== PASSING_VALUE);
 		for (let i = 0; i < ignoredResults.length; i++) {
 			assertEquals(
 				ignoredResults[i],
 				IGNORE_RESULT,
-				"throttleBufferAsync did not return a unique symbol for ignored invocations."
-			)
+				"throttleBufferAsync did not return a unique symbol for ignored invocations.",
+			);
 		}
 	};
 }
@@ -97,9 +103,9 @@ const testBufferAsync = async (test: Deno.TestContext) => {
 		"Only the first and the most recent buffered call should have executed",
 	);
 	assertEquals(
-		[results[0],results[1]],
+		[results[0], results[1]],
 		[IGNORE_RESULT, IGNORE_RESULT],
-		"bufferAsync did not return a unique symbol for ignored invocations."
+		"bufferAsync did not return a unique symbol for ignored invocations.",
 	);
 };
 
@@ -132,11 +138,14 @@ const testDebounceAsync = async (test: Deno.TestContext) => {
 
 	// Ensure that the function was only called once with the latest parameters ("abcd")
 	assertEquals(calls, 1, "The debounced function should only be called once.");
-	for (let i = 0; i < CallAmount-1; i++) {
-		assert(results[i] === IGNORE_RESULT, "trailingDebounceAsync did not return unique symbol on an ignored invocation.");
+	for (let i = 0; i < CallAmount - 1; i++) {
+		assert(
+			results[i] === IGNORE_RESULT,
+			"trailingDebounceAsync did not return unique symbol on an ignored invocation.",
+		);
 	}
 	assertEquals(
-		results[CallAmount-1],
+		results[CallAmount - 1],
 		`Fetched results for: a${CallAmount}`,
 		"The debounced function should use the latest parameters.",
 	);
@@ -157,11 +166,19 @@ const testThrottleAsync = async (test: Deno.TestContext) => {
 	const result2 = throttledFunc("B"); // should not be executed
 	const result3 = throttledFunc("C"); // should not be executed
 	await pause(15);
-	assertEquals(isThrottled.value, true, "throttleAsync did not set isThrottled to true while throttle should be active.");
+	assertEquals(
+		isThrottled.value,
+		true,
+		"throttleAsync did not set isThrottled to true while throttle should be active.",
+	);
 	assertEquals(result2, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
 	assertEquals(result3, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
 	// Wait for the throttle period to pass
 	const ret = await result1;
 
-	assertEquals(ret, "Fetched results for: A", "throttleAsync did not return the expected value. Is it calling the function provided?");
+	assertEquals(
+		ret,
+		"Fetched results for: A",
+		"throttleAsync did not return the expected value. Is it calling the function provided?",
+	);
 };

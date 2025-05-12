@@ -92,13 +92,13 @@ export function must<T, K, V, R, A>(
  */
 export function validateIf<T, K, V, R, A, Validators extends Validator<T, K, V, R, A>[]>(
 	predicate: (params: ValidatorParams<T, K, V, A>) => boolean | Promise<boolean>,
-	validators: Validators
+	validators: Validators,
 ): AsyncValidator<T, K, V, R, A> {
 	return async (params) => {
 		if (await predicate(params)) {
 			return validators;
 		}
-	}
+	};
 }
 
 /**
