@@ -15,6 +15,9 @@ export type IndexableObject = {
 	[key: string]: unknown;
 };
 
+/**
+ * Stores metadata about a validator, and the validator itself.
+ */
 export type ProcessedValidator = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
