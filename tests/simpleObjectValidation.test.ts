@@ -1,11 +1,12 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { type Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
-import { must } from "../src/validators.ts";
+import { minLength, must, validateIf } from "../src/validators.ts";
 import { pause } from "./main.ts";
 
-Deno.test("Simple Object Validation", async (test: Deno.TestContext) => {
-	await test.step("Must Validator", testMustEqualValidator);
+Deno.test("Test Simple Object Validation", async (test: Deno.TestContext) => {
+	await test.step("Test Must Validator", testMustEqualValidator);
+	await test.step("Test ValidateIf Validator", testValidateIfValidator);
 	await test.step(
 		"Test nullable object validation",
 		testNullableObjectValidation,
@@ -16,6 +17,7 @@ type SimpleObject = {
 	age?: number;
 	name?: string;
 	password?: string;
+	isPerson?: boolean;
 	relatedEntity?: {
 		confirmPassword?: string;
 	} | null;
@@ -54,6 +56,38 @@ const testMustEqualValidator = async (test: Deno.TestContext) => {
 	assert(
 		v$.isValid === true,
 		"isValid was false when the passwords are matching",
+	);
+};
+
+const testValidateIfValidator = async (test: Deno.TestContext) => {
+	const model: Ref<SimpleObject> = ref({
+		name: "Foo",
+		age: 1000,
+		isPerson: false,
+	});
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			name: {
+				$reactive: [
+					validateIf(params => params.model.isPerson === true, [minLength(5)])
+				]
+			}
+		},
+		delayReactiveValidation: false,
+	});
+	model.value.isPerson = true;
+	model.value.name = "Test";
+	await pause();
+	assert(
+		v$.isValid === false,
+		"isValid was true when the name is too long (minLength validator should be activating)",
+	);
+	model.value.isPerson = false;
+	await pause();
+	assert(
+		v$.isValid === true,
+		"isValid was false when validateIf should now return undefined and therefore pass validation.",
 	);
 };
 
