@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"moduleResolution": "node",
+		"target": "ES2024",
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"allowImportingTsExtensions": true,
