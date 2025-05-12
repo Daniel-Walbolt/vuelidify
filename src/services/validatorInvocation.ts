@@ -153,8 +153,6 @@ function recursiveInvokeAndOptimizeValidators(
 
 		let validationReturn: ReturnType<GenericValidator>;
 		if (processedValidator.computedValidator === undefined) {
-			// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
-			// This will require a cast to the type the validator expects in order to avoid type errors.
 			const params: GenericValidatorParams = {
 				value: property,
 				model: model,
@@ -200,7 +198,7 @@ function recursiveInvokeAndOptimizeValidators(
 									return undefined;
 								}
 								return result;
-							}
+							};
 						} else {
 							// Slow validators will receive a buffer.
 							// Calls will never overlap
@@ -211,7 +209,7 @@ function recursiveInvokeAndOptimizeValidators(
 									return undefined;
 								}
 								return result;
-							}
+							};
 						}
 					}
 
@@ -228,7 +226,7 @@ function recursiveInvokeAndOptimizeValidators(
 							recursionCount,
 						);
 						allResults.push(...syncResults);
-						await Promise.all(asyncPromises); // Wait for all spawned validators to finish
+						allPromises.push(...asyncPromises);
 						return;
 					} else if (checkForValidatorReturn) {
 						validatorsWhichPreviouslyReturnedValidators.push(
