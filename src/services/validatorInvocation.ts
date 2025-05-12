@@ -62,7 +62,6 @@ export async function invokeAndOptimizeValidators(
 		// Replace it if it does, otherwise add it.
 		const existingResult = propertyConfig.validationResults.value.find((x) => x.id === ret.id);
 		if (existingResult !== undefined) {
-			// TODO: This might cause a problem with reactivity
 			Object.assign(existingResult, ret);
 			if (
 				ret.name !== undefined &&
@@ -127,21 +126,38 @@ export async function invokeAndOptimizeValidators(
  * @param recursionCount counter for the amount of recursion happening.
  */
 function recursiveInvokeAndOptimizeValidators(
-	propertyConfig: PropertyValidationConfig,
+	propertyConfig: Readonly<PropertyValidationConfig>,
 	model: unknown,
 	args: unknown,
 	iterationId: number,
-	validators: ProcessedValidator[],
+	validators: Readonly<ProcessedValidator>[],
 	processValidatorResult: ResultProcessor,
 	shouldOptimize: boolean,
 	recursionCount: number,
 ) {
+	// DISCLAIMER
+	// Try to avoid any mutation of the propertyConfig object in this function.
+	// It could result in hard-to-find race conditions where one execution mutates and the other doesn't do that mutation.
+	// Resulting in an unpredictable, or wrong end state.
+	//
 	const property = propertyConfig.target.value;
 	// Collect all the promised results and synchronous results in lists to return later.
 	const allPromises: Promise<BaseValidationReturn | undefined>[] = [];
 	const allResults: BaseValidationReturn<unknown>[] = [];
 	// Add validators to this list that returned validators from a previous run, but did not this time.
 	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator[] = [];
+
+	/** Details the changes that need to be made at the end of this validation cycle. */
+	const changes: {
+		validatorChanges: {
+			[key: string]: {
+				newPreviouslySpawnedValidators: ProcessedValidator["previouslySpawnedValidators"];
+				newSpawnedValidators: ProcessedValidator["spawnedValidators"];
+				newPreviousReturnedValidators: ProcessedValidator["previouslyReturnedValidators"];
+			}
+		}
+	} = {};
+
 	for (const processedValidator of validators) {
 		let checkForValidatorReturn = false;
 		if (processedValidator.previouslyReturnedValidators) {
