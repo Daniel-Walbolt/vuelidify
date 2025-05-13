@@ -105,7 +105,7 @@ export async function invokeAndOptimizeValidators(
 	 */
 	function recursiveInvokeValidators(
 		validators: ProcessedValidator[],
-		originProcessedValidator: ProcessedValidator
+		originProcessedValidator: ProcessedValidator,
 	) {
 		// Collect all the promised results in a list to return
 		const promises: Promise<(BaseValidationReturn | undefined)[]>[] = [];
@@ -121,10 +121,10 @@ export async function invokeAndOptimizeValidators(
 	async function executeAndOptimize(
 		processedValidator: ProcessedValidator,
 		shouldOptimize: boolean,
-		originProcessedValidator: ProcessedValidator = processedValidator
+		originProcessedValidator: ProcessedValidator = processedValidator,
 	) {
 		const results: (BaseValidationReturn | undefined)[] = [];
-		const checkForValidatorReturn = processedValidator.previouslyReturnedValidators != undefined;
+		const checkForValidatorReturn = processedValidator.previouslyReturnedValidators;
 		if (checkForValidatorReturn) {
 			processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
 			// This will be set later on if this validator does return validators again.
@@ -186,12 +186,14 @@ export async function invokeAndOptimizeValidators(
 				const returnedValidatorResponses = handleReturnedValidators(
 					processedValidator,
 					ret,
-					originProcessedValidator
+					originProcessedValidator,
 				);
 				// This contains all nested validation results, no matter how deeply nested they were.
 				const nestedResults = await Promise.all(returnedValidatorResponses);
 				results.push(...nestedResults.flat());
-				removeOldNestedValidators(propertyConfig, processedValidator);
+				if (checkForValidatorReturn) {
+					removeOldNestedValidators(propertyConfig, processedValidator);
+				}
 			} else {
 				if (checkForValidatorReturn) {
 					removeOldNestedValidators(propertyConfig, processedValidator);
@@ -210,10 +212,13 @@ export async function invokeAndOptimizeValidators(
 			const returnedValidatorResponses = handleReturnedValidators(
 				processedValidator,
 				validationReturn,
-				originProcessedValidator
+				originProcessedValidator,
 			);
 			const nestedResults = await Promise.all(returnedValidatorResponses);
 			results.push(...nestedResults.flat());
+			if (checkForValidatorReturn) {
+				removeOldNestedValidators(propertyConfig, processedValidator);
+			}
 		} else {
 			if (checkForValidatorReturn) {
 				removeOldNestedValidators(propertyConfig, processedValidator);
@@ -257,7 +262,7 @@ export async function invokeAndOptimizeValidators(
 	function handleReturnedValidators(
 		parentProcessedValidator: ProcessedValidator,
 		returnedValidators: GenericValidator[],
-		originProcessedValidator: ProcessedValidator
+		originProcessedValidator: ProcessedValidator,
 	) {
 		// Turn them into processed validators so they can be
 		// executed the same way all other validators are
@@ -278,7 +283,9 @@ export async function invokeAndOptimizeValidators(
 		for (const processedValidator of processedRetValidators) {
 			if (spawnedValidatorsMap[processedValidator.validatorId] != undefined) {
 				// The unique ID of validators is not actually unique and that's a serious problem.
-				console.error(`Unable to keep track of nested validators. Validator ID: ${processedValidator.validatorId} was not unique.`)
+				console.error(
+					`Unable to keep track of nested validators. Validator ID: ${processedValidator.validatorId} was not unique.`,
+				);
 			}
 			spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
 		}
@@ -289,9 +296,14 @@ export async function invokeAndOptimizeValidators(
 	}
 }
 
+/**
+ * Private function which removes the results of previously spawned validators that are no longer apart of the spawned validators map.
+ * @param propertyConfig
+ * @param processedValidator
+ */
 function removeOldNestedValidators(
 	propertyConfig: PropertyValidationConfig,
-	processedValidator: ProcessedValidator
+	processedValidator: ProcessedValidator,
 ) {
 	for (
 		const validatorId in processedValidator.previouslySpawnedValidators
