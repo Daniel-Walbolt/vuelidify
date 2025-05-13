@@ -35,11 +35,11 @@ export type ProcessedValidator = {
 	};
 	previouslyReturnedValidators: boolean;
 	/**
-	 * Used for a validator and its results are processed atomically.
+	 * Used for making sure the validator is processed atomically.
 	 * This specifically solves a case where one iteration saw this validator had spawned validators before
-	 * and a second iteration thinks it didn't because the first iteration modified the ProcessedValidator.
+	 * and a second iteration thinks it didn't because the first iteration modified the {@link ProcessedValidator}.
 	 *
-	 * The iteration must wait for this promise to resolve.
+	 * Instead, any subsequent iteration must wait for this promise to resolve.
 	 */
 	activeValidation?: Promise<any>;
 	// Any additional information can be added here.
