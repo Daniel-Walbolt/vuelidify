@@ -1,7 +1,6 @@
 /**
- * Accepts an array and uses the provided getter to get any value from each index ignoring any undefined values.
- *
- * The default getter returns each array element (a map without the possible undefined values).
+ * Accepts an array and uses the provided getter to get any value from each element
+ * and ignoring any undefined or null values returned.
  *
  * ```ts
  * const array = [{ id: 123, name: "Foo"}, { id: 456, name: undefined }]
