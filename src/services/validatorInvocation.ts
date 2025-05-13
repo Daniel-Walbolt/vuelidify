@@ -87,8 +87,13 @@ export async function invokeAndOptimizeValidators(
 	// If a given processed validator already has validation running, wait for it to finish before validating it again.
 	// This avoids most race conditions with modifying state for a given validation config.
 	for (const processedValidator of validators) {
-		const promiseToValidate = (processedValidator.activeValidation ?? Promise.resolve()).then((_) => {
-			return executeAndOptimize(processedValidator, true);
+		const promiseToValidate = (processedValidator.activeValidation ?? Promise.resolve()).then(async () => {
+			if (iterationId !== toValue(currentIterationId)) {
+				// Skip validation it isn't the latest iteration
+				// This massively improves throughput for validation that takes awhile to perform.
+				return [];
+			}
+			return await executeAndOptimize(processedValidator, true);
 		});
 		processedValidator.activeValidation = promiseToValidate;
 		promises.push(promiseToValidate);
@@ -144,42 +149,7 @@ export async function invokeAndOptimizeValidators(
 
 		if (validationReturn instanceof Promise) {
 			// Check how long this async validator takes to return.
-			const past = Date.now();
 			const ret = await validationReturn;
-			const duration = Date.now() - past;
-
-			// Optionally optimize async validator
-			if (
-				shouldOptimize && duration > ThrottleDurationMs &&
-				processedValidator.optimized === false
-			) {
-				processedValidator.optimized = true;
-				if (
-					duration > ThrottleDurationMs && duration < 2 * ThrottleDurationMs
-				) {
-					// Moderately slow validators will receive a throttle.
-					// Calls will overlap, but it shouldn't overwhelm the server
-					const throttledValidator = throttleBufferAsync(processedValidator.validator, ThrottleDurationMs);
-					processedValidator.validator = async (params: GenericValidatorParams) => {
-						const result = await throttledValidator(params);
-						if (result === IGNORE_RESULT) {
-							return undefined;
-						}
-						return result;
-					};
-				} else {
-					// Slow validators will receive a buffer.
-					// Calls will never overlap
-					const bufferedValidator = bufferAsync(processedValidator.validator);
-					processedValidator.validator = async (params: GenericValidatorParams) => {
-						const result = await bufferedValidator(params);
-						if (result === IGNORE_RESULT) {
-							return undefined;
-						}
-						return result;
-					};
-				}
-			}
 
 			// Check if this validator returned validators
 			if (Array.isArray(ret)) {
