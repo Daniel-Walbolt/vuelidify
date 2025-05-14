@@ -8,7 +8,7 @@ type SimpleObject = {
 	age: number;
 };
 
-Deno.test("Test errorMessages state", async (test: Deno.TestContext) => {
+Deno.test("Test named validation results", async (test: Deno.TestContext) => {
 	const PassingValue = 10;
 	const PromiseLengthMs1 = 100;
 	const ValidationName1 = "Validation1";

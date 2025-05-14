@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"moduleResolution": "node",
+		"target": "ESNext",
 		"declaration": true,
 		"emitDeclarationOnly": true,
 		"allowImportingTsExtensions": true,

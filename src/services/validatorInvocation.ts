@@ -1,5 +1,4 @@
 import { computed, type MaybeRefOrGetter, type Ref, toValue } from "vue";
-import { bufferAsync, throttleAsync } from "../throttleFunctions.ts";
 import type {
 	GenericSyncValidator,
 	GenericValidator,
@@ -62,7 +61,6 @@ export async function invokeAndOptimizeValidators(
 		// Replace it if it does, otherwise add it.
 		const existingResult = propertyConfig.validationResults.value.find((x) => x.id === ret.id);
 		if (existingResult !== undefined) {
-			// TODO: This might cause a problem with reactivity
 			Object.assign(existingResult, ret);
 			if (
 				ret.name !== undefined &&
@@ -81,185 +79,131 @@ export async function invokeAndOptimizeValidators(
 		}
 	};
 
-	const { asyncPromises, validatorsWhichPreviouslyReturnedValidators } = recursiveInvokeAndOptimizeValidators(
-		propertyConfig,
-		model,
-		args,
-		iterationId,
-		validators,
-		resultProcessor,
-		true,
-		1,
-	);
-	await Promise.all(asyncPromises);
+	// Collect all the promised results in a list to return
+	const promises: Promise<(BaseValidationReturn | undefined)[]>[] = [];
 
-	if (iterationId === toValue(currentIterationId)) {
-		// Remove the error messages of validators that were ran in the previous run but not in this run.
-		for (
-			const processedValidator of validatorsWhichPreviouslyReturnedValidators
-		) {
-			for (
-				const validatorId of Object.keys(
-					processedValidator.previouslySpawnedValidators,
-				)
-			) {
-				if (processedValidator.spawnedValidators[validatorId] == undefined) {
-					const index = propertyConfig.validationResults.value.findIndex((x) => x.id === validatorId);
-					if (index !== -1) {
-						propertyConfig.validationResults.value.splice(index);
-					}
-				}
-			}
-		}
-	}
-	return isAllValid;
-}
-
-/**
- * Private function that has extra parameters for recursive calls
- * @param propertyConfig the config we're validating for
- * @param model the entire model given to the composable
- * @param args the additional arguments to pass to validators
- * @param iterationId this iteration's ID
- * @param validators the list of validators to invoke and optimize
- * @param processValidatorResult callback which processes the return values of validators
- * @param shouldOptimize whether or not to optimize validators
- * @param recursionCount counter for the amount of recursion happening.
- */
-function recursiveInvokeAndOptimizeValidators(
-	propertyConfig: PropertyValidationConfig,
-	model: unknown,
-	args: unknown,
-	iterationId: number,
-	validators: ProcessedValidator[],
-	processValidatorResult: ResultProcessor,
-	shouldOptimize: boolean,
-	recursionCount: number,
-) {
-	const property = propertyConfig.target.value;
-	// Collect all the promised results and synchronous results in lists to return later.
-	const allPromises: Promise<BaseValidationReturn | undefined>[] = [];
-	const allResults: BaseValidationReturn<unknown>[] = [];
-	// Add validators to this list that returned validators from a previous run, but did not this time.
-	const validatorsWhichPreviouslyReturnedValidators: ProcessedValidator[] = [];
+	// Schedule all the validators to run in their own promise.
+	// If a given processed validator already has validation running, wait for it to finish before validating it again.
+	// This avoids most race conditions with modifying state for a given validation config.
 	for (const processedValidator of validators) {
-		let checkForValidatorReturn = false;
-		if (processedValidator.previouslyReturnedValidators) {
+		const promiseToValidate = (processedValidator.activeValidation ?? Promise.resolve()).then(async () => {
+			if (iterationId !== toValue(currentIterationId)) {
+				// Skip validation it isn't the latest iteration
+				// This massively improves throughput for validation that takes awhile to perform.
+				return [];
+			}
+			return await executeAndOptimize(processedValidator, true);
+		});
+		processedValidator.activeValidation = promiseToValidate;
+		promises.push(promiseToValidate);
+	}
+
+	await Promise.all(promises);
+	return isAllValid;
+
+	// Nested functions are pretty gross, but useful for not passing around the same arguments recursively.
+	/**
+	 * Handles the invocation and responses of nested validators. Recursively calls itself if validators return more validators.
+	 * @param validators The list of validators to invoke
+	 * @param originProcessedValidator The processed validator that started the chain of recursion. Necessary for tracking which validators spawned from it, so they can be deleted in the future.
+	 */
+	function recursiveInvokeValidators(
+		validators: ProcessedValidator[],
+		originProcessedValidator: ProcessedValidator,
+	) {
+		// Collect all the promised results in a list to return
+		const promises: Promise<(BaseValidationReturn | undefined)[]>[] = [];
+
+		for (const processedValidator of validators) {
+			promises.push(executeAndOptimize(processedValidator, false, originProcessedValidator));
+		}
+
+		return promises;
+	}
+
+	/** Encapsulates the logic for executing a {@link ProcessedValidator}. */
+	async function executeAndOptimize(
+		processedValidator: ProcessedValidator,
+		shouldOptimize: boolean,
+		originProcessedValidator: ProcessedValidator = processedValidator,
+	) {
+		const results: (BaseValidationReturn | undefined)[] = [];
+		const checkForValidatorReturn = processedValidator.previouslyReturnedValidators;
+		if (checkForValidatorReturn) {
 			processedValidator.previouslySpawnedValidators = processedValidator.spawnedValidators;
-			processedValidator.spawnedValidators = {}; // This will be set later on if this validator does return validators again.
-			checkForValidatorReturn = true;
+			// This will be set later on if this validator does return validators again.
+			processedValidator.spawnedValidators = {};
 		}
 		processedValidator.previouslyReturnedValidators = false;
 
-		let validationReturn: ReturnType<GenericValidator>;
-		if (processedValidator.computedValidator === undefined) {
-			// The type the user sees will be conditional and correct, but in this code it needs to account for all cases.
-			// This will require a cast to the type the validator expects in order to avoid type errors.
-			const params: GenericValidatorParams = {
-				value: property,
-				model: model,
-				args: args,
-				arrayAncestors: propertyConfig.arrayAncestors,
-			};
-			validationReturn = processedValidator.validator(params);
-		} else {
-			validationReturn = processedValidator.computedValidator
-				.value as typeof validationReturn;
-		}
+		const params: GenericValidatorParams = {
+			value: propertyConfig.target.value,
+			model: model,
+			args: args,
+			arrayAncestors: propertyConfig.arrayAncestors,
+		};
+
+		// Invoke the validator
+		const validationReturn: ReturnType<GenericValidator> = processedValidator.validator(params);
 
 		if (validationReturn instanceof Promise) {
 			// Check how long this async validator takes to return.
-			const past = Date.now();
-			allPromises.push(
-				validationReturn.then(async (ret) => {
-					if (ret === undefined) {
-						if (checkForValidatorReturn) {
-							validatorsWhichPreviouslyReturnedValidators.push(
-								processedValidator,
-							);
-						}
-						return undefined;
-					}
-					const duration = Date.now() - past;
+			const ret = await validationReturn;
 
-					// Optionally optimize async validator
-					if (
-						shouldOptimize && duration > ThrottleDurationMs &&
-						processedValidator.optimized === false
-					) {
-						processedValidator.optimized = true;
-						if (
-							duration > ThrottleDurationMs && duration < 2 * ThrottleDurationMs
-						) {
-							// Moderately slow validators will receive a throttle.
-							// Calls will overlap, but it shouldn't overwhelm the server
-							processedValidator.validator = throttleAsync<
-								typeof processedValidator.validator,
-								Awaited<ReturnType<typeof processedValidator.validator>>
-							>(processedValidator.validator, ThrottleDurationMs);
-						} else {
-							// Slow validators will receive a buffer.
-							// Calls will never overlap
-							processedValidator.validator = bufferAsync<
-								typeof processedValidator.validator,
-								Awaited<ReturnType<typeof processedValidator.validator>>
-							>(processedValidator.validator);
-						}
-					}
-
-					// Check if this validator returned validators
-					if (Array.isArray(ret)) {
-						const { asyncPromises, syncResults } = handleReturnedValidators(
-							propertyConfig,
-							model,
-							args,
-							iterationId,
-							processValidatorResult,
-							processedValidator,
-							ret,
-							recursionCount,
-						);
-						allResults.push(...syncResults);
-						await Promise.all(asyncPromises); // Wait for all spawned validators to finish
-						return;
-					} else if (checkForValidatorReturn) {
-						validatorsWhichPreviouslyReturnedValidators.push(
-							processedValidator,
-						);
-					}
-					processValidatorResult(propertyConfig, processedValidator, ret);
-				}),
-			);
+			// Check if this validator returned validators
+			if (Array.isArray(ret)) {
+				const returnedValidatorResponses = handleReturnedValidators(
+					processedValidator,
+					ret,
+					originProcessedValidator,
+				);
+				// This contains all nested validation results, no matter how deeply nested they were.
+				const nestedResults = await Promise.all(returnedValidatorResponses);
+				results.push(...nestedResults.flat());
+				if (checkForValidatorReturn) {
+					removeOldNestedValidators(propertyConfig, processedValidator);
+				}
+			} else {
+				if (checkForValidatorReturn) {
+					removeOldNestedValidators(propertyConfig, processedValidator);
+				}
+				if (ret != undefined) {
+					results.push(ret);
+					resultProcessor(propertyConfig, processedValidator, ret);
+				}
+			}
 		} else if (Array.isArray(validationReturn)) {
 			// Assume the array is full of validators. TypeScript should warn them from returning any other type of array.
 			// We can't optimize these validators because they might not come back in subsequent runs.
 			// So if async calls are returned in this array they will NOT be throttled.
 			// This is because the list of validators returned COULD be dynamic, although it's very unlikely.
 			// It's impossible to know which validator is a previously ran validator because there's no ID attached to the function.
-			const { asyncPromises, syncResults } = handleReturnedValidators(
-				propertyConfig,
-				model,
-				args,
-				iterationId,
-				processValidatorResult,
+			const returnedValidatorResponses = handleReturnedValidators(
 				processedValidator,
 				validationReturn,
-				recursionCount,
+				originProcessedValidator,
 			);
-			allPromises.push(...asyncPromises);
-			allResults.push(...syncResults);
+			const nestedResults = await Promise.all(returnedValidatorResponses);
+			results.push(...nestedResults.flat());
+			if (checkForValidatorReturn) {
+				removeOldNestedValidators(propertyConfig, processedValidator);
+			}
 		} else {
 			if (checkForValidatorReturn) {
-				validatorsWhichPreviouslyReturnedValidators.push(processedValidator);
+				removeOldNestedValidators(propertyConfig, processedValidator);
 			}
-			if (validationReturn !== undefined) {
+			if (validationReturn != undefined) {
+				// Determine if we should optimize this sync validator
 				if (shouldOptimize && processedValidator.optimized === false) {
+					// strongly type the processed validator as a SyncValidator.
 					const typedValidator = processedValidator
 						.validator as GenericSyncValidator;
 					// Optimize sync validators into computed functions
-					processedValidator.computedValidator = computed<
+					const computedValidator = computed<
 						ReturnType<typeof typedValidator>
 					>(() => {
+						// TODO: Write a test for checking if an optimized sync validator will detect changes to model or args.
+						// Obviously changes to array ancestors completely changes the structure of validation, and that can't be expected to be reactive.
 						const params: GenericValidatorParams = {
 							value: propertyConfig.target.value, // Setup a reactive dependency on the property value
 							model: model,
@@ -268,74 +212,79 @@ function recursiveInvokeAndOptimizeValidators(
 						};
 						return typedValidator(params);
 					});
+					// Prevent future optimizations on this processed validator
 					processedValidator.optimized = true;
 					// Replace a validator with a function that just gets the value of the computed.
-					processedValidator.validator = () => processedValidator.computedValidator?.value;
+					processedValidator.validator = () => computedValidator.value;
 				}
-				allResults.push(validationReturn);
-				processValidatorResult(
+				results.push(validationReturn);
+				resultProcessor(
 					propertyConfig,
 					processedValidator,
 					validationReturn,
 				);
 			}
 		}
+		return results;
 	}
 
-	return {
-		asyncPromises: allPromises,
-		syncResults: allResults,
-		validatorsWhichPreviouslyReturnedValidators,
-	};
+	function handleReturnedValidators(
+		parentProcessedValidator: ProcessedValidator,
+		returnedValidators: GenericValidator[],
+		originProcessedValidator: ProcessedValidator,
+	) {
+		// Turn them into processed validators so they can be
+		// executed the same way all other validators are
+		const processedRetValidators = processValidators(
+			returnedValidators,
+			parentProcessedValidator.isReactive,
+			parentProcessedValidator.validatorId,
+		);
+		const response = recursiveInvokeValidators(
+			processedRetValidators,
+			originProcessedValidator, // don't optimize
+		);
+
+		// Create the spawned validators map for the parentProcessedValidator
+		// TODO: If a validator returned from a validator also returns more validators,
+		// it's likely it won't properly remove its error messages because it doesn't modify the spawned validators.
+		const spawnedValidatorsMap: ProcessedValidator["spawnedValidators"] = originProcessedValidator.spawnedValidators;
+		for (const processedValidator of processedRetValidators) {
+			if (spawnedValidatorsMap[processedValidator.validatorId] != undefined) {
+				// The unique ID of validators is not actually unique and that's a serious problem.
+				console.error(
+					`Unable to keep track of nested validators. Validator ID: ${processedValidator.validatorId} was not unique.`,
+				);
+			}
+			spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
+		}
+		parentProcessedValidator.spawnedValidators = spawnedValidatorsMap;
+		parentProcessedValidator.previouslyReturnedValidators = true;
+
+		return response;
+	}
 }
 
 /**
- * Takes the array of validators returned from a validator and adds them to the normal validation process.
- * @param propertyConfig the config we're validating for
- * @param model the entire model given to the composable
- * @param args the additional arguments to pass to validators
- * @param iterationId this iteration's ID
- * @param validators the list of validators to invoke and optimize
- * @param processValidatorResult callback which processes the return values of validators
- * @param recursionCount counter for the amount of recursion happening.
- * @param parentProcessedValidator the validator which spawned the returnedValidators
- * @param returnedValidators validators which were returned from invoking a validator
+ * Private function which removes the results of previously spawned validators that are no longer apart of the spawned validators map.
+ * @param propertyConfig
+ * @param processedValidator
  */
-function handleReturnedValidators(
+function removeOldNestedValidators(
 	propertyConfig: PropertyValidationConfig,
-	model: unknown,
-	args: unknown,
-	/** Must match latest iteration ID on property config before updating any state. */
-	iterationId: number,
-	processValidatorResult: ResultProcessor,
-	parentProcessedValidator: ProcessedValidator,
-	returnedValidators: GenericValidator[],
-	recursionCount: number,
+	processedValidator: ProcessedValidator,
 ) {
-	const processedRetValidators = processValidators(
-		returnedValidators,
-		parentProcessedValidator.isReactive,
-		parentProcessedValidator.validatorId,
-	);
-	const response = recursiveInvokeAndOptimizeValidators(
-		propertyConfig,
-		model,
-		args,
-		iterationId,
-		processedRetValidators,
-		processValidatorResult,
-		false,
-		++recursionCount,
-	);
-
-	const spawnedValidatorsMap: ProcessedValidator["spawnedValidators"] = {};
-	for (const processedValidator of processedRetValidators) {
-		spawnedValidatorsMap[processedValidator.validatorId] = processedValidator;
+	for (
+		const validatorId in processedValidator.previouslySpawnedValidators
+	) {
+		if (processedValidator.spawnedValidators[validatorId] != undefined) {
+			continue;
+		}
+		const index = propertyConfig.validationResults.value.findIndex((x) => x.id === validatorId);
+		if (index !== -1) {
+			propertyConfig.validationResults.value.splice(index, 1);
+		}
 	}
-	parentProcessedValidator.spawnedValidators = spawnedValidatorsMap;
-	parentProcessedValidator.previouslyReturnedValidators = true;
-
-	return response;
 }
 
 /**

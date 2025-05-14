@@ -15,6 +15,9 @@ export type IndexableObject = {
 	[key: string]: unknown;
 };
 
+/**
+ * Stores metadata about a validator, and the validator itself.
+ */
 export type ProcessedValidator = {
 	/** The ID of the validator which is also used for the error messages */
 	validatorId: string;
@@ -31,6 +34,14 @@ export type ProcessedValidator = {
 		[key: string]: ProcessedValidator;
 	};
 	previouslyReturnedValidators: boolean;
+	/**
+	 * Used for making sure the validator is processed atomically.
+	 * This specifically solves a case where one iteration saw this validator had spawned validators before
+	 * and a second iteration thinks it didn't because the first iteration modified the {@link ProcessedValidator}.
+	 *
+	 * Instead, any subsequent iteration must wait for this promise to resolve.
+	 */
+	activeValidation?: Promise<any>;
 	// Any additional information can be added here.
 };
 

@@ -1,5 +1,5 @@
 {
-  "version": "4",
+  "version": "5",
   "remote": {
     "https://deno.land/std@0.224.0/assert/_constants.ts": "a271e8ef5a573f1df8e822a6eb9d09df064ad66a4390f21b3e31f820a38e0975",
     "https://deno.land/std@0.224.0/assert/assert.ts": "09d30564c09de846855b7b071e62b5974b001bb72a4b797958fe0660e7849834",
@@ -38,18 +38,18 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@tsconfig/node20@^20.1.4",
-        "npm:@types/node@^20.16.2",
-        "npm:@vitejs/plugin-vue@^5.1.3",
+        "npm:@tsconfig/node20@^20.1.5",
+        "npm:@types/node@^20.17.46",
+        "npm:@vitejs/plugin-vue@^5.2.4",
         "npm:@vue/eslint-config-typescript@13",
         "npm:@vue/tsconfig@~0.5.1",
-        "npm:eslint-plugin-vue@^9.27.0",
-        "npm:eslint@^8.57.0",
-        "npm:npm-run-all2@^6.2.2",
+        "npm:eslint-plugin-vue@^9.33.0",
+        "npm:eslint@^8.57.1",
+        "npm:npm-run-all2@^6.2.6",
         "npm:tsup@^6.7.0",
         "npm:typescript@~5.4.5",
-        "npm:vue-tsc@^2.1.2",
-        "npm:vue@^3.4.38"
+        "npm:vue-tsc@^2.2.10",
+        "npm:vue@3"
       ]
     }
   }

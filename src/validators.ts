@@ -1,4 +1,4 @@
-import type { SyncValidator, ValidatorParams } from "./publicTypes.ts";
+import type { AsyncValidator, SyncValidator, Validator, ValidatorParams } from "./publicTypes.ts";
 
 /**
  * Validates the object is not loosely undefined.
@@ -83,6 +83,22 @@ export function must<T, K, V, R, A>(
 		isValid: fn(params),
 		message: errorMessage,
 	});
+}
+
+/**
+ * Execute a set of validators only if the provided predicate is true
+ * @param predicate Determines if the set of validators should be returned
+ * @param validators The set of validators to execute if the predicate returns true.
+ */
+export function validateIf<T, K, V, R, A, Validators extends Validator<T, K, V, R, A>[]>(
+	predicate: (params: ValidatorParams<T, K, V, A>) => boolean | Promise<boolean>,
+	validators: Validators,
+): AsyncValidator<T, K, V, R, A> {
+	return async (params) => {
+		if (await predicate(params)) {
+			return validators;
+		}
+	};
 }
 
 /**

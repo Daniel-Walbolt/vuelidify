@@ -11,7 +11,7 @@ import type {
 	ProcessedValidator,
 	PropertyValidationConfig,
 } from "../privateTypes.ts";
-import { reduceUndefined } from "../throttleFunctions.ts";
+import { reduceUndefined } from "../utilFunctions.ts";
 
 function uniqueId() {
 	return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;

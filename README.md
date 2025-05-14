@@ -11,6 +11,8 @@ Powerful and typed model-based validation for Vue 3
 
 [Custom Validators](#custom-validators)
 
+[Throttle Functions](#throttle-functions)
+
 [Technical Details](#technical-details)
 
 ---
@@ -177,18 +179,18 @@ type BaseValidationReturn<F> = {
 ```
 Here is the breakdown of the parameters that are passed into validators
 ```ts
-type ValidatorParams<T,P,V,A> = {
+type ValidatorParams<T,KModel,Args,Ancestors> = {
 	// The value of the property being validated
 	value: T,
 	// The top-most ancestor being validated. The object that was passed to the composable.
-	parent: P,
+	model: KModel,
 	// The args that were specified in the composable configuration.
-	args: V,
+	args: Args,
 	// The type will be an ordered array of strongly typed objects.
 	// Each index is an ancestor to what you're validating.
 	// Index 0 will appear when you're 1 array deep, and index 1 will appear 2 arrays deep, etc.
 	// Extremely useful for complex validation.
-	arrayAncestors: A
+	arrayAncestors: Ancestors
 }
 ```
 
@@ -357,7 +359,7 @@ Sometimes your objects will contain objects and arrays.
 </script>
 ```
 ### Validation State
-All of the validation types present their results similarly. Just access `state` to get started! As long as you have TypeScript enabled in your workspace, you should have no problem understanding its layout. Here's a short example on what you can do with the state object.
+In order to access the results of validation, access the `state` property returned from the composable. As long as you have TypeScript enabled in your workspace, you should have no problem understanding its layout. Validation state copies the layout of your model and puts state objects where values should be instead. Here's a short example on what you can do with the state object.
 ```ts
 const v$ = useValidation({ 
 	// ... complex object validation provided earlier ...
@@ -367,7 +369,7 @@ const aAgeErrors: string[] | undefined = v$.state.a?.age?.$state?.errorMessages;
 // An array of validation state objects on each person of property b.
 const bErrors = v$.state.b?.$arrayState;
 ```
-Note, properties may show up in the intellisense, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
+Note, your properties may show up in the intellisense for `state`, but they are undefinable *on purpose*. If validation rules are not provided for a property, its state object will not exist.
 
 # Provided Validators
 Here are the validators that Vuelidify provides by default:
@@ -389,6 +391,9 @@ Here are the validators that Vuelidify provides by default:
 	```
 -	```ts
 	must(fn: (params) => boolean, errorMessage: string)
+	```
+-	```ts
+	validateIf(predicate: (params) => boolean | Promise<boolean>, validators: Validator[])
 	```
 -	```ts
 	isEmailSync()
@@ -413,7 +418,7 @@ export function isEmailSync<
 	T extends string | undefined | null,
 	// The type for the model parameter.
 	// Generally you don't put constraints on this.
-	P,
+	K,
 	// The type for the args
 	// You may want to put a constraint on this if you need access to a store, or some other external data.
 	V,
@@ -424,12 +429,12 @@ export function isEmailSync<
 	A
 >(
 // Specify any parameters you need here. This can be configuration (like a max length) or reactive variables.
-): SyncValidator<T, P, V, R, A> // Explicitly type the validator you'll be returning
+): SyncValidator<T, K, V, R, A> // Explicitly type the validator you'll be returning
 {
 	// Return a validator function
 	return (
 		// Strongly type the expected params object to have intellisense
-		params: ValidatorParams<T, P, V, A>
+		params: ValidatorParams<T, K, V, A>
 	) => {
 		// you can do whatever you want a normal validator can in here.
 		// Return undefined, an array of validators, or a validation result.
@@ -458,6 +463,16 @@ export function isEmailSync<T extends string | undefined | null>(): SyncValidato
 
 This validator is effectively: `SyncValidator<string | undefined | null, unknown, unknown, unknown, unknown>`
 
+## Throttle Functions
+Vuelidify provides several throttling functions for limiting how often a function can be invoked. Internally, Vuelidify uses some of these internally to optimize async validators, but we figured they could be useful outside of just validation. Functions like `debounce` and `throttle` are common examples exported by lodash. However, lodash's implementations are often hard to use because they don't return control back to the caller (i.e. they don't return a promise). The functions Vuelidify provides strongly type themselves to the function you provide, and always return a promise when it makes sense to. Here is a list of the available throttling functions:
+
+- ```bufferAsync``` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest promise will execute the function next, all other promises will resolve to `IGNORE_RESULT` once the current instance returns. This function is very useful for only invoking resource-heavy functions while guaranteeing each execution uses the most up-to-date parameters.
+- ```throttleBufferAsync``` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered promise will execute the function and all others will resolve to `IGNORE_RESULT`. This means multiple instances of the function could be running at the same time, depending on the throttle and how long the function actually takes to return.
+- ```throttleAsync``` ensures a function can only be invoked once every throttle period. Does not use buffering. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting invocation of a function (e.g. forgot password form submission). Does not guarantee the latest invocation will be executed because invocations during the throttle period return `IGNORE_RESULT`.
+- ```trailingDebounceAsync``` ensures a function will only be invoked after a delay has passed since the last call. Guarantees the latest parameters will be executed. All calls prior to the latest will return `IGNORE_RESULT`.
+
+`IGNORE_RESULT` is a constant unique symbol exported by Vuelidify that helps you to identify when invocations are ignored by a throttle function. This was done to make sure this unique state doesn't conflict with possible returns from your own functions.
+
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
 
@@ -465,16 +480,30 @@ For those interested in the inner workings of the library without looking at the
 
 - Lazy validation is only performed only when the `validate()` function is called. However, `validate()` will also invoke all reactive validators to guarantee all validation results are up-to-date with the model. Properties or the model itself may be valid before ever calling `validate()` if there were no lazy validators provided, and all reactive validators were true (or again none specified).
 
-- Validation results are ideally visible as soon as possible. Synchronous validation should not wait for async validation to finish before displaying errors. Vuelidify implements this by running all validators concurrently, and assimilating the validation results as they finish. This is fairly intuitive. However, what happens when you have lazy validation and reactive validation? You can't replace the array every time a new validation cycle happens, because that could lose the results from lazy validation! Each validator is assigned an ID internally. This ID is used for identifying the results from validators. When a result is returned, Vuelidify determines if it already exists in the results array. If it does, then Vuelidify updates all the data in that result to the data from the new result. This feature is particularly useful if you want to do animations on validation errors, because the error won't be leaving and re-entering the array every time validation is done.
+- Validation results should appear as soon as possible. Synchronous validators shouldn’t wait for asynchronous ones to finish before showing errors. But things get complex when mixing lazy and reactive validators that run at different times or modify the same data. It’s even trickier when validators return other validators—sometimes inconsistently across runs. Vuelidify solves these problems with a robust validation system:
+	- Each validator gets a unique ID.
 
-- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the sync and async validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines it doesn't rely on it. Async validators will be optimized based on how long they take to return. If they return faster than 250ms, they will not be given any optimization; if they return in less than 500ms, they will be given a throttle of 250ms; if they return longer than that they will be given a buffer. Details of the throttles are below.
+	- All validators are run concurrently and their results are processed as they come back.
 
-- `throttleAsync` is an async throttler that preserves your function’s signature and always returns a Promise of its result. It executes immediately when idle; if called during the throttle interval, it buffers only the latest call and runs it once the interval elapses—earlier buffered calls resolve to `undefined`. This lets you schedule non-blocking, promise-based throttling without overlapping executions and guarantees you always call your function with the latest arguments. Note, you are unable to distinguish if your function returned `undefined` or `throttleAsync` returned `undefined`.
+	- Any child validators returned inherit the parent's ID with a unique suffix.
 
-- `bufferAsync` is another custom function exported by this library that provides a more aggressive throttling behavior than `throttleAsync`. `bufferAsync` preserves the original function’s signature and returns a promise resolving to its result. It only remembers the latest invocation while the provided function is still executing. Once the current execution completes, only the remembered call will be invoked — all intermediate calls will return `undefined`. This mechanism prevents overlapping executions and reduces redundant work, making it ideal for expensive async operations where only the most recent intent should be executed. Note, you are unable to distinguish if your function returned `undefined` or `bufferAsync` returned `undefined`.
+	- All child validators are evaluated immediately and tracked within the origin validator.
 
-- Returning arrays of validators from within other validators is powerful but complex. Initially, we aimed to optimize these nested validators, but their dynamic nature--varying instances, order, and presence between iterations--made this unreliable. Since their results merge with all other validators, Vuelidify tracks and removes outdated results when the "parent" validator is invoked again and the same results are not returned.
+	- If a parent validator returns a different set of children in a future run, the ones that are no longer present are removed.
 
-- This library uses `unknown` instead of `any` to align with Deno and strict TypeScript standards. While `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally, the default type of `Return` is `any` because it truly *can be* anything; if it was unknown, you would be unable to access it. `Return` is the only part of Vuelidify that is not strongly-typed. Be sure to cast it to what you expect before using it.
+- Validation configs are objects which are created to store any necessary data to validate a value. The validation configs that are created are entirely dependent on the validation rules provided. These validation configs make heavy use of Vue's reactivity system to ensure references to your object and its nested properties stays up-to-date. These configs are not exposed to developers directly, but `state` and values like `isValidating` are determined using these configs. The use of these configs greatly improve readability and maintainability of Vuelidify.
+
+- Validation configs are usually created as soon as the composable is invoked, but in the case of arrays, they must be created dynamically with the content of the array. There's some nuance to using the `$each` validation rule to validate arrays. Validation of arrays works by creating a matching array of validation configs for each element of the array. In the case of arrays of primitives, it is impossible to assign IDs to each element such that they can map to a validation config which was created. On the other hand, each object in an array can be modified with an ID mapping an object to a validation config. This is an important feature, because the validation state for an array is meant to match 1:1 with the array validated. However, what happens when the elements shift around? <br/>
+When the indexes of objects are modified, Vuelidify reactively maps the objects to their validation config and returns the correctly ordered state. This is important specifically for *lazy* validators--which likely won't validate every time an index changes. So if error messages from lazy validation are on an object whose index moves, they need to follow that object around. This does not behave correctly with primitives; basically, only the index is used to map validation configs to values. **Make sure to NOT use lazy validation on primitives in arrays which can change indexes.**
+
+- Both lazy and reactive validations track their own iteration ID. Before updating anything, iterations check if they're still the most recent. This prevents outdated runs from making state changes like setting the `isValidating` ref to false when the latest validation is actually still validating.
+
+- When results are returned from validation, Vuelidify updates existing entries instead of replacing them. This avoids flickering or reordering in the results array—especially useful if you want to animate error messages smoothly.
+
+- Async validators can be mixed with sync validators, so there is no way to distinguish them upon initialization. However, once they are invoked for the first time, it is possible to distinguish them. Optimizations can then be made on the synchronous validators to improve validation behavior and performance. Sync validators will be wrapped in a computed function which has the benefit of determining reactive dependencies and caching the result. This counteracts the downside of using a deep watcher discussed previously. Synchronous validators will not be needlessly reevaluated every time a character changes in an unrelated property because the computed determines its own reactive dependencies.
+
+- **As of v2.1, all validators are guaranteed to run exclusively.** No validator will execute concurrently with itself. This removed the need for manual optimization of async-validators in earlier versions because all validators now essentially have a `bufferAsync` on them. This also has the added benefit of allowing developers to have piece of mind that their synchronous and asynchronous validators won't have weird race conditions because of concurrency. While a validator is being ran and its return is processed, all validation attempts are queued to happen after it returns. Before the buffered validations run, they check if they are the latest iteration, and if they aren't they return immediately. This means no matter how many times validation is invoked, only the latest state is validated. This decision for exclusivity was made because of a bug that arose around the `validateIf` validator, where race-conditions were happening with modifying the internal state of the validator to keep track of child validators it returned.
+
+- This library uses `unknown` a lot instead of `any` to align with Deno and strict TypeScript standards. While the common generics, `Args` and `Ancestors` are logically `undefined` by default, using `undefined` as a type causes issues—`unknown` can't be assigned to `undefined`. This distinction is why some of Vuelidify’s types may seem unusual, especially when creating generic validators meant to work universally. Additionally, the default type of `Return` is `any` because it truly *can be* anything; if it was unknown, you wouldn't be able to access it from state. There are only a handful of spots in Vuelidify where any is used (e.g. throttle functions).
 
 Feel free to post issues you may have with the package on the git repo! Happy validating!
