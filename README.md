@@ -508,9 +508,12 @@ Vuelidify provides several throttling functions for limiting how often a functio
 Vuelidify provides a utility function you are free to use as well. 
 
 - 	```ts
-	reduceUndefined<T, K>(array: T[], getter: (val: T) => K): K[]
+	reduceUndefined<T, K = NonNullable<T>>(
+		array: T[],
+		getter: (value: T) => K | undefined | null,
+	): K[]
 	```
-	Used internally when collecting error messages from validator results. Removes undefined or null values from a mapping. The getter defaults to selecting every element in the array, but you can provide your own to select any part of each element.
+	Used internally when collecting error messages from validator results. Removes undefined or null values from a mapped array. The getter defaults to selecting every element in the array, but you can provide your own to perform your own mapping.
 
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
