@@ -11,6 +11,8 @@ Powerful and typed model-based validation for Vue 3
 
 [Custom Validators](#custom-validators)
 
+[Utility Functions](#utility-functions)
+
 [Throttle Functions](#throttle-functions)
 
 [Technical Details](#technical-details)
@@ -166,7 +168,7 @@ type BaseValidationReturn<F> = {
 	// Make sure your names are unique between your validators.
 	name?: string,
 	// the unique identifier for this validation result. Assigned internally.
-	// you can use this ID to identify your DOM elements that display error messages.
+	// you can use this to identify your DOM elements that display error messages.
 	id? string,
 	// required for determining whether or not this validator passed
 	isValid: boolean,
@@ -464,14 +466,51 @@ export function isEmailSync<T extends string | undefined | null>(): SyncValidato
 This validator is effectively: `SyncValidator<string | undefined | null, unknown, unknown, unknown, unknown>`
 
 ## Throttle Functions
-Vuelidify provides several throttling functions for limiting how often a function can be invoked. Internally, Vuelidify uses some of these internally to optimize async validators, but we figured they could be useful outside of just validation. Functions like `debounce` and `throttle` are common examples exported by lodash. However, lodash's implementations are often hard to use because they don't return control back to the caller (i.e. they don't return a promise). The functions Vuelidify provides strongly type themselves to the function you provide, and always return a promise when it makes sense to. Here is a list of the available throttling functions:
+Vuelidify provides several throttling functions for limiting how often a function can be invoked. We figured these would be useful outside of just validation. Functions like `debounce` and `throttle` are common examples exported by lodash. However, lodash's implementations are often hard to use because they don't return control back to the caller (i.e. they don't return a promise). The functions Vuelidify provides strongly type themselves to the function you provide, and always return a promise when it makes sense to. Here is a list of the available throttling functions:
 
-- ```bufferAsync``` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest promise will execute the function next, all other promises will resolve to `IGNORE_RESULT` once the current instance returns. This function is very useful for only invoking resource-heavy functions while guaranteeing each execution uses the most up-to-date parameters.
-- ```throttleBufferAsync``` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered promise will execute the function and all others will resolve to `IGNORE_RESULT`. This means multiple instances of the function could be running at the same time, depending on the throttle and how long the function actually takes to return.
-- ```throttleAsync``` ensures a function can only be invoked once every throttle period. Does not use buffering. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting invocation of a function (e.g. forgot password form submission). Does not guarantee the latest invocation will be executed because invocations during the throttle period return `IGNORE_RESULT`.
-- ```trailingDebounceAsync``` ensures a function will only be invoked after a delay has passed since the last call. Guarantees the latest parameters will be executed. All calls prior to the latest will return `IGNORE_RESULT`.
+- 	```ts
+	bufferAsync<F extends (...args: any[]) => any>(
+		func: F,
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	```
+	`bufferAsync` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest promise will execute the function next, all other promises will resolve to `IGNORE_RESULT` once the current instance returns. This function is very useful for only invoking resource-heavy functions while guaranteeing each execution uses the most up-to-date parameters.
+
+-	```ts
+	throttleBufferAsync<F extends (...args: any[]) => any>(
+		func: F,
+		delayMs: number,
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	```
+	`throttleBufferAsync` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered promise will execute the function and all others will resolve to `IGNORE_RESULT`. This means multiple instances of the function could be running at the same time, depending on the throttle and how long the function takes to return.
+
+- 	```ts
+	throttleAsync<F extends (...args: any) => any>(
+		func: F,
+		delayMs: number,
+	): {
+		isThrottled: Ref<boolean>;
+		throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof IGNORE_RESULT;
+	}
+	```
+	`throttleAsync` ensures a function can only be invoked once every throttle period. Does not use buffering. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting invocation of a function (e.g. forgot password form submission). Calls during the throttle period return `IGNORE_RESULT`.
+
+- 	```ts
+	trailingDebounceAsync<F extends (...args: any) => any>(
+		func: F,
+		delayMs: number,
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	```
+	`trailingDebounceAsync` ensures a function will only be invoked after a delay has passed since the last call. Guarantees the latest parameters will be executed. All calls prior to the latest will return `IGNORE_RESULT`.
 
 `IGNORE_RESULT` is a constant unique symbol exported by Vuelidify that helps you to identify when invocations are ignored by a throttle function. This was done to make sure this unique state doesn't conflict with possible returns from your own functions.
+
+## Utility Functions
+Vuelidify provides a utility function you are free to use as well. 
+
+- 	```ts
+	reduceUndefined<T, K>(array: T[], getter: (val: T) => K): K[]
+	```
+	Used internally when collecting error messages from validator results. Removes undefined or null values from a mapping. The getter defaults to selecting every element in the array, but you can provide your own to select any part of each element.
 
 ## Technical Details
 For those interested in the inner workings of the library without looking at the code:
