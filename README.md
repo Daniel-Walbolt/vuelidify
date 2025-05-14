@@ -406,7 +406,7 @@ There aren't many validators provided by this library on purpose. If you feel a 
 # Custom Validators
 This section guides you to create your own generic validators. Validators were designed to be easy to create and easier to use.
 
-Here is a breakdown of one of the built-in validators (expanded to make comments more readable):
+Here is a breakdown of one of the provided validators (expanded to make comments more readable):
 
 ```ts
 // always provide a header comment to explain what the validator does!
@@ -438,8 +438,8 @@ export function isEmailSync<
 		// Strongly type the expected params object to have intellisense
 		params: ValidatorParams<T, K, V, A>
 	) => {
-		// you can do whatever you want a normal validator can in here.
-		// Return undefined, an array of validators, or a validation result.
+		// you can do whatever a normal function can do here.
+		// However, you must return undefined, an array of validators, or a validation result.
 		// In this case, we're checking the value of the property against an email regex.
 		return {
 			isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
