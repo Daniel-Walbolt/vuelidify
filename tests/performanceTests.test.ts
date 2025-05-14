@@ -26,11 +26,11 @@ const testValidationIsAtomic = async (test: Deno.TestContext) => {
 							isValid: params.value === PASSING_VALUE,
 							message: "Name must be correct",
 						};
-					}
+					},
 				],
 			},
 		},
-		delayReactiveValidation: true
+		delayReactiveValidation: true,
 	});
 	model.value.name = "Test";
 	const ITERATIONS = 10;
@@ -39,7 +39,11 @@ const testValidationIsAtomic = async (test: Deno.TestContext) => {
 		promises.push(v$.validate());
 	}
 	await Promise.all(promises);
-	assertEquals(ranValidator, 1, `The validator was ran ${ranValidator} times, when only ${1} was expected. Validation must not be skipping intermediate validation.`);
+	assertEquals(
+		ranValidator,
+		1,
+		`The validator was ran ${ranValidator} times, when only ${1} was expected. Validation must not be skipping intermediate validation.`,
+	);
 
 	ranValidator = 0;
 	promises.push(v$.validate());
@@ -48,5 +52,9 @@ const testValidationIsAtomic = async (test: Deno.TestContext) => {
 		promises.push(v$.validate());
 	}
 	await Promise.all(promises);
-	assertEquals(ranValidator, 2, `The validator was ran ${ranValidator} times, when only ${2} was expected. Validation must not be skipping intermediate validation.`);
+	assertEquals(
+		ranValidator,
+		2,
+		`The validator was ran ${ranValidator} times, when only ${2} was expected. Validation must not be skipping intermediate validation.`,
+	);
 };
