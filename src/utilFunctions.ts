@@ -13,7 +13,7 @@
 export function reduceUndefined<T, K = NonNullable<T>>(
 	array: T[],
 	getter: (value: T) => K | undefined | null = (val) => val as K | undefined | null,
-) {
+): K[] {
 	return array.reduce<K[]>((results, item) => {
 		const value = getter(item);
 		if (value != undefined) {
