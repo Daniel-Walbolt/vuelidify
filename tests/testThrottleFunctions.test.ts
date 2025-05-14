@@ -111,7 +111,7 @@ const testBufferAsync = async (test: Deno.TestContext) => {
 
 const testDebounceAsync = async (test: Deno.TestContext) => {
 	// The async function we will debounce
-	const fetchResults = async (query: string) => {
+	const fetchResults = (query: string) => {
 		calls++;
 		return `Fetched results for: ${query}`;
 	};

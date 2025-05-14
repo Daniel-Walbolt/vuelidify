@@ -3,7 +3,7 @@ import { type Ref, ref } from "vue";
 import { useValidation } from "../src/useValidation.ts";
 import { minLength, must, validateIf } from "../src/validators.ts";
 import { pause } from "./main.ts";
-import { SyncValidator, Validator } from "../src/publicTypes.ts";
+import type { SyncValidator, Validator } from "../src/publicTypes.ts";
 
 Deno.test("Test Simple Object Validation", async (test: Deno.TestContext) => {
 	await test.step("Test Must Validator", testMustEqualValidator);

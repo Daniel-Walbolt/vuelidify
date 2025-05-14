@@ -1,4 +1,4 @@
-import { Ref, ref } from "vue";
+import { type Ref, ref } from "vue";
 
 export const IGNORE_RESULT = Symbol("Throttled function call was ignored");
 
@@ -111,7 +111,7 @@ export function trailingDebounceAsync<F extends (...args: any) => any>(
 ): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT> {
 	/** Used to identify concurrent iterations of this function. */
 	let callId = 0;
-	return async (...params: Parameters<F>) =>
+	return (...params: Parameters<F>) =>
 		new Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>(
 			(resolve) => {
 				const currentId = ++callId;
