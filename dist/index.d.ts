@@ -76,6 +76,10 @@ type ArrayValidation<U, T = U[], KModel = unknown, Args = unknown, Return = any,
         [key in NLevel]: ArrayAncestor<U, T>;
     }, Increment<NLevel>>;
 };
+/**
+ * Represents an element in {@link ValidatorParams.arrayAncestors | arrayAncestors} which
+ * holds context about the ancestor along with the ancestor itself.
+ */
 type ArrayAncestor<U = unknown, // the type of T's elements
 T = unknown> = Readonly<{
     /** The index this ancestor is at in `array` */
@@ -88,11 +92,11 @@ T = unknown> = Readonly<{
 /** A synchronous or asynchronous validator. */
 type Validator<T = unknown, KModel = unknown, Args = unknown, Return = any, Ancestors = unknown> = SyncValidator<T, KModel, Args, Return, Ancestors> | AsyncValidator<T, KModel, Args, Return, Ancestors>;
 /** Defines a validator function */
-type BaseValidator<T, Parent, Args, Return, Ancestors> = (input: ValidatorParams<T, Parent, Args, Ancestors>) => Return;
+type BaseValidator<T, KModel, Args, Return, Ancestors> = (input: ValidatorParams<T, KModel, Args, Ancestors>) => Return;
 /** Defines a validator which always runs synchronously */
-type SyncValidator<T = unknown, Parent = unknown, Args = unknown, Return = any, Ancestors = unknown> = BaseValidator<T, Parent, Args, BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, Ancestors>> | undefined, Ancestors>;
+type SyncValidator<T = unknown, KModel = unknown, Args = unknown, Return = any, Ancestors = unknown> = BaseValidator<T, KModel, Args, BaseValidationReturn<Return> | Array<Validator<T, KModel, Args, Return, Ancestors>> | undefined, Ancestors>;
 /** Defines a validator which returns a promise */
-type AsyncValidator<T = unknown, Parent = unknown, Args = unknown, Return = any, Ancestors = unknown> = BaseValidator<T, Parent, Args, Promise<BaseValidationReturn<Return> | Array<Validator<T, Parent, Args, Return, Ancestors>> | undefined>, Ancestors>;
+type AsyncValidator<T = unknown, KModel = unknown, Args = unknown, Return = any, Ancestors = unknown> = BaseValidator<T, KModel, Args, Promise<BaseValidationReturn<Return> | Array<Validator<T, KModel, Args, Return, Ancestors>> | undefined>, Ancestors>;
 /** Defines the return value of validators */
 type BaseValidationReturn<F = unknown> = {
     /**
@@ -191,76 +195,170 @@ type Increment<N extends number> = [
     ...number[]
 ][N];
 
+/** Vuelidify's constant Symbol used for identifying when a throttle function returned early. */
+declare const V$_IGNORE: unique symbol;
 /**
- * Returns a function that will execute the provided function
- * with the latest params only if a previously created promise does not exist.
- * ```ts
- * async function test(): Promise<boolean> {}
- * // Call this constant instead of the function to get the buffer benefits
- * const bufferedTest = bufferAsync<
- * 		typeof test, // this type makes the return the same signature as test()
- * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
- * >(test);
- * ```
+ * Buffers a function such that only one instance of the function executes at a time.
+ *
+ * Calls during execution return a promise to execute the function after current execution finishes.
+ * Only the latest buffered call will execute the function; the rest resolve to {@link V$_IGNORE}.
+ *
+ * @param func The function to apply a buffer to.
+ *
+ * @example
+ * const buffered = bufferAsync(someAsyncFn);
+ * buffered('a'); // executes
+ * buffered('b'); // queued but will resolve to undefined
+ * buffered('c'); // queued and will executed after first completes
  */
-declare function bufferAsync<F extends (...args: any[]) => any, K>(func: (...params: Parameters<F>) => K | Promise<K>): (...params: Parameters<typeof func>) => Promise<K | undefined>;
+declare function bufferAsync<F extends (...args: any[]) => any>(func: F): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>;
 /**
- * Guarantees delay between invocations of the given function.
+ * Throttles and buffers a function such that it is only called once per delay period.
  *
- * Invocations of the throttled function after the given interval has passed will execute instantly.
+ * Calls during the throttle return a promise to execute the function after the throttle.
+ * Only the latest buffered call will execute; the rest resolve to {@link V$_IGNORE}.
  *
- * Subsequent invocations during the cool down return a promise to invoke the function after the remaining delay has passed.
+ * Useful when you want to avoid spamming a resource and using the latest parameters is important.
  *
- * Once the interval has passed, all queued promises are executed, but only the latest promise will execute the function. The others will return undefined.
- * ```ts
- * async function test(): Promise<boolean> {}
- * // Call this constant instead of the function to get the throttle benefits
- * const throttledTest = throttleQueueAsync<
- * 		typeof test, // this type makes the return the same signature as test()
- * 		Awaited<ReturnType<typeof test>> // this type makes the returned function have the same return type
- * >(test);
- * ```
- * @param func the function to throttle
- * @param delay milliseconds required between invocations of the function.
+ * @param func - The function to throttle.
+ * @param delayMs - Time between invocations.
+ * @returns A throttled version of the function.
+ *
+ * @example
+ * async function saveInput(input: string) { ... }
+ * const throttledSave = throttleBufferAsync(saveInput, 1000);
+ *
+ * throttledSave("a"); // Executes immediately
+ * throttledSave("b"); // Queued but will resolve to IGNORE_RESULT
+ * throttledSave("c"); // Replaces "b", starts after 1s
+ *
+ * // Only "a" and "c" will be processed
  */
-declare function throttleQueueAsync<F extends (...args: any[]) => any, K>(func: (...params: Parameters<F>) => K | Promise<K>, delay: number): (...params: Parameters<typeof func>) => Promise<K | undefined>;
+declare function throttleBufferAsync<F extends (...args: any[]) => any>(func: F, delayMs: number): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>;
+/**
+ * Adds trailing debounce behavior to a function.
+ *
+ * Waits for the specified delay after the last call before executing.
+ * All previous calls during the delay resolve to {@link V$_IGNORE}. Guarantees the call will have the latest parameters.
+ *
+ * @param func - The async function to debounce.
+ * @param delay - Delay in milliseconds after the last call before execution.
+ * @returns A debounced version of the function.
+ *
+ * @example
+ * async function fetchResults(query: string) { ... }
+ * const debouncedFetch = trailingDebounceAsync(fetchResults, 500);
+ *
+ * debouncedFetch("a"); // resolves to IGNORE_RESULT
+ * debouncedFetch("ab"); // resolves to IGNORE_RESULT
+ * debouncedFetch("abc"); // Only this call will be executed after 500ms
+ */
+declare function trailingDebounceAsync<F extends (...args: any) => any>(func: F, delayMs: number): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>;
+/**
+ * Throttles a function, ensuring it's called once per delay period.
+ *
+ * Calls during the delay are ignored, and the first call after the delay executes immediately.
+ *
+ * Useful for hard limiting actions (e.g. form submissions or API calls).
+ *
+ * @param func - The function to throttle.
+ * @param delayMs - The minimum time (in milliseconds) between calls.
+ * @returns A ref indicating throttle state and the throttled function.
+ *
+ * @example
+ * async function fetchResults(query: string) { ... }
+ * const { throttledFunc } = throttleAsync(fetchResults, 500);
+ *
+ * throttledFunc("a"); // executes immediately
+ * throttledFunc("ab"); // ignored
+ * // ... 500 ms later ...
+ * throttledFunc("abc"); // executes immediately
+ */
+declare function throttleAsync<F extends (...args: any) => any>(func: F, delayMs: number): {
+    isThrottled: Ref<boolean>;
+    throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof V$_IGNORE;
+};
+
+/**
+ * Accepts an array and uses the provided getter to get any value from each element
+ * and ignoring any undefined or null values returned.
+ *
+ * ```ts
+ * const array = [{ id: 123, name: "Foo"}, { id: 456, name: undefined }]
+ * const validNames = reduceUndefined(array, v => v.name) // ["Foo"]
+ * ```
+ * @param array the array to map values from
+ * @param getter a function executed with each element which can perform any kind of custom mapping.
+ * @returns an array of the getter's return value invoked with each source element, with undefined values omitted.
+ */
+declare function reduceUndefined<T, K = NonNullable<T>>(array: T[], getter?: (value: T) => K | undefined | null): K[];
 
 /**
  * Validates the object is not loosely undefined.
+ * This does allow for empty strings. If you need a non-empty value, use {@link notEmpty()}.
+ * @param message sets the error message returned.
  */
-declare function required(): SyncValidator;
+declare function required(message?: string): SyncValidator;
+/**
+ * Validates the object is not loosely undefined and is not an empty string.
+ * @param message sets the error message returned.
+ */
+declare function notEmpty(message?: string): SyncValidator;
 /**
  * Validates a string or number has a length >= to the provided length. Undefined and null are 0 length.
- * @param minLength
+ * @param min the minimum length of the string or number.
+ * @param message sets the error message returned.
  */
-declare function minLength<T extends string | number | undefined | null>(minLength: number): SyncValidator<T>;
+declare function minLength<T extends string | number | undefined | null>(min: number, message?: string): SyncValidator<T>;
 /**
  * Validates a string or number's length. Undefined and null are 0 length.
- * @param maxLength the maximum length of the string or number
+ * @param max the maximum length of the string or number.
+ * @param message sets the error message returned.
  */
-declare function maxLength<T extends string | number | undefined | null>(maxLength: number): SyncValidator<T>;
+declare function maxLength<T extends string | number | undefined | null>(max: number, message?: string): SyncValidator<T>;
 /**
  * Validates a number is defined and is at least some value.
- * @param minNumber the minimum number the value can be
+ * @param min the minimum number the value can be.
+ * @param message sets the error message returned.
  */
-declare function minNumber<T extends number | undefined | null>(minNumber: number): SyncValidator<T>;
+declare function minNumber<T extends number | undefined | null>(min: number, message?: string): SyncValidator<T>;
+/**
+ * Validates a number is defined and is at least some value.
+ * @param min the minimum number the value can be.
+ * @param message sets the error message returned.
+ */
+declare function exclusiveMinNumber<T extends number | undefined | null>(min: number, message?: string): SyncValidator<T>;
 /**
  * Validates a number is defined and is at most some value.
- * @param maxNumber the maximum number the value can be
+ * @param max the maximum number the value can be.
+ * @param message sets the error message returned.
  */
-declare function maxNumber<T extends number | undefined | null>(maxNumber: number): SyncValidator<T>;
+declare function maxNumber<T extends number | undefined | null>(max: number, message?: string): SyncValidator<T>;
+/**
+ * Validates a number is defined and is at most some value.
+ * @param max the maximum number the value can be.
+ * @param message sets the error message returned.
+ */
+declare function exclusiveMaxNumber<T extends number | undefined | null>(max: number, message?: string): SyncValidator<T>;
 /**
  * Validate the provided predicate function.
  * @param fn predicate that returns true if the value is valid.
- * @param errorMessage the message to display when the values are not equal.
+ * @param message sets the error message returned.
  */
-declare function must<T, K, V, R, A>(fn: (params: ValidatorParams<T, K, V, A>) => boolean, errorMessage: string): SyncValidator<T, K, V, R, A>;
+declare function must<T, K, V, R, A>(fn: (params: ValidatorParams<T, K, V, A>) => boolean, message: string): SyncValidator<T, K, V, R, A>;
+/**
+ * Execute a set of validators only if the provided predicate is true.
+ * @param predicate determines if the set of validators should be returned.
+ * @param validators The set of validators to execute if the predicate returns true.
+ */
+declare function validateIf<T, K, V, R, A, Validators extends Validator<T, K, V, R, A>[]>(predicate: (params: ValidatorParams<T, K, V, A>) => boolean | Promise<boolean>, validators: Validators): AsyncValidator<T, K, V, R, A>;
 /**
  * Validates a string is a valid looking email using RegEx.
  *
  * The RegEx was taken from https://stackoverflow.com/questions/46155/how-can-i-validate-an-email-address-in-javascript, and may be updated in the future.
-s */
-declare function isEmailSync<T extends string | undefined | null>(): SyncValidator<T>;
+ * @param message sets the error message returned.
+ */
+declare function isEmailSync<T extends string | undefined | null>(message?: string): SyncValidator<T>;
 
 type UseValidationReturn<T = unknown, Return = any> = {
     hasValidated: Ref<boolean>;
@@ -280,6 +378,10 @@ type UseValidationReturn<T = unknown, Return = any> = {
      * The reference state can be changed using {@link setReference()}.
      */
     isDirty: ComputedRef<boolean>;
+    /**
+     * Resets the internal state of the composable back to its starting state.
+     */
+    reset: () => void;
 };
 /**
  * The starting point for validation with Vuelidify.
@@ -288,4 +390,4 @@ type UseValidationReturn<T = unknown, Return = any> = {
  */
 declare function useValidation<T, Args = unknown, Return = any>(validationConfig: ValidationConfig<T, Args, Return>): Reactive<UseValidationReturn<T, Return>>;
 
-export { ArrayAncestor, ArrayValidation, ArrayValidationState, AsyncValidator, BaseValidation, BaseValidationReturn, BaseValidationState, BaseValidator, ObjectValidationTypes, Primitive, PrimitiveValidationState, RecursiveValidation, RecursiveValidationState, SyncValidator, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, bufferAsync, isEmailSync, maxLength, maxNumber, minLength, minNumber, must, required, throttleQueueAsync, useValidation };
+export { ArrayAncestor, ArrayValidation, ArrayValidationState, AsyncValidator, BaseValidation, BaseValidationReturn, BaseValidationState, BaseValidator, ObjectValidationTypes, Primitive, PrimitiveValidationState, RecursiveValidation, RecursiveValidationState, SyncValidator, V$_IGNORE, Validation, ValidationConfig, ValidationState, Validator, ValidatorParams, bufferAsync, exclusiveMaxNumber, exclusiveMinNumber, isEmailSync, maxLength, maxNumber, minLength, minNumber, must, notEmpty, reduceUndefined, required, throttleAsync, throttleBufferAsync, trailingDebounceAsync, useValidation, validateIf };
