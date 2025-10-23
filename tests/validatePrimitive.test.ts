@@ -1,7 +1,7 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
 import { type Ref, ref } from "vue";
-import { isEmailSync, maxLength, maxNumber, minLength, minNumber, required } from "../src/validators.ts";
+import { exclusiveMaxNumber, exclusiveMinNumber, isEmailSync, maxLength, maxNumber, minLength, minNumber, notEmpty, required } from "../src/validators.ts";
 import { pause } from "./main.ts";
 
 Deno.test("Validating a primitive", async (test) => {
@@ -9,8 +9,11 @@ Deno.test("Validating a primitive", async (test) => {
 	await test.step("MaxLength Validator", testMaxLength);
 	await test.step("Email Validator", testEmail);
 	await test.step("MinNumber Validator", testMinNumber);
+	await test.step("ExclusiveMinNumber Validator", testExclusiveMinNumber);
 	await test.step("MaxNumber Validator", testMaxNumber);
+	await test.step("ExclusiveMaxNumber Validator", testExclusiveMaxNumber);
 	await test.step("Required Validator", testRequired);
+	await test.step("NotEmpty Validator", testNotEmpty);
 	await test.step("Lazy Validation", testLazyValidation);
 	await test.step("Lazy & Reactive Validation", testLazyAndReactiveValidation);
 	await test.step("Global isValid check", testGlobalIsValid);
@@ -35,7 +38,7 @@ const testMinLength = async (test: Deno.TestContext) => {
 		{ model: "This", expected: false },
 		{ model: 10000, expected: true },
 		{ model: "      ", expected: true },
-		{ model: "     _____", expected: true },
+		{ model: "     ___", expected: true },
 	];
 
 	for (const testCase of tests) {
@@ -123,6 +126,7 @@ const testMinNumber = async (test: Deno.TestContext) => {
 	const tests = [
 		{ model: -1, expected: false },
 		{ model: 0, expected: false },
+		{ model: MinNumber, expected: true },
 		{ model: 10, expected: true },
 	];
 
@@ -132,6 +136,36 @@ const testMinNumber = async (test: Deno.TestContext) => {
 		assert(
 			v$.state.$state?.isValid == testCase.expected,
 			`minNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`,
+		);
+	}
+};
+
+const testExclusiveMinNumber = async (test: Deno.TestContext) => {
+	const MinNumber = 5;
+	const model: Ref<number> = ref(0);
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$reactive: [
+				exclusiveMinNumber(MinNumber),
+			],
+		},
+		delayReactiveValidation: false,
+	});
+	const tests = [
+		{ model: -1, expected: false },
+		{ model: 0, expected: false },
+		{ model: MinNumber, expected: false },
+		{ model: MinNumber+0.0000001, expected: true },
+		{ model: 10, expected: true },
+	];
+
+	for (const testCase of tests) {
+		model.value = testCase.model;
+		await pause();
+		assert(
+			v$.state.$state?.isValid == testCase.expected,
+			`exclusiveMinNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value}, with min of ${MinNumber}`,
 		);
 	}
 };
@@ -153,8 +187,8 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		{ model: 10, expected: true },
 		{ model: -1000, expected: true },
 		{ model: -100, expected: true },
-		{ model: 100, expected: true },
-		{ model: 100.0001, expected: false },
+		{ model: MaxNumber, expected: true },
+		{ model: MaxNumber+0.000001, expected: false },
 		{ model: 1e6, expected: false },
 	];
 
@@ -164,6 +198,38 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		assert(
 			v$.state.$state?.isValid === testCase.expected,
 			`maxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`,
+		);
+	}
+};
+
+const testExclusiveMaxNumber = async (test: Deno.TestContext) => {
+	const MaxNumber = 100;
+	const model: Ref<number> = ref(0);
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$reactive: [
+				exclusiveMaxNumber(MaxNumber),
+			],
+		},
+		delayReactiveValidation: false,
+	});
+
+	const tests = [
+		{ model: 10, expected: true },
+		{ model: -1000, expected: true },
+		{ model: -100, expected: true },
+		{ model: MaxNumber, expected: false },
+		{ model: MaxNumber-0.000001, expected: true },
+		{ model: 1e6, expected: false },
+	];
+
+	for (const testCase of tests) {
+		model.value = testCase.model;
+		await pause();
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`exclusiveMaxNumber did not ${testCase.expected ? "pass" : "fail"}: ${model.value} with max of ${MaxNumber}.`,
 		);
 	}
 };
@@ -196,6 +262,41 @@ const testRequired = async (test: Deno.TestContext) => {
 		assert(
 			v$.state.$state?.isValid === testCase.expected,
 			`required did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`,
+		);
+	}
+};
+
+const testNotEmpty = async (test: Deno.TestContext) => {
+	const model: Ref<any> = ref();
+	const v$ = useValidation({
+		model: model,
+		validation: {
+			$reactive: [
+				notEmpty(),
+			],
+		},
+		delayReactiveValidation: false,
+	});
+
+	const tests = [
+		{ model: true, expected: true },
+		{ model: "Test", expected: true },
+		{ model: 10, expected: true },
+		{ model: null, expected: false },
+		{ model: undefined, expected: false },
+		{ model: " ", expected: false },
+		{ model: "null", expected: true },
+		{ model: "   ", expected: false },
+		{ model: {}, expected: true },
+		{ model: new Map(), expected: true }
+	];
+
+	for (const testCase of tests) {
+		model.value = testCase.model;
+		await pause();
+		assert(
+			v$.state.$state?.isValid === testCase.expected,
+			`notEmpty did not ${testCase.expected ? "pass" : "fail"}: "${model.value}"`,
 		);
 	}
 };
