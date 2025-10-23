@@ -1,7 +1,17 @@
 import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { useValidation } from "../src/useValidation.ts";
 import { type Ref, ref } from "vue";
-import { exclusiveMaxNumber, exclusiveMinNumber, isEmailSync, maxLength, maxNumber, minLength, minNumber, notEmpty, required } from "../src/validators.ts";
+import {
+	exclusiveMaxNumber,
+	exclusiveMinNumber,
+	isEmailSync,
+	maxLength,
+	maxNumber,
+	minLength,
+	minNumber,
+	notEmpty,
+	required,
+} from "../src/validators.ts";
 import { pause } from "./main.ts";
 
 Deno.test("Validating a primitive", async (test) => {
@@ -156,7 +166,7 @@ const testExclusiveMinNumber = async (test: Deno.TestContext) => {
 		{ model: -1, expected: false },
 		{ model: 0, expected: false },
 		{ model: MinNumber, expected: false },
-		{ model: MinNumber+0.0000001, expected: true },
+		{ model: MinNumber + 0.0000001, expected: true },
 		{ model: 10, expected: true },
 	];
 
@@ -188,7 +198,7 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		{ model: -1000, expected: true },
 		{ model: -100, expected: true },
 		{ model: MaxNumber, expected: true },
-		{ model: MaxNumber+0.000001, expected: false },
+		{ model: MaxNumber + 0.000001, expected: false },
 		{ model: 1e6, expected: false },
 	];
 
@@ -220,7 +230,7 @@ const testExclusiveMaxNumber = async (test: Deno.TestContext) => {
 		{ model: -1000, expected: true },
 		{ model: -100, expected: true },
 		{ model: MaxNumber, expected: false },
-		{ model: MaxNumber-0.000001, expected: true },
+		{ model: MaxNumber - 0.000001, expected: true },
 		{ model: 1e6, expected: false },
 	];
 
@@ -288,7 +298,7 @@ const testNotEmpty = async (test: Deno.TestContext) => {
 		{ model: "null", expected: true },
 		{ model: "   ", expected: false },
 		{ model: {}, expected: true },
-		{ model: new Map(), expected: true }
+		{ model: new Map(), expected: true },
 	];
 
 	for (const testCase of tests) {

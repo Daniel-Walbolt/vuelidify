@@ -22,9 +22,9 @@ export function notEmpty(message?: string): SyncValidator {
 	return (params: ValidatorParams) => {
 		return {
 			isValid: params.value != undefined && params.value !== "" && String(params.value).trim().length > 0,
-			message: message ?? "Must not be empty"
-		}
-	}
+			message: message ?? "Must not be empty",
+		};
+	};
 }
 
 /**
@@ -34,7 +34,7 @@ export function notEmpty(message?: string): SyncValidator {
  */
 export function minLength<T extends string | number | undefined | null>(
 	min: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => {
 		const val = String(params.value ?? "");
@@ -52,7 +52,7 @@ export function minLength<T extends string | number | undefined | null>(
  */
 export function maxLength<T extends string | number | undefined | null>(
 	max: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => {
 		const val = String(params.value ?? "");
@@ -70,14 +70,13 @@ export function maxLength<T extends string | number | undefined | null>(
  */
 export function minNumber<T extends number | undefined | null>(
 	min: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid:
-			params.value != undefined
-			&& params.value >= min
+		isValid: params.value != undefined &&
+			params.value >= min &&
 			// Added this check because number inputs in HTML will go to blank strings!
-			&& String(params.value) !== "",
+			String(params.value) !== "",
 		message: message ?? `The minimum value is ${min}`,
 	});
 }
@@ -89,18 +88,16 @@ export function minNumber<T extends number | undefined | null>(
  */
 export function exclusiveMinNumber<T extends number | undefined | null>(
 	min: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid:
-			params.value != undefined
-			&& params.value > min
+		isValid: params.value != undefined &&
+			params.value > min &&
 			// Added this check because number inputs in HTML will go to blank strings!
-			&& String(params.value) !== "",
+			String(params.value) !== "",
 		message: message ?? `The minimum value is ${min}`,
 	});
 }
-
 
 /**
  * Validates a number is defined and is at most some value.
@@ -109,14 +106,13 @@ export function exclusiveMinNumber<T extends number | undefined | null>(
  */
 export function maxNumber<T extends number | undefined | null>(
 	max: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid:
-			params.value != undefined
-			&& params.value <= max
+		isValid: params.value != undefined &&
+			params.value <= max &&
 			// Added this check because number inputs in HTML will go to blank strings!
-			&& String(params.value) !== "",
+			String(params.value) !== "",
 		message: message ?? `The maximum value is ${max}`,
 	});
 }
@@ -128,14 +124,13 @@ export function maxNumber<T extends number | undefined | null>(
  */
 export function exclusiveMaxNumber<T extends number | undefined | null>(
 	max: number,
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid:
-			params.value != undefined
-			&& params.value < max
+		isValid: params.value != undefined &&
+			params.value < max &&
 			// Added this check because number inputs in HTML will go to blank strings!
-			&& String(params.value) !== "",
+			String(params.value) !== "",
 		message: message ?? `The maximum value is ${max}`,
 	});
 }
@@ -180,7 +175,7 @@ export function validateIf<T, K, V, R, A, Validators extends Validator<T, K, V, 
 export function isEmailSync<
 	T extends string | undefined | null,
 >(
-	message?: string
+	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
 		isValid: params.value

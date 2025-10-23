@@ -2,10 +2,10 @@ import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.t
 import { pause } from "./main.ts";
 import {
 	bufferAsync,
-	V$_IGNORE,
 	throttleAsync,
 	throttleBufferAsync,
 	trailingDebounceAsync,
+	V$_IGNORE,
 } from "../src/throttleFunctions.ts";
 
 Deno.test("Test Throttle Functions", async (test: Deno.TestContext) => {

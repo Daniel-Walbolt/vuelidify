@@ -129,6 +129,6 @@ export function useValidation<
 		isErrored,
 		setReference,
 		isDirty,
-		reset
+		reset,
 	});
 }
