@@ -25,6 +25,10 @@ export type UseValidationReturn<
 	 * The reference state can be changed using {@link setReference()}.
 	 */
 	isDirty: ComputedRef<boolean>;
+	/**
+	 * Resets the internal state of the composable back to its starting state.
+	 */
+	reset: () => void;
 };
 
 /**
@@ -54,19 +58,18 @@ export function useValidation<
 		const allValidatorsValid = validationConfigs.every((x) => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
 	});
-	/** List of objects that relates validation to the object's properties. */
-	let validationConfigs: PropertyValidationConfig[] = [];
 
 	/** The reference for determining if the object has been changed or not.  */
 	const dirtyReference = ref(JSON.stringify(validationConfig.model.value));
 	const isDirty = computed(() => dirtyReference.value !== JSON.stringify(validationConfig.model.value));
 
-	const setup = setupValidation(
+	let setup: ReturnType<typeof setupValidation> = setupValidation(
 		object as Ref<T>,
 		validation as GenericValidation,
 	);
-	const validationState = setup.state as ValidationState<T, Return>;
-	validationConfigs = setup.validationConfigs;
+	let validationState = setup.state as ValidationState<T, Return>;
+	/** List of objects that relates validation to the object's properties. */
+	let validationConfigs: PropertyValidationConfig[] = setup.validationConfigs;
 
 	/**
 	 * Watch the object for any changes.
@@ -106,6 +109,17 @@ export function useValidation<
 		dirtyReference.value = JSON.stringify(reference);
 	}
 
+	/** Sets the internal state of the composable back to its starting state. */
+	function reset() {
+		hasValidated.value = false;
+		setup = setupValidation(
+			object as Ref<T>,
+			validation as GenericValidation,
+		);
+		validationConfigs = setup.validationConfigs;
+		validationState = setup.state as ValidationState<T, Return>;
+	}
+
 	return reactive({
 		hasValidated,
 		validate,
@@ -115,5 +129,6 @@ export function useValidation<
 		isErrored,
 		setReference,
 		isDirty,
+		reset,
 	});
 }

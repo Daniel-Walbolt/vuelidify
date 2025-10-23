@@ -2,10 +2,10 @@ import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.t
 import { pause } from "./main.ts";
 import {
 	bufferAsync,
-	IGNORE_RESULT,
 	throttleAsync,
 	throttleBufferAsync,
 	trailingDebounceAsync,
+	V$_IGNORE,
 } from "../src/throttleFunctions.ts";
 
 Deno.test("Test Throttle Functions", async (test: Deno.TestContext) => {
@@ -31,7 +31,7 @@ function parameterizedThrottleTest(timeOfTest: number, throttleTime: number, cal
 
 		const throttled = throttleBufferAsync(asyncFunction, throttleTime);
 
-		const results: (number | typeof IGNORE_RESULT)[] = [];
+		const results: (number | typeof V$_IGNORE)[] = [];
 
 		// Warmup
 		await throttled();
@@ -62,7 +62,7 @@ function parameterizedThrottleTest(timeOfTest: number, throttleTime: number, cal
 		for (let i = 0; i < ignoredResults.length; i++) {
 			assertEquals(
 				ignoredResults[i],
-				IGNORE_RESULT,
+				V$_IGNORE,
 				"throttleBufferAsync did not return a unique symbol for ignored invocations.",
 			);
 		}
@@ -104,7 +104,7 @@ const testBufferAsync = async (test: Deno.TestContext) => {
 	);
 	assertEquals(
 		[results[0], results[1]],
-		[IGNORE_RESULT, IGNORE_RESULT],
+		[V$_IGNORE, V$_IGNORE],
 		"bufferAsync did not return a unique symbol for ignored invocations.",
 	);
 };
@@ -119,7 +119,7 @@ const testDebounceAsync = async (test: Deno.TestContext) => {
 	const debouncedFetch = trailingDebounceAsync(fetchResults, 500);
 
 	// Set up variables to track the function execution
-	const results: (string | typeof IGNORE_RESULT)[] = [];
+	const results: (string | typeof V$_IGNORE)[] = [];
 	let calls = 0;
 
 	// Create a mock function to track when the debounced function gets called
@@ -140,7 +140,7 @@ const testDebounceAsync = async (test: Deno.TestContext) => {
 	assertEquals(calls, 1, "The debounced function should only be called once.");
 	for (let i = 0; i < CallAmount - 1; i++) {
 		assert(
-			results[i] === IGNORE_RESULT,
+			results[i] === V$_IGNORE,
 			"trailingDebounceAsync did not return unique symbol on an ignored invocation.",
 		);
 	}
@@ -171,8 +171,8 @@ const testThrottleAsync = async (test: Deno.TestContext) => {
 		true,
 		"throttleAsync did not set isThrottled to true while throttle should be active.",
 	);
-	assertEquals(result2, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
-	assertEquals(result3, IGNORE_RESULT, "throttleAsync did not return a unique symbol for ignored calls");
+	assertEquals(result2, V$_IGNORE, "throttleAsync did not return a unique symbol for ignored calls");
+	assertEquals(result3, V$_IGNORE, "throttleAsync did not return a unique symbol for ignored calls");
 	// Wait for the throttle period to pass
 	const ret = await result1;
 

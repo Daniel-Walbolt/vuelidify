@@ -377,28 +377,37 @@ Note, your properties may show up in the intellisense for `state`, but they are 
 Here are the validators that Vuelidify provides by default:
 
 - 	```ts
-	required()
+	required(message?: string)
+	```
+-	```ts
+	notEmpty(message?: string)
 	```
 - 	```ts
-	minLength(min: number)
+	minLength(min: number, message?: string)
 	```
 - 	```ts
-	maxLength(max: number)
+	maxLength(max: number, message?: string)
 	```
 -	```ts
-	minNumber(min: number)
+	minNumber(min: number, message?: string)
 	```
 -	```ts
-	maxNumber(max: number)
+	exclusiveMinNumber(min: number, message?: string)
 	```
 -	```ts
-	must(fn: (params) => boolean, errorMessage: string)
+	maxNumber(max: number, message?: string)
+	```
+-	```ts
+	exclusiveMaxNumber(max: number, message?: string)
+	```
+-	```ts
+	must(fn: (params) => boolean, message: string)
 	```
 -	```ts
 	validateIf(predicate: (params) => boolean | Promise<boolean>, validators: Validator[])
 	```
 -	```ts
-	isEmailSync()
+	isEmailSync(message?: string)
 	```
 
 There aren't many validators provided by this library on purpose. If you feel a validator would be useful for everyone to have, give us feedback on our GitHub repository. However, we highly encourage you to understand how to make your own!
@@ -412,6 +421,7 @@ Here is a breakdown of one of the provided validators (expanded to make comments
 // always provide a header comment to explain what the validator does!
 /**
  * Checks if the string value is a valid looking email using RegEx.
+ * @param message sets the error message returned.
  */
 export function isEmailSync<
 	// The type of the property you want to support validation for.
@@ -430,7 +440,8 @@ export function isEmailSync<
 	// Generally you don't put constraints on this.
 	A
 >(
-// Specify any parameters you need here. This can be configuration (like a max length) or reactive variables.
+	// Specify any parameters here.
+	message?: string
 ): SyncValidator<T, K, V, R, A> // Explicitly type the validator you'll be returning
 {
 	// Return a validator function
@@ -438,12 +449,14 @@ export function isEmailSync<
 		// Strongly type the expected params object to have intellisense
 		params: ValidatorParams<T, K, V, A>
 	) => {
-		// you can do whatever a normal function can do here.
-		// However, you must return undefined, an array of validators, or a validation result.
-		// In this case, we're checking the value of the property against an email regex.
+		/**
+		 * You can do whatever here, but you must return undefined,
+		 * an array of validators, or a validation result.
+		 * In this case, we're checking the value against an email regex.
+		 */
 		return {
 			isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
-			message: "Invalid email format"
+			message: message ?? "Invalid email format"
 		}
 	};
 }
@@ -454,11 +467,14 @@ Because every generic has a default value in `SyncValidator`, we can greatly sim
 ```ts
 /**
  * Validates a string is a valid looking email using RegEx.
+ * @param message sets the error message returned.
  */
-export function isEmailSync<T extends string | undefined | null>(): SyncValidator<T> {
+export function isEmailSync<T extends string | undefined | null>(
+	message?: string
+): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
 		isValid: params.value ? RegExp(/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/).test(params.value) : false,
-		message: "Invalid email format"
+		message: message ?? "Invalid email format"
 	});
 }
 ```
@@ -471,17 +487,17 @@ Vuelidify provides several throttling functions for limiting how often a functio
 - 	```ts
 	bufferAsync<F extends (...args: any[]) => any>(
 		func: F,
-	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>
 	```
-	`bufferAsync` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest promise will execute the function next, all other promises will resolve to `IGNORE_RESULT` once the current instance returns. This function is very useful for only invoking resource-heavy functions while guaranteeing each execution uses the most up-to-date parameters.
+	`bufferAsync` ensures that the provided function has only one instance executing at a time. Calls to the buffered function will return a promise to execute when the current instance returns. Only the latest promise will execute the function next, all other promises will resolve to `V$_IGNORE` once the current instance returns. This function is very useful for only invoking resource-heavy functions while guaranteeing each execution uses the most up-to-date parameters.
 
 -	```ts
 	throttleBufferAsync<F extends (...args: any[]) => any>(
 		func: F,
 		delayMs: number,
-	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>
 	```
-	`throttleBufferAsync` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered promise will execute the function and all others will resolve to `IGNORE_RESULT`. This means multiple instances of the function could be running at the same time, depending on the throttle and how long the function takes to return.
+	`throttleBufferAsync` behaves very similarly to `bufferAsync`, but instead of waiting for the current instance to return, it waits for a throttle duration to expire. Once the throttle expires the latest buffered promise will execute the function and all others will resolve to `V$_IGNORE`. This means multiple instances of the function could be running at the same time, depending on the throttle and how long the function takes to return.
 
 - 	```ts
 	throttleAsync<F extends (...args: any) => any>(
@@ -489,20 +505,20 @@ Vuelidify provides several throttling functions for limiting how often a functio
 		delayMs: number,
 	): {
 		isThrottled: Ref<boolean>;
-		throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof IGNORE_RESULT;
+		throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof V$_IGNORE;
 	}
 	```
-	`throttleAsync` ensures a function can only be invoked once every throttle period. Does not use buffering. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting invocation of a function (e.g. forgot password form submission). Calls during the throttle period return `IGNORE_RESULT`.
+	`throttleAsync` ensures a function can only be invoked once every throttle period. Does not use buffering. Returns two objects, a ref indicating if the function is in its throttle period and the throttled function. Useful for hard limiting invocation of a function (e.g. forgot password form submission). Calls during the throttle period return `V$_IGNORE`.
 
 - 	```ts
 	trailingDebounceAsync<F extends (...args: any) => any>(
 		func: F,
 		delayMs: number,
-	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>
+	): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>
 	```
-	`trailingDebounceAsync` ensures a function will only be invoked after a delay has passed since the last call. Guarantees the latest parameters will be executed. All calls prior to the latest will return `IGNORE_RESULT`.
+	`trailingDebounceAsync` ensures a function will only be invoked after a delay has passed since the last call. Guarantees the latest parameters will be executed. All calls prior to the latest will return `V$_IGNORE`.
 
-`IGNORE_RESULT` is a constant unique symbol exported by Vuelidify that helps you to identify when invocations are ignored by a throttle function. This was done to make sure this unique state doesn't conflict with possible returns from your own functions.
+`V$_IGNORE` is a constant unique symbol exported by Vuelidify that helps you to identify when invocations are ignored by a throttle function. This was done to make sure this unique state doesn't conflict with possible returns from your own functions.
 
 ## Utility Functions
 Vuelidify provides a utility function you are free to use as well. 

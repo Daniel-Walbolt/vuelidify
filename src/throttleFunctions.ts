@@ -1,12 +1,13 @@
 import { type Ref, ref } from "vue";
 
-export const IGNORE_RESULT = Symbol("Throttled function call was ignored");
+/** Vuelidify's constant Symbol used for identifying when a throttle function returned early. */
+export const V$_IGNORE = Symbol("Throttled function call was ignored");
 
 /**
  * Buffers a function such that only one instance of the function executes at a time.
  *
  * Calls during execution return a promise to execute the function after current execution finishes.
- * Only the latest buffered call will execute the function; the rest resolve to {@link IGNORE_RESULT}.
+ * Only the latest buffered call will execute the function; the rest resolve to {@link V$_IGNORE}.
  *
  * @param func The function to apply a buffer to.
  *
@@ -18,7 +19,7 @@ export const IGNORE_RESULT = Symbol("Throttled function call was ignored");
  */
 export function bufferAsync<F extends (...args: any[]) => any>(
 	func: F,
-): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT> {
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE> {
 	/** Used to identify concurrent iterations of this function. */
 	let callId: number = 0;
 	let pending: Promise<unknown> | undefined;
@@ -28,7 +29,7 @@ export function bufferAsync<F extends (...args: any[]) => any>(
 
 		const result = (pending ?? Promise.resolve()).then(() => {
 			if (currentId !== callId) {
-				return IGNORE_RESULT;
+				return V$_IGNORE;
 			}
 			return func(...params);
 		}).finally(() => {
@@ -44,7 +45,7 @@ export function bufferAsync<F extends (...args: any[]) => any>(
  * Throttles and buffers a function such that it is only called once per delay period.
  *
  * Calls during the throttle return a promise to execute the function after the throttle.
- * Only the latest buffered call will execute; the rest resolve to {@link IGNORE_RESULT}.
+ * Only the latest buffered call will execute; the rest resolve to {@link V$_IGNORE}.
  *
  * Useful when you want to avoid spamming a resource and using the latest parameters is important.
  *
@@ -65,7 +66,7 @@ export function bufferAsync<F extends (...args: any[]) => any>(
 export function throttleBufferAsync<F extends (...args: any[]) => any>(
 	func: F,
 	delayMs: number,
-): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT> {
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE> {
 	/** Used to identify concurrent iterations of this function. */
 	let callId: number = 0;
 	let lastCallTime = 0;
@@ -79,7 +80,7 @@ export function throttleBufferAsync<F extends (...args: any[]) => any>(
 			await new Promise((r) => setTimeout(r, delayMs - timeSinceLast));
 			if (currentId !== callId) {
 				// Ignore outdated calls
-				return IGNORE_RESULT;
+				return V$_IGNORE;
 			}
 		}
 		lastCallTime = Date.now();
@@ -91,7 +92,7 @@ export function throttleBufferAsync<F extends (...args: any[]) => any>(
  * Adds trailing debounce behavior to a function.
  *
  * Waits for the specified delay after the last call before executing.
- * All previous calls during the delay resolve to {@link IGNORE_RESULT}. Guarantees the call will have the latest parameters.
+ * All previous calls during the delay resolve to {@link V$_IGNORE}. Guarantees the call will have the latest parameters.
  *
  * @param func - The async function to debounce.
  * @param delay - Delay in milliseconds after the last call before execution.
@@ -108,11 +109,11 @@ export function throttleBufferAsync<F extends (...args: any[]) => any>(
 export function trailingDebounceAsync<F extends (...args: any) => any>(
 	func: F,
 	delayMs: number,
-): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT> {
+): (...params: Parameters<F>) => Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE> {
 	/** Used to identify concurrent iterations of this function. */
 	let callId = 0;
 	return (...params: Parameters<F>) =>
-		new Promise<Awaited<ReturnType<F>> | typeof IGNORE_RESULT>(
+		new Promise<Awaited<ReturnType<F>> | typeof V$_IGNORE>(
 			(resolve) => {
 				const currentId = ++callId;
 				setTimeout(async () => {
@@ -123,7 +124,7 @@ export function trailingDebounceAsync<F extends (...args: any) => any>(
 					if (currentId == callId) {
 						resolve(await func(...params));
 					} else {
-						resolve(IGNORE_RESULT);
+						resolve(V$_IGNORE);
 					}
 				}, delayMs);
 			},
@@ -155,12 +156,12 @@ export function throttleAsync<F extends (...args: any) => any>(
 	delayMs: number,
 ): {
 	isThrottled: Ref<boolean>;
-	throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof IGNORE_RESULT;
+	throttledFunc: (...params: Parameters<F>) => ReturnType<F> | typeof V$_IGNORE;
 } {
 	const isThrottled: Ref<boolean> = ref(false);
 	const throttledFunc = (...params: Parameters<F>) => {
 		if (isThrottled.value) {
-			return IGNORE_RESULT;
+			return V$_IGNORE;
 		}
 		isThrottled.value = true;
 		setTimeout(() => isThrottled.value = false, delayMs);
