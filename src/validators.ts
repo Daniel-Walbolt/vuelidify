@@ -95,7 +95,7 @@ export function exclusiveMinNumber<T extends number | undefined | null>(
 			params.value > min &&
 			// Added this check because number inputs in HTML will go to blank strings!
 			String(params.value) !== "",
-		message: message ?? `The minimum value is ${min}`,
+		message: message ?? `Must be greater than ${min}`,
 	});
 }
 
@@ -131,7 +131,7 @@ export function exclusiveMaxNumber<T extends number | undefined | null>(
 			params.value < max &&
 			// Added this check because number inputs in HTML will go to blank strings!
 			String(params.value) !== "",
-		message: message ?? `The maximum value is ${max}`,
+		message: message ?? `Must be less than ${max}`,
 	});
 }
 
