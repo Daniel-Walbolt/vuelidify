@@ -1,5 +1,5 @@
 import type { ValidationConfig, ValidationState } from "./publicTypes.ts";
-import { computed, type ComputedRef, type Reactive, reactive, type Ref, ref, watch } from "vue";
+import { computed, type ComputedRef, type Reactive, reactive, type Ref, ref, shallowRef, ShallowRef, watch } from "vue";
 import type { GenericValidation, PropertyValidationConfig } from "./privateTypes.ts";
 import { invokeValidatorConfigs } from "./services/validatorInvocation.ts";
 import { setupValidation } from "./services/validatorProcessing.ts";
@@ -49,13 +49,13 @@ export function useValidation<
 	/** Only true after {@link validate()} finished successfully. */
 	const hasValidated = ref(false);
 	const isValidating = computed(() =>
-		validationConfigs.some((x) => x.isValidatingLazy.value || x.isValidatingReactive.value)
+		validationConfigs.value.some((x) => x.isValidatingLazy.value || x.isValidatingReactive.value)
 	);
 	const isErrored = computed(() =>
-		validationConfigs.some((x) => x.validationResults.value.some((x) => x.isValid === false))
+		validationConfigs.value.some((x) => x.validationResults.value.some((x) => x.isValid === false))
 	);
 	const isValid = computed(() => {
-		const allValidatorsValid = validationConfigs.every((x) => x.isReactiveValid.value && x.isLazyValid.value);
+		const allValidatorsValid = validationConfigs.value.every((x) => x.isReactiveValid.value && x.isLazyValid.value);
 		return allValidatorsValid;
 	});
 
@@ -67,9 +67,9 @@ export function useValidation<
 		object as Ref<T>,
 		validation as GenericValidation,
 	);
-	let validationState = setup.state as ValidationState<T, Return>;
+	const validationState: Ref<ValidationState<T, Return>> = shallowRef(setup.state as ValidationState<T, Return>);
 	/** List of objects that relates validation to the object's properties. */
-	let validationConfigs: PropertyValidationConfig[] = setup.validationConfigs;
+	const validationConfigs: ShallowRef<PropertyValidationConfig[]> = shallowRef(setup.validationConfigs);
 
 	/**
 	 * Watch the object for any changes.
@@ -82,10 +82,10 @@ export function useValidation<
 		() => {
 			if (delayReactiveValidation) {
 				if (hasValidated.value === true) {
-					invokeValidatorConfigs(validationConfigs, object, args, true, false);
+					invokeValidatorConfigs(validationConfigs.value, object, args, true, false);
 				}
 			} else {
-				invokeValidatorConfigs(validationConfigs, object, args, true, false);
+				invokeValidatorConfigs(validationConfigs.value, object, args, true, false);
 			}
 		},
 		{ deep: true },
@@ -94,7 +94,7 @@ export function useValidation<
 	/** Invokes all reactive and lazy validators. Returns whether or not all validators passed.*/
 	async function validate() {
 		const isValid = await invokeValidatorConfigs(
-			validationConfigs,
+			validationConfigs.value,
 			object,
 			args,
 			true,
@@ -116,15 +116,15 @@ export function useValidation<
 			object as Ref<T>,
 			validation as GenericValidation,
 		);
-		validationConfigs = setup.validationConfigs;
-		validationState = setup.state as ValidationState<T, Return>;
+		validationConfigs.value = setup.validationConfigs;
+		validationState.value = setup.state as ValidationState<T, Return>;
 	}
 
 	return reactive({
 		hasValidated,
 		validate,
 		isValidating,
-		state: computed(() => validationState),
+		state: computed(() => validationState.value),
 		isValid,
 		isErrored,
 		setReference,
