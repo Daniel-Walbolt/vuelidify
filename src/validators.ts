@@ -82,8 +82,8 @@ export function minNumber<T extends number | undefined | null>(
 }
 
 /**
- * Validates a number is defined and is at least some value.
- * @param min the minimum number the value can be.
+ * Validates a number is defined and is greater than some value.
+ * @param min the number the value must be greater than.
  * @param message sets the error message returned.
  */
 export function exclusiveMinNumber<T extends number | undefined | null>(
@@ -118,8 +118,8 @@ export function maxNumber<T extends number | undefined | null>(
 }
 
 /**
- * Validates a number is defined and is at most some value.
- * @param max the maximum number the value can be.
+ * Validates a number is defined and is less than some value.
+ * @param max the number the value must be less than.
  * @param message sets the error message returned.
  */
 export function exclusiveMaxNumber<T extends number | undefined | null>(
