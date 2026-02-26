@@ -64,7 +64,7 @@ export function maxLength<T extends string | number | undefined | null>(
 }
 
 /**
- * Validates a number is defined and is at least some value.
+ * Validates a value is a number and is at least some value.
  * @param min the minimum number the value can be.
  * @param message sets the error message returned.
  */
@@ -73,17 +73,16 @@ export function minNumber<T extends number | undefined | null>(
 	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined &&
-			params.value >= min &&
-			// Added this check because number inputs in HTML will go to blank strings!
-			String(params.value) !== "",
+		isValid: typeof params.value === "number" &&
+			Number.isFinite(params.value) &&
+			params.value >= min,
 		message: message ?? `The minimum value is ${min}`,
 	});
 }
 
 /**
- * Validates a number is defined and is at least some value.
- * @param min the minimum number the value can be.
+ * Validates a value is a number and is greater than some value.
+ * @param min the number the value must be greater than.
  * @param message sets the error message returned.
  */
 export function exclusiveMinNumber<T extends number | undefined | null>(
@@ -91,16 +90,15 @@ export function exclusiveMinNumber<T extends number | undefined | null>(
 	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined &&
-			params.value > min &&
-			// Added this check because number inputs in HTML will go to blank strings!
-			String(params.value) !== "",
+		isValid: typeof params.value === "number" &&
+			Number.isFinite(params.value) &&
+			params.value > min,
 		message: message ?? `Must be greater than ${min}`,
 	});
 }
 
 /**
- * Validates a number is defined and is at most some value.
+ * Validates a value is a number and is at most some value.
  * @param max the maximum number the value can be.
  * @param message sets the error message returned.
  */
@@ -109,17 +107,16 @@ export function maxNumber<T extends number | undefined | null>(
 	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined &&
-			params.value <= max &&
-			// Added this check because number inputs in HTML will go to blank strings!
-			String(params.value) !== "",
+		isValid: typeof params.value === "number" &&
+			Number.isFinite(params.value) &&
+			params.value <= max,
 		message: message ?? `The maximum value is ${max}`,
 	});
 }
 
 /**
- * Validates a number is defined and is at most some value.
- * @param max the maximum number the value can be.
+ * Validates a value is a number and is less than some value.
+ * @param max the number the value must be less than.
  * @param message sets the error message returned.
  */
 export function exclusiveMaxNumber<T extends number | undefined | null>(
@@ -127,10 +124,9 @@ export function exclusiveMaxNumber<T extends number | undefined | null>(
 	message?: string,
 ): SyncValidator<T> {
 	return (params: ValidatorParams<T>) => ({
-		isValid: params.value != undefined &&
-			params.value < max &&
-			// Added this check because number inputs in HTML will go to blank strings!
-			String(params.value) !== "",
+		isValid: typeof params.value === "number" &&
+			Number.isFinite(params.value) &&
+			params.value < max,
 		message: message ?? `Must be less than ${max}`,
 	});
 }
