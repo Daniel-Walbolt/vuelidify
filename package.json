@@ -25,11 +25,11 @@
 		"async-validation",
 		"typescript"
 	],
-	"homepage": "https://github.com/Daniel-Walbolt/vue-final-form",
-	"issues": "https://github.com/Daniel-Walbolt/vue-final-form/issues",
+	"homepage": "https://github.com/Daniel-Walbolt/vuelidify",
+	"issues": "https://github.com/Daniel-Walbolt/vuelidify/issues",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Daniel-Walbolt/vue-final-form"
+		"url": "https://github.com/Daniel-Walbolt/vuelidify"
 	},
 	"dependencies": {
 		"vue": "^3.0.0"
