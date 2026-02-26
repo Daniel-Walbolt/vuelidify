@@ -29,7 +29,7 @@
 	"issues": "https://github.com/Daniel-Walbolt/vuelidify/issues",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Daniel-Walbolt/vuelidify"
+		"url": "git+https://github.com/Daniel-Walbolt/vuelidify.git"
 	},
 	"dependencies": {
 		"vue": "^3.0.0"
