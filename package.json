@@ -16,6 +16,15 @@
 		"favicon.ico",
 		"assets"
 	],
+	"keywords": [
+		"validation",
+		"reactive-validation",
+		"vue3",
+		"forms",
+		"model-based-validation",
+		"async-validation",
+		"typescript"
+	],
 	"homepage": "https://github.com/Daniel-Walbolt/vue-final-form",
 	"issues": "https://github.com/Daniel-Walbolt/vue-final-form/issues",
 	"repository": {
