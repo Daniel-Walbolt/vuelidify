@@ -104,7 +104,8 @@ jobs:
                 cache: "pnpm"
 
           - name: Publish to NPM
-            run: pnpm publish
+            # no git checks because otherwise it thinks there's uncommitted changes
+            run: pnpm publish --no-git-checks
     publish_jsr:
         name: Publish to JSR
         runs-on: ubuntu-latest
