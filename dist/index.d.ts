@@ -317,26 +317,26 @@ declare function minLength<T extends string | number | undefined | null>(min: nu
  */
 declare function maxLength<T extends string | number | undefined | null>(max: number, message?: string): SyncValidator<T>;
 /**
- * Validates a number is defined and is at least some value.
+ * Validates a value is a number and is at least some value.
  * @param min the minimum number the value can be.
  * @param message sets the error message returned.
  */
 declare function minNumber<T extends number | undefined | null>(min: number, message?: string): SyncValidator<T>;
 /**
- * Validates a number is defined and is at least some value.
- * @param min the minimum number the value can be.
+ * Validates a value is a number and is greater than some value.
+ * @param min the number the value must be greater than.
  * @param message sets the error message returned.
  */
 declare function exclusiveMinNumber<T extends number | undefined | null>(min: number, message?: string): SyncValidator<T>;
 /**
- * Validates a number is defined and is at most some value.
+ * Validates a value is a number and is at most some value.
  * @param max the maximum number the value can be.
  * @param message sets the error message returned.
  */
 declare function maxNumber<T extends number | undefined | null>(max: number, message?: string): SyncValidator<T>;
 /**
- * Validates a number is defined and is at most some value.
- * @param max the maximum number the value can be.
+ * Validates a value is a number and is less than some value.
+ * @param max the number the value must be less than.
  * @param message sets the error message returned.
  */
 declare function exclusiveMaxNumber<T extends number | undefined | null>(max: number, message?: string): SyncValidator<T>;
