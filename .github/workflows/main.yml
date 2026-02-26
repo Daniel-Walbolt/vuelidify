@@ -104,13 +104,13 @@ jobs:
                 cache: "pnpm"
 
           - name: Publish to NPM
-            run: pnpm publish --no-git-checks --provenance
+            run: pnpm publish
     publish_jsr:
         name: Publish to JSR
         runs-on: ubuntu-latest
         permissions:
           contents: read
-          id-token: write # An OIDC ID token is used for authentication with JSR
+          id-token: write # REQUIRED FOR OIDC
         needs: build
         steps:
           - name: Download build artifacts
