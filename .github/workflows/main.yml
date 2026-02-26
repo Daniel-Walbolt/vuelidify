@@ -82,7 +82,6 @@ jobs:
         permissions:
           contents: read
           id-token: write # REQUIRED FOR OIDC
-        environment: production # must match trusted publisher setup on npm webpage for this package.
         steps:
           - uses: actions/checkout@v4
           - name: Download build artifacts
