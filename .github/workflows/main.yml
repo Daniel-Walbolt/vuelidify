@@ -4,6 +4,7 @@ name: Build & Publish
 on:
     release:
         types: [created]
+    workflow_dispatch:
 
 jobs:
     lint_test:
@@ -103,7 +104,7 @@ jobs:
                 cache: "pnpm"
 
           - name: Publish to NPM
-            run: pnpm publish --no-git-checks
+            run: pnpm publish --no-git-checks --provenance
     publish_jsr:
         name: Publish to JSR
         runs-on: ubuntu-latest
