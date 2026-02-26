@@ -78,6 +78,10 @@ jobs:
         name: Publish to NPM
         runs-on: ubuntu-latest
         needs: build
+        permissions:
+          contents: read
+          id-token: write # REQUIRED FOR OIDC
+        environment: production # must match trusted publisher setup on npm webpage for this package.
         steps:
           - uses: actions/checkout@v4
           - name: Download build artifacts
@@ -100,8 +104,6 @@ jobs:
 
           - name: Publish to NPM
             run: pnpm publish --no-git-checks
-            env:
-                NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     publish_jsr:
         name: Publish to JSR
         runs-on: ubuntu-latest
