@@ -1,5 +1,15 @@
 import type { ValidationConfig, ValidationState } from "./publicTypes.ts";
-import { computed, type ComputedRef, type Reactive, reactive, type Ref, ref, shallowRef, type ShallowRef, watch } from "vue";
+import {
+	computed,
+	type ComputedRef,
+	type Reactive,
+	reactive,
+	type Ref,
+	ref,
+	type ShallowRef,
+	shallowRef,
+	watch,
+} from "vue";
 import type { GenericValidation, PropertyValidationConfig } from "./privateTypes.ts";
 import { invokeValidatorConfigs } from "./services/validatorInvocation.ts";
 import { setupValidation } from "./services/validatorProcessing.ts";

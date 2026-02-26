@@ -140,7 +140,7 @@ const testMinNumber = async (test: Deno.TestContext) => {
 		{ model: 10, expected: true },
 		{ model: Infinity, expected: false },
 		{ model: -Infinity, expected: false },
-		{ model: NaN, expected: false }
+		{ model: NaN, expected: false },
 	];
 
 	for (const testCase of tests) {
@@ -173,7 +173,7 @@ const testExclusiveMinNumber = async (test: Deno.TestContext) => {
 		{ model: 10, expected: true },
 		{ model: Infinity, expected: false },
 		{ model: -Infinity, expected: false },
-		{ model: NaN, expected: false }
+		{ model: NaN, expected: false },
 	];
 
 	for (const testCase of tests) {
@@ -208,7 +208,7 @@ const testMaxNumber = async (test: Deno.TestContext) => {
 		{ model: 1e6, expected: false },
 		{ model: Infinity, expected: false },
 		{ model: -Infinity, expected: false },
-		{ model: NaN, expected: false }
+		{ model: NaN, expected: false },
 	];
 
 	for (const testCase of tests) {
@@ -243,7 +243,7 @@ const testExclusiveMaxNumber = async (test: Deno.TestContext) => {
 		{ model: 1e6, expected: false },
 		{ model: Infinity, expected: false },
 		{ model: -Infinity, expected: false },
-		{ model: NaN, expected: false }
+		{ model: NaN, expected: false },
 	];
 
 	for (const testCase of tests) {

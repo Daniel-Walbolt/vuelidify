@@ -24,25 +24,25 @@ async function testValidationStateResets(test: Deno.TestContext) {
 		model: model,
 		validation: {
 			age: {
-				$reactive: [exclusiveMinNumber(10)]
-			}
+				$reactive: [exclusiveMinNumber(10)],
+			},
 		},
-		delayReactiveValidation: false
+		delayReactiveValidation: false,
 	});
 	const errors = computed(() => v$.state.age?.$state?.errorMessages);
 	await v$.validate();
 	await pause();
 	assert(
 		v$.isValid === false,
-		"isValid was true when the age should be failing validation."
+		"isValid was true when the age should be failing validation.",
 	);
 	assert(
 		errors.value != undefined && errors.value.length > 0,
-		"There were no validation errors when there should have been."
+		"There were no validation errors when there should have been.",
 	);
 	v$.reset();
 	assert(
 		errors.value == undefined || errors.value.length == 0,
-		"There were errors after calling reset(), and there shouldn't be."
+		"There were errors after calling reset(), and there shouldn't be.",
 	);
 }
