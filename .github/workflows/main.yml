@@ -102,6 +102,17 @@ jobs:
                 registry-url: 'https://registry.npmjs.org'
                 cache: "pnpm"
 
+          - name: Debug OIDC token
+            run: |
+              echo "Requesting token..."
+              TOKEN=$(curl -s \
+                -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+                "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm" | jq -r '.value')
+
+              echo "Token length: ${#TOKEN}"
+
+              echo "$TOKEN" | cut -d '.' -f2 | base64 -d | jq
+
           - name: Publish to NPM
             # no git checks because otherwise it thinks there's uncommitted changes
             run: pnpm publish --no-git-checks
