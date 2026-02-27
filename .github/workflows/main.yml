@@ -2,9 +2,6 @@ name: Build & Publish
 # MAKE SURE SETTINGS > ACTIONS > GENERAL HAS WORKFLOW PERMISSIONS ABLE TO EDIT
 
 on:
-    push:
-      tags:
-        - 'v*'
     release:
         types: [created]
     workflow_dispatch:
@@ -99,7 +96,7 @@ jobs:
                 version: latest
           
           - name: Install Node
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v4k
             with:
                 node-version: '20.x'
                 registry-url: 'https://registry.npmjs.org'
