@@ -1,3 +1,14 @@
+// Create global intercept for console.error for all tests.
+// As of writing this, validation shouldn't console.error
+// if used properly and functioning properly.
+const originalConsoleError = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+	originalConsoleError(...args);
+	throw new Error(
+		`console.error was called during a test: ${args.map((arg) => String(arg)).join(" ")}`,
+	);
+};
+
 export const pause = (length: number = 50) => new Promise((resolve) => setTimeout(resolve, length));
 
 export type Child = {
