@@ -1,6 +1,6 @@
 {
 	"name": "vuelidify",
-	"version": "2.2.3",
+	"version": "2.2.4",
 	"author": "Daniel Walbolt",
 	"private": false,
 	"main": "./dist/index.js",
