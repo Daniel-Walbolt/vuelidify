@@ -287,13 +287,16 @@ export function setupNestedPropertiesForValidation(
 			 */
 			const target = computed(() => {
 				const obj = toValue(rObject);
+				if (obj == null) {
+					return undefined;
+				}
 				if (isGenericRecord<IndexableObject>(obj)) {
 					return obj[key];
 				} else {
 					console.error(
 						`Vuelidify Error: validation could not be setup correctly on ${obj} because ${rObject} is not enumerable.`,
 					);
-					return null;
+					return undefined;
 				}
 			});
 			const maybeNestedValidation = rValidation[key];
